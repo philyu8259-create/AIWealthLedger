@@ -1969,7 +1969,7 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
         ),
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
+            padding: const EdgeInsets.fromLTRB(0, 18, 0, 0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1985,207 +1985,216 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [Color(0xFF5B42F3), Color(0xFFB61FFF)],
+                    ),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        AppStrings.of(context).text(AppStringKeys.homeQuickAddTitle),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        AppStrings.of(context).text(AppStringKeys.homeQuickAddSubtitle),
+                        softWrap: true,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.86),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF7F8FA),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: TextField(
+                          controller: _amountController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          autofocus: false,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          decoration: InputDecoration(
+                            labelText: AppStrings.of(
+                              context,
+                            ).text(AppStringKeys.homeAmountLabel),
+                            hintText: AppStrings.of(
+                              context,
+                            ).text(AppStringKeys.homeAmountHint),
+                            prefixText: _homeCurrencyPrefix(),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 18,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(18),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(18),
+                              borderSide: const BorderSide(color: _primaryColor),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
                         children: [
                           Text(
                             AppStrings.of(
                               context,
-                            ).text(AppStringKeys.homeQuickAddTitle),
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            ).text(AppStringKeys.transactionsSelectCategory),
+                            style: TextStyle(fontSize: 13, color: Colors.grey),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            AppStrings.of(
-                              context,
-                            ).text(AppStringKeys.homeQuickAddSubtitle),
-                            softWrap: true,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
+                          const Spacer(),
+                          PressFeedback(
+                            onTap: () => _showCategoryEditSheet(context),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _primaryColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                AppStrings.of(context).text(AppStringKeys.assetsEdit),
+                                style: TextStyle(fontSize: 13, color: _primaryColor),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF7F8FA),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: TextField(
-                    controller: _amountController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    autofocus: false,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: AppStrings.of(
-                        context,
-                      ).text(AppStringKeys.homeAmountLabel),
-                      hintText: AppStrings.of(
-                        context,
-                      ).text(AppStringKeys.homeAmountHint),
-                      prefixText: _homeCurrencyPrefix(),
-                      filled: true,
-                      fillColor: Colors.transparent,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 18,
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: visibleCategories.map((c) {
+                          final isSelected = _selectedCategoryId == c.id;
+                          return PressFeedback(
+                            onTap: () {
+                              setState(() {
+                                _selectedCategoryId = c.id;
+                                _selectedName = _homeCategoryName(c.id, c.name);
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected ? _primaryColor : Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: isSelected ? _primaryColor : Colors.transparent,
+                                ),
+                              ),
+                              child: Text(
+                                '${c.icon} ${_homeCategoryName(c.id, c.name)}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isSelected ? Colors.white : Colors.black87,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: const BorderSide(color: _primaryColor),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Text(
-                      AppStrings.of(
-                        context,
-                      ).text(AppStringKeys.transactionsSelectCategory),
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                    const Spacer(),
-                    PressFeedback(
-                      onTap: () => _showCategoryEditSheet(context),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
                         ),
-                        decoration: BoxDecoration(
-                          color: _primaryColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
+                        onPressed: () {
+                          final amount = double.tryParse(_amountController.text);
+                          if (amount == null || amount <= 0) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  AppStrings.of(
+                                    context,
+                                  ).text(AppStringKeys.homeInvalidAmount),
+                                ),
+                                duration: Duration(seconds: 1),
+                              ),
+                            );
+                            return;
+                          }
+                          final category =
+                              _categoryMap[effectiveSelectedId] ??
+                              CategoryDef.expenseCategories.first;
+                          final entryType = _resolveType(category.id);
+                          context.read<AccountBloc>().add(
+                            AddAccountEntry(
+                              AccountEntry(
+                                id: const Uuid().v4(),
+                                amount: amount,
+                                type: entryType,
+                                category: category.id,
+                                description:
+                                    _selectedName ??
+                                    _homeCategoryName(category.id, category.name),
+                                date: DateTime.now(),
+                                createdAt: DateTime.now(),
+                                originalCurrency: _homeBaseCurrency(),
+                                baseCurrency: _homeBaseCurrency(),
+                                locale: _homeLocale().toLanguageTag(),
+                                countryCode: _homeCountryCode(),
+                                syncStatus: SyncStatus.pending,
+                              ),
+                            ),
+                          );
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                AppStrings.of(context).text(
+                                  AppStringKeys.homeSavedAmount,
+                                  params: {'amount': _homeMoney(amount)},
+                                ),
+                              ),
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        },
                         child: Text(
-                          AppStrings.of(context).text(AppStringKeys.assetsEdit),
-                          style: TextStyle(fontSize: 13, color: _primaryColor),
+                          AppStrings.of(context).text(AppStringKeys.commonConfirm),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: visibleCategories.map((c) {
-                    final isSelected = _selectedCategoryId == c.id;
-                    return PressFeedback(
-                      onTap: () {
-                        setState(() {
-                          _selectedCategoryId = c.id;
-                          _selectedName = _homeCategoryName(c.id, c.name);
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected ? _primaryColor : Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: isSelected ? _primaryColor : Colors.transparent,
-                          ),
-                        ),
-                        child: Text(
-                          '${c.icon} ${_homeCategoryName(c.id, c.name)}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: isSelected ? Colors.white : Colors.black87,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                  ),
-                  onPressed: () {
-                    final amount = double.tryParse(_amountController.text);
-                    if (amount == null || amount <= 0) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            AppStrings.of(
-                              context,
-                            ).text(AppStringKeys.homeInvalidAmount),
-                          ),
-                          duration: Duration(seconds: 1),
-                        ),
-                      );
-                      return;
-                    }
-                    final category =
-                        _categoryMap[effectiveSelectedId] ??
-                        CategoryDef.expenseCategories.first;
-                    final entryType = _resolveType(category.id);
-                    context.read<AccountBloc>().add(
-                      AddAccountEntry(
-                        AccountEntry(
-                          id: const Uuid().v4(),
-                          amount: amount,
-                          type: entryType,
-                          category: category.id,
-                          description:
-                              _selectedName ??
-                              _homeCategoryName(category.id, category.name),
-                          date: DateTime.now(),
-                          createdAt: DateTime.now(),
-                          originalCurrency: _homeBaseCurrency(),
-                          baseCurrency: _homeBaseCurrency(),
-                          locale: _homeLocale().toLanguageTag(),
-                          countryCode: _homeCountryCode(),
-                          syncStatus: SyncStatus.pending,
-                        ),
-                      ),
-                    );
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          AppStrings.of(context).text(
-                            AppStringKeys.homeSavedAmount,
-                            params: {'amount': _homeMoney(amount)},
-                          ),
-                        ),
-                        duration: const Duration(seconds: 1),
-                      ),
-                    );
-                  },
-                  child: Text(
-                    AppStrings.of(context).text(AppStringKeys.commonConfirm),
+                    ],
                   ),
                 ),
               ],
