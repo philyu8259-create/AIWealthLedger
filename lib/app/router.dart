@@ -255,8 +255,16 @@ class MainScaffold extends StatelessWidget {
                           GestureDetector(
                             onTap: () {
                               HapticFeedback.mediumImpact();
+                              final currentPath =
+                                  GoRouterState.of(context).uri.path;
+                              if (currentPath.startsWith('/home')) {
+                                homeAiTrigger.value++;
+                                return;
+                              }
                               context.go('/home');
-                              homeAiTrigger.value++;
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                homeAiTrigger.value++;
+                              });
                             },
                             child: Container(
                               width: 50,
