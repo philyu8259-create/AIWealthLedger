@@ -37,6 +37,7 @@ import '../widgets/ai_bottom_sheet.dart';
 import '../widgets/custom_numpad_sheet.dart';
 import '../widgets/animated_number_text.dart';
 import '../widgets/premium_capsule_button.dart';
+import '../widgets/section_header.dart';
 import '../widgets/shimmer_loading.dart';
 
 String _homeMoney(num amount, {int decimalDigits = 2}) {
@@ -796,15 +797,35 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                               crossAxisAlignment:
                                                   CrossAxisAlignment.start,
                                               children: [
-                                                Text(
-                                                  getIt<AppProfileService>()
-                                                      .appTitle,
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: TextStyle(
-                                                    fontSize: compact ? 18 : 20,
-                                                    fontWeight: FontWeight.bold,
+                                                ShaderMask(
+                                                  blendMode: BlendMode.srcIn,
+                                                  shaderCallback: (bounds) =>
+                                                      const LinearGradient(
+                                                        colors: [
+                                                          Color(0xFF6B4DFF),
+                                                          Color(0xFF4A47D8),
+                                                        ],
+                                                        begin: Alignment.topLeft,
+                                                        end: Alignment.bottomRight,
+                                                      ).createShader(
+                                                        Rect.fromLTWH(
+                                                          0,
+                                                          0,
+                                                          bounds.width,
+                                                          bounds.height,
+                                                        ),
+                                                      ),
+                                                  child: Text(
+                                                    getIt<AppProfileService>()
+                                                        .appTitle,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: TextStyle(
+                                                      fontSize: compact ? 20 : 22,
+                                                      fontWeight: FontWeight.w900,
+                                                      letterSpacing: -0.5,
+                                                    ),
                                                   ),
                                                 ),
                                                 Text(
@@ -1179,13 +1200,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                               height: 44,
                                               decoration: BoxDecoration(
                                                 color: AppColors.primary
-                                                    .withValues(alpha: 0.08),
+                                                    .withValues(alpha: 0.12),
                                                 borderRadius:
                                                     BorderRadius.circular(14),
+                                                border: Border.all(
+                                                  color: AppColors.primary
+                                                      .withValues(alpha: 0.05),
+                                                  width: 1,
+                                                ),
                                               ),
                                               child: const Icon(
                                                 Icons
-                                                    .account_balance_wallet_outlined,
+                                                    .account_balance_wallet_rounded,
                                                 color: AppColors.primary,
                                                 size: 22,
                                               ),
@@ -1498,27 +1524,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   20,
                                   8,
                                 ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      AppStrings.of(context).text(
-                                        AppStringKeys.homeRecentEntriesTitle,
-                                      ),
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                child: SectionHeader(
+                                  title: AppStrings.of(context).text(
+                                    AppStringKeys.homeRecentEntriesTitle,
+                                  ),
+                                  trailing: PremiumCapsuleButton(
+                                    text: AppStrings.of(context).text(
+                                      AppStringKeys.homeRecentEntriesSeeAll,
                                     ),
-                                    PremiumCapsuleButton(
-                                      text: AppStrings.of(context).text(
-                                        AppStringKeys.homeRecentEntriesSeeAll,
-                                      ),
-                                      icon: Icons.arrow_forward_ios_rounded,
-                                      onTap: () => context.go('/transactions'),
-                                    ),
-                                  ],
+                                    icon: Icons.arrow_forward_ios_rounded,
+                                    onTap: () => context.go('/transactions'),
+                                  ),
                                 ),
                               ),
                             ),
@@ -2316,31 +2332,25 @@ class _QuickChipsGridState extends State<_QuickChipsGrid> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                AppStrings.of(
+          SectionHeader(
+            title: AppStrings.of(
+              context,
+            ).text(AppStringKeys.homeQuickAccountingTitle),
+            trailing: PremiumCapsuleButton(
+              text: AppStrings.of(context).text(AppStringKeys.homeManage),
+              icon: Icons.tune_rounded,
+              onTap: () {
+                Navigator.push(
                   context,
-                ).text(AppStringKeys.homeQuickAccountingTitle),
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              PremiumCapsuleButton(
-                text: AppStrings.of(context).text(AppStringKeys.homeManage),
-                icon: Icons.tune_rounded,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => BlocProvider<CustomCategoryBloc>.value(
-                        value: widget.bloc,
-                        child: _QuickChipEditorPage(bloc: widget.bloc),
-                      ),
+                  MaterialPageRoute(
+                    builder: (_) => BlocProvider<CustomCategoryBloc>.value(
+                      value: widget.bloc,
+                      child: _QuickChipEditorPage(bloc: widget.bloc),
                     ),
-                  );
-                },
-              ),
-            ],
+                  ),
+                );
+              },
+            ),
           ),
           const SizedBox(height: 12),
           GridView.builder(
