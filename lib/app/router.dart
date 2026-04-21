@@ -213,7 +213,7 @@ class MainScaffold extends StatelessWidget {
     final outerHorizontalPadding = compactNav ? 18.0 : 22.0;
     final innerHorizontalPadding = compactNav ? 10.0 : 14.0;
     final navGap = compactNav ? 4.0 : 6.0;
-    final centerGap = compactNav ? 10.0 : 14.0;
+    final centerGap = compactNav ? 14.0 : 14.0;
 
     return Scaffold(
       extendBody: true,
