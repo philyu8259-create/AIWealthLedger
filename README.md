@@ -1,126 +1,171 @@
 # AI财富账本
 
 > 技术栈：Flutter + flutter_bloc + go_router + Clean Architecture
-> 云端：阿里云函数计算（已接入）
-> AI：阿里通义（ASR ✅ 已接入 | OCR ✅ 已接入 | 通义 Key 待配置）
-> 状态：本地 Mock 运行中，CloudBase 等凭据到位
+> 云端：阿里云函数计算接口（`ALIYUN_FC_API`）
+> AI / OCR：按区服与 `.env` 配置启用
+> 状态：当前仓库为本地最新代码，运行能力取决于 `.env` 凭据与后端配置
 
 ## 技术栈
 
 | 组件 | 技术 |
 |------|------|
-| 框架 | Flutter 3.41 |
+| 框架 | Flutter |
 | 状态管理 | flutter_bloc |
 | 路由 | go_router |
-| 架构 | Clean Architecture（domain/data/presentation） |
+| 架构 | Clean Architecture（domain / data / presentation） |
 | DI | get_it |
-| 云端 | 腾讯云 CloudBase `cloudbase_ce` ✅ |
-| 语音识别 | 阿里云 ASR ✅ 已接入 |
-| OCR 票据识别 | 阿里云 OCR ✅ 已接入 |
-| AI 语义解析 | 通义千问 ⏳ 等 Key |
+| 云端同步 | 阿里云函数计算接口 + `cloud_service.dart` |
+| 中国区文本 AI | 通义千问 / `qwen_service.dart` |
+| 国际版文本 AI | Gemini / `gemini_input_parser_service.dart` |
+| 中国区 OCR | 百度 OCR / OCR.space / 阿里云 OCR |
+| 国际版 OCR | Google Vision |
+| 美股行情（intl） | Finnhub |
 
 ## 项目结构
 
-```
+```text
 lib/
-├── main.dart
 ├── app/
-│   ├── app.dart                 # BlocProvider + MaterialApp.router
-│   └── router.dart              # go_router 底部 Tab 路由
-├── core/usecases/
-│   └── usecase.dart            # UseCase 基类
+│   ├── app.dart
+│   ├── app_flavor.dart
+│   └── router.dart
+├── core/
+│   ├── formatters/
+│   ├── theme/
+│   └── usecases/
 ├── features/accounting/
-│   ├── domain/
-│   │   ├── entities/           # AccountEntry / CategoryDef
-│   │   ├── repositories/       # AccountEntryRepository 接口
-│   │   └── usecases/         # GetEntriesByMonth / AddEntry / DeleteEntry
 │   ├── data/
 │   │   ├── datasources/
-│   │   │   ├── i_account_entry_datasource.dart  # 统一接口
-│   │   │   ├── cloudbase_account_datasource.dart # CloudBase 实现
-│   │   │   └── mock_account_entry_datasource.dart # Mock 实现
+│   │   │   ├── cloud_asset_datasource.dart
+│   │   │   ├── cloud_sync_account_datasource.dart
+│   │   │   ├── mock_account_entry_datasource.dart
+│   │   │   └── mock_asset_datasource.dart
 │   │   ├── models/
-│   │   │   └── account_entry_model.dart
 │   │   └── repositories/
+│   ├── domain/
+│   │   ├── entities/
+│   │   ├── repositories/
+│   │   └── usecases/
 │   └── presentation/
-│       ├── bloc/              # AccountBloc + Events + States
-│       └── pages/             # Home / Transactions / Reports / Settings
+│       ├── bloc/
+│       ├── pages/
+│       └── widgets/
+├── l10n/
+├── main.dart
 └── services/
-    ├── cloudbase_service.dart  # CloudBase 服务封装
-    ├── qwen_service.dart       # 通义千问 AI 语义解析
-    ├── aliyun_asr_service.dart # 阿里云 ASR 语音识别
-    ├── aliyun_ocr_service.dart # 阿里云 OCR 票据识别
-    └── injection.dart          # get_it DI 容器
+    ├── cloud_service.dart
+    ├── config_service.dart
+    ├── qwen_service.dart
+    ├── gemini_input_parser_service.dart
+    ├── gemini_spending_prediction_service.dart
+    ├── google_vision_receipt_ocr_service.dart
+    ├── aliyun_asr_service.dart
+    ├── aliyun_ocr_service.dart
+    ├── baidu_ocr_service.dart
+    ├── stock_service.dart
+    └── vip_service.dart
 ```
 
 ## 运行
 
 ```bash
 flutter pub get
-flutter analyze    # 应为 0 errors
-flutter run        # 本地 Mock 运行
-```
-
-环境变量建议先从模板复制：
-
-```bash
+flutter analyze
 cp .env.example .env
+flutter run
 ```
 
-## 功能进度
+## 功能状态
 
-| 功能 | 状态 |
+| 功能 | 当前状态 |
 |------|------|
-| 首页记账（AI 文字/快捷） | ✅ 完成 |
-| 🎤 语音记账（ASR） | ✅ 已接入（等 Nova 配置 AccessKey） |
-| 📷 OCR 票据记账 | ✅ 已接入（等 Nova 配置 AccessKey） |
-| 账单列表（筛选/滑动删除） | ✅ 完成 |
-| 月度报表（支出分布/排名） | ✅ 完成 |
+| 首页记账（AI 文字 / 快捷） | ✅ 完成 |
+| 🎤 语音记账（ASR） | ✅ 已接入，需配置阿里云语音相关凭据 |
+| 📷 OCR 票据记账 | ✅ 已接入，需按区服配置对应 OCR 凭据 |
+| 账单列表（筛选 / 滑动删除） | ✅ 完成 |
+| 月度报表（支出分布 / 排名） | ✅ 完成 |
+| 预测页 / AI 分析 | ✅ 已接入，需按区服配置对应 AI 凭据 |
+| 资产页 | ✅ 完成，intl 美股行情需 `FINNHUB_API_KEY` |
 | 设置页 | ✅ 完成 |
 | flutter_bloc 状态管理 | ✅ 完成 |
 | go_router 路由 | ✅ 完成 |
 | get_it DI | ✅ 完成 |
 | 本地 Mock 数据 | ✅ 完成 |
-| CloudBase 云端集成 | ⏳ 等 Nova 配置凭据 |
-| 通义千问 AI 预算建议 | ⏳ 等 Nova 配置 API Key |
+| 云端同步接口 | ✅ 已接入，需配置 `ALIYUN_FC_API` 与后端能力 |
 
-## 待配置凭据
+## 环境变量
 
-```
-CloudBase:
-  envId: phil-1982-8g6loclhc49b392d
-  appAccessKey: （等 Nova 提供）
-  appAccessVersion: （等 Nova 提供）
+当前项目通过 `.env` 驱动不同区服能力。
 
-阿里云:
-  AccessKey ID: （等 Nova 提供）
-  AccessKey Secret: （等 Nova 提供）
-  ASR AppKey: hCRcN0lEbeU7BhL9 ✅ 已就绪
-  OCR: 共用 AccessKey ✅
-  通义千问 API Key: （等 Nova 申请）
+先复制模板：
+
+```bash
+cp .env.example .env
 ```
 
-配置到位后，更新对应 service 文件中的凭据即可启用云端/AI 功能。
-
-## 国际版新增环境变量
-
-当前 intl 相关能力改为直接读取 `.env`：
+### 国际版（intl）
 
 ```bash
 GEMINI_API_KEY=
 GOOGLE_VISION_API_KEY=
 FINNHUB_API_KEY=
+GOOGLE_IOS_CLIENT_ID=
+GOOGLE_SERVER_CLIENT_ID=
+GOOGLE_IOS_REVERSED_CLIENT_ID=
 ```
 
-- `GEMINI_API_KEY`：intl 文本记账解析、消费预测
+- `GEMINI_API_KEY`：intl 文本记账解析、预测
 - `GOOGLE_VISION_API_KEY`：intl 票据 OCR
 - `FINNHUB_API_KEY`：intl 美股搜索与行情
+- `GOOGLE_*`：intl Google 登录
 
-说明：
-- 如果 `FINNHUB_API_KEY` 未配置，国际版资产页会继续显示“美股接入中”，并阻止新增/刷新股票，避免误打旧的 A 股数据源。
-- 如果 `GEMINI_API_KEY` / `GOOGLE_VISION_API_KEY` 未配置，国际版 AI / OCR 会表现为不可用，而不是回退到国内 provider 伪装运行。
+### 云端接口
 
-## 国际版联调文档
+```bash
+ALIYUN_FC_API=
+```
+
+- `ALIYUN_FC_API`：账单、资产、VIP 等云端接口基地址
+
+### 中国区 AI / OCR
+
+```bash
+QWEN_API_KEY=
+BAIDU_AK=
+BAIDU_SK=
+OCR_SPACE_API_KEY=
+```
+
+- `QWEN_API_KEY`：文本 AI 解析 / 预测
+- `BAIDU_AK` / `BAIDU_SK`：百度 OCR
+- `OCR_SPACE_API_KEY`：OCR.space 备用 OCR
+
+### 阿里云
+
+```bash
+ALIYUN_ACCESS_KEY_ID=
+ALIYUN_ACCESS_KEY_SECRET=
+ALIYUN_ASR_APP_KEY=
+```
+
+- `ALIYUN_ACCESS_KEY_ID` / `ALIYUN_ACCESS_KEY_SECRET`：阿里云能力接入
+- `ALIYUN_ASR_APP_KEY`：阿里云语音识别
+
+### App Store
+
+```bash
+APP_STORE_SHARED_SECRET=
+```
+
+## 说明
+
+- 如果 `FINNHUB_API_KEY` 未配置，intl 资产页会保持“美股接入中”并阻止股票新增 / 刷新。
+- 如果 intl 的 `GEMINI_API_KEY` 或 `GOOGLE_VISION_API_KEY` 未配置，对应 AI / OCR 能力会表现为不可用，而不会伪装回退到中国区 provider。
+- 如果中国区 `QWEN_API_KEY`、OCR 或阿里云凭据未配置，对应能力会按当前代码路径降级或不可用。
+- 本仓库已经移除 `.env`、`ios/Runner/.env`、`tmp/` 等本地敏感或临时内容，不会上传这些文件。
+
+## 相关文档
 
 - `国际版认证剩余配置清单.md`
 - `国际版真机联调清单.md`
+- `国际版真机联调执行记录.md`
