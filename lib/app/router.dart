@@ -317,16 +317,18 @@ class MainScaffold extends StatelessWidget {
                               HapticFeedback.mediumImpact();
                               final currentPath =
                                   GoRouterState.of(context).uri.path;
+                              final shellContext =
+                                  _shellNavigatorKey.currentContext;
                               if (currentPath.startsWith('/home')) {
-                                showHomeAddEntrySheet(context);
+                                showHomeAddEntrySheet(shellContext ?? context);
                                 return;
                               }
                               context.go('/home');
                               WidgetsBinding.instance.addPostFrameCallback((_) {
-                                final shellContext =
+                                final nextShellContext =
                                     _shellNavigatorKey.currentContext;
-                                if (shellContext != null) {
-                                  showHomeAddEntrySheet(shellContext);
+                                if (nextShellContext != null) {
+                                  showHomeAddEntrySheet(nextShellContext);
                                 }
                               });
                             },
