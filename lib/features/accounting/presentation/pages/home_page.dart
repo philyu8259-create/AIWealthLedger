@@ -1965,12 +1965,9 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
     final effectiveSelectedId =
         _selectedCategoryId ??
         (visibleCategories.isNotEmpty ? visibleCategories.first.id : 'food');
-    final floatingNavInset = mediaQuery.padding.bottom + 110;
 
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: mediaQuery.viewInsets.bottom + floatingNavInset,
-      ),
+      padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
