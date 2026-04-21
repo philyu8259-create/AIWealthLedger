@@ -1592,11 +1592,11 @@ class _CategoryGrid extends StatelessWidget {
                 height: 26,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFA11A),
+                  color: const Color(0xFFF0EBFF),
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFFFA11A).withValues(alpha: 0.24),
+                      color: const Color(0xFF7A35FF).withValues(alpha: 0.10),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),
@@ -1864,11 +1864,11 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                       height: 26,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFA11A),
+                        color: const Color(0xFFF0EBFF),
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFFFA11A).withValues(alpha: 0.24),
+                            color: const Color(0xFF7A35FF).withValues(alpha: 0.10),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
