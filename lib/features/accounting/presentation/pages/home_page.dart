@@ -230,6 +230,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     context.read<AccountBloc>().add(const LoadCurrentMonthEntries());
     _loadAssetPrivacyHidden();
     homeAiTrigger.addListener(_onAiTriggered);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && consumePendingHomeAiOpen()) {
+        homeAiTrigger.value++;
+      }
+    });
   }
 
   void _onAiTriggered() {

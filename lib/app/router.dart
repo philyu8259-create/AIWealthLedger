@@ -27,6 +27,17 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 /// 用于跨页面触发首页 AI 弹窗
 final homeAiTrigger = ValueNotifier<int>(0);
+bool _pendingHomeAiOpen = false;
+
+void queueHomeAiOpenAfterNavigation() {
+  _pendingHomeAiOpen = true;
+}
+
+bool consumePendingHomeAiOpen() {
+  if (!_pendingHomeAiOpen) return false;
+  _pendingHomeAiOpen = false;
+  return true;
+}
 
 
 
@@ -261,10 +272,8 @@ class MainScaffold extends StatelessWidget {
                                 homeAiTrigger.value++;
                                 return;
                               }
+                              queueHomeAiOpenAfterNavigation();
                               context.go('/home');
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                homeAiTrigger.value++;
-                              });
                             },
                             child: Container(
                               width: 50,
