@@ -284,20 +284,32 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Future<bool> _ensureSpeechInitialized() async {
-    if (_speechInitialized) return _speechAvailable;
+    if (_speechInitialized && _speechAvailable) return true;
     try {
-      _speechAvailable = await _speech.initialize();
+      _speechAvailable = await _speech.initialize(
+        onStatus: (status) {
+          if (!mounted) return;
+          if (status == 'done' || status == 'notListening') {
+            setState(() => _isListening = false);
+          }
+        },
+        onError: (_) {
+          if (!mounted) return;
+          setState(() => _isListening = false);
+        },
+      );
+      _speechInitialized = _speechAvailable;
     } catch (_) {
       _speechAvailable = false;
+      _speechInitialized = false;
     }
-    _speechInitialized = true;
     return _speechAvailable;
   }
 
-  void _startListening() async {
+  Future<bool> _startListening() async {
     // 语音能力改为按需初始化，避免页面首帧阶段触发原生插件导致启动闪退
     final available = await _ensureSpeechInitialized();
-    if (!mounted) return;
+    if (!mounted) return false;
     if (!available) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -306,28 +318,38 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           ),
         ),
       );
-      return;
+      return false;
     }
     setState(() => _isListening = true);
-    await _speech.listen(
-      localeId: getIt<AppProfileService>().speechLocaleId,
-      onResult: (result) {
-        if (result.finalResult && result.recognizedWords.isNotEmpty) {
-          _textController.text = result.recognizedWords;
-          if (!_ensureAiReady()) return;
-          context.read<AccountBloc>().add(
-            ParseTextInput(result.recognizedWords),
-          );
-        }
-      },
-      listenFor: const Duration(seconds: 30),
-      pauseFor: const Duration(seconds: 3),
-    );
+    try {
+      await _speech.listen(
+        localeId: getIt<AppProfileService>().speechLocaleId,
+        onResult: (result) {
+          if (result.finalResult && result.recognizedWords.isNotEmpty) {
+            _textController.text = result.recognizedWords;
+            if (!_ensureAiReady()) return;
+            context.read<AccountBloc>().add(
+              ParseTextInput(result.recognizedWords),
+            );
+          }
+        },
+        listenFor: const Duration(seconds: 30),
+        pauseFor: const Duration(seconds: 3),
+      );
+      return true;
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isListening = false);
+      }
+      return false;
+    }
   }
 
-  void _stopListening() async {
+  Future<void> _stopListening() async {
     await _speech.stop();
-    setState(() => _isListening = false);
+    if (mounted) {
+      setState(() => _isListening = false);
+    }
   }
 
   Future<void> _loadAssetPrivacyHidden() async {

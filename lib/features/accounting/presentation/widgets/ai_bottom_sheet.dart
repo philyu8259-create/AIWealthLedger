@@ -9,8 +9,8 @@ void showAiBottomSheet({
   required BuildContext context,
   required TextEditingController textController,
   required bool isListening,
-  required VoidCallback onStartListening,
-  required VoidCallback onStopListening,
+  required Future<bool> Function() onStartListening,
+  required Future<void> Function() onStopListening,
   required VoidCallback onPickCamera,
   required VoidCallback onPickGallery,
   required void Function(String) onSubmitText,
@@ -163,13 +163,17 @@ void showAiBottomSheet({
                               Expanded(
                                 child: VoicePulseButton(
                                   isListening: isListening,
-                                  onTap: () {
+                                  onTap: () async {
                                     if (isListening) {
-                                      onStopListening();
-                                      setModalState(() => isListening = false);
+                                      await onStopListening();
+                                      if (ctx.mounted) {
+                                        setModalState(() => isListening = false);
+                                      }
                                     } else {
-                                      onStartListening();
-                                      setModalState(() => isListening = true);
+                                      final started = await onStartListening();
+                                      if (started && ctx.mounted) {
+                                        setModalState(() => isListening = true);
+                                      }
                                     }
                                   },
                                 ),
