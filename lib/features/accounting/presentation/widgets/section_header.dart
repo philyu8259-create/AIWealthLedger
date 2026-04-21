@@ -40,7 +40,7 @@ class SectionHeader extends StatelessWidget {
               title,
               style: const TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w400,
                 color: Color(0xFF1A1A2E),
                 letterSpacing: 0.5,
               ),

@@ -805,7 +805,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                       TextOverflow.ellipsis,
                                                   style: TextStyle(
                                                     fontSize: compact ? 17 : 19,
-                                                    fontWeight: FontWeight.w800,
+                                                    fontWeight: FontWeight.w400,
                                                     letterSpacing: -0.2,
                                                     color: const Color(0xFF1A1A2E),
                                                   ),
@@ -1221,7 +1221,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                                 fontSize: 14,
                                                                 fontWeight:
                                                                     FontWeight
-                                                                        .bold,
+                                                                        .w400,
                                                                 color: Color(
                                                                   0xFF1A1A2E,
                                                                 ),
