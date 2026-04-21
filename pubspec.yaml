@@ -1,0 +1,66 @@
+name: ai_accounting_app
+description: "AI记账 - 智能语音记账"
+publish_to: 'none'
+version: 1.2.0+7
+
+environment:
+  sdk: ^3.11.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # State Management
+  flutter_bloc: ^8.1.6
+  equatable: ^2.0.5
+
+  # Routing
+  go_router: ^14.6.2
+
+  # DI
+  get_it: ^8.0.2
+  injectable: ^2.5.0
+
+  # HTTP
+  dio: ^5.4.0
+
+  # Local Storage (mock data)
+  shared_preferences: ^2.3.4
+
+
+
+  # Utils
+  intl: ^0.20.2
+  flutter_localizations:
+    sdk: flutter
+  share_plus: ^10.0.0
+  path_provider: ^2.1.5
+  url_launcher: ^6.3.0
+  speech_to_text: ^7.0.0
+  crypto: ^3.0.3
+  flutter_dotenv: ^5.2.1
+  uuid: ^4.5.1
+  fl_chart: ^0.69.2
+  image_picker: ^1.1.2
+  flutter_secure_storage: ^10.0.0
+  google_sign_in: ^6.3.0
+  sign_in_with_apple: ^6.1.4
+
+  # Functional
+  dartz: ^0.10.1
+  in_app_purchase: ^3.2.3
+  package_info_plus: ^9.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.13
+  injectable_generator: ^2.6.2
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon_brand_primary.png
+    - assets/icon_brand_secondary.png

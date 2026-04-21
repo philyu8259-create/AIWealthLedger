@@ -1,0 +1,6 @@
+CFBundleDisplayName = "AI Wealth Ledger";
+CFBundleName = "AI Wealth Ledger";
+NSSpeechRecognitionUsageDescription = "AI Wealth Ledger uses speech recognition to convert your voice into text for expense analysis and bookkeeping.";
+NSMicrophoneUsageDescription = "AI Wealth Ledger uses the microphone to capture your voice for speech-to-text bookkeeping.";
+NSCameraUsageDescription = "AI Wealth Ledger uses the camera to scan receipts for OCR recognition.";
+NSPhotoLibraryUsageDescription = "AI Wealth Ledger accesses your photo library so you can choose receipt images for OCR recognition.";

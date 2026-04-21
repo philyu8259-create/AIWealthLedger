@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>隐私政策 | AI财富账本</title>
+  <style>
+    :root {
+      --primary: #10b981;
+      --primary-dark: #059669;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --bg: #f8fafc;
+      --card: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.8;
+    }
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 32px 20px 56px;
+    }
+    .hero, .section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    }
+    .hero {
+      padding: 28px;
+      margin-bottom: 18px;
+    }
+    .section {
+      padding: 24px 28px;
+      margin-top: 16px;
+    }
+    h1, h2, h3 { margin: 0 0 12px; }
+    h1 {
+      color: var(--primary-dark);
+      font-size: 32px;
+      line-height: 1.25;
+    }
+    h2 {
+      color: var(--primary-dark);
+      font-size: 22px;
+      margin-top: 4px;
+    }
+    h3 {
+      color: #047857;
+      font-size: 18px;
+      margin-top: 18px;
+    }
+    p { margin: 10px 0; }
+    ul { margin: 10px 0; padding-left: 22px; }
+    li { margin: 6px 0; }
+    .meta {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    .note {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-top: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f0fdf4;
+      color: var(--primary-dark);
+    }
+    .footer {
+      color: var(--muted);
+      font-size: 14px;
+      text-align: center;
+      margin-top: 22px;
+    }
+    a { color: var(--primary-dark); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>隐私政策 | AI财富账本</h1>
+      <p class="meta">更新日期：2026年4月15日 · 生效日期：2026年4月15日</p>
+      <p>本隐私政策适用于 <strong>AI财富账本</strong> 中文版。我们依据当前版本代码中已实现并已接入的能力，说明应用如何处理您的个人信息、账本数据与功能授权信息。</p>
+      <div class="note">
+        中文版与国际版能力不同。中文版当前以手机号验证码登录为主，OCR 识别使用百度 OCR，AI 文本解析与消费预测使用通义千问，股票能力面向沪深 A 股 / 中国市场，云同步后端链路为阿里云函数计算（FC）。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>一、我们可能处理的信息</h2>
+      <h3>1. 您主动输入或在应用内创建的信息</h3>
+      <ul>
+        <li>账单数据，例如金额、收支类型、分类、日期、备注、原始输入文本等。</li>
+        <li>资产与持仓数据，例如账户名称、账户类型、余额、股票代码、持仓数量、成本价等。</li>
+        <li>票据图片，即您主动拍摄或选择上传、用于票据识别的小票、发票、收据图片。</li>
+        <li>登录与校验信息，例如手机号，以及发送和校验短信验证码所需的信息。</li>
+        <li>订阅相关信息，例如会员状态、恢复购买结果，以及订阅校验所需的必要信息。</li>
+      </ul>
+
+      <h3>2. 设备本地保存的信息</h3>
+      <ul>
+        <li>本地账单、资产、持仓缓存，以及游客模式下仅保存在本机的数据。</li>
+        <li>登录状态、地区与语言、基础货币、隐私授权记录等配置项。</li>
+        <li>股票搜索缓存、行情刷新时间、页面状态等维持功能运行所需的缓存信息。</li>
+      </ul>
+
+      <h3>3. 设备权限与系统能力</h3>
+      <ul>
+        <li>相机或相册权限：用于拍照记账或导入票据图片。</li>
+        <li>麦克风与语音识别权限：用于语音输入。当前中文版本的语音输入依赖设备系统语音识别能力，代码中未看到已启用的独立第三方云语音识别服务链路。</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>二、中文版实际使用的第三方服务</h2>
+      <table>
+        <tr>
+          <th>服务</th>
+          <th>触发时机</th>
+          <th>可能涉及的数据</th>
+          <th>用途</th>
+        </tr>
+        <tr>
+          <td>阿里云短信能力</td>
+          <td>手机号登录、验证码校验、账号注销校验时</td>
+          <td>手机号、验证码请求参数、验证码校验参数</td>
+          <td>完成短信验证码发送与校验</td>
+        </tr>
+        <tr>
+          <td>百度 OCR</td>
+          <td>拍照识别票据时</td>
+          <td>票据图片</td>
+          <td>提取票据图片中的文字信息</td>
+        </tr>
+        <tr>
+          <td>通义千问（Qwen）</td>
+          <td>文本记账解析、OCR 后结构化解析、消费预测时</td>
+          <td>您输入的文本、OCR 识别出的文字、必要的账单摘要</td>
+          <td>识别记账意图、生成结构化账单、提供 AI 分析</td>
+        </tr>
+        <tr>
+          <td>A 股行情与搜索接口/服务</td>
+          <td>搜索沪深 A 股、刷新中国市场股票行情时</td>
+          <td>股票代码、搜索关键词、必要的行情请求参数</td>
+          <td>提供沪深 A 股 / 中国市场股票搜索与行情查询</td>
+        </tr>
+        <tr>
+          <td>Apple App Store 订阅能力</td>
+          <td>购买会员、恢复购买、校验订阅状态时</td>
+          <td>订阅状态、交易凭证、收据校验所需信息</td>
+          <td>完成会员购买、恢复与状态确认</td>
+        </tr>
+        <tr>
+          <td>阿里云函数计算（FC）后端</td>
+          <td>手机号登录用户进行云同步、删除账户、同步会员状态时</td>
+          <td>账单、资产、股票持仓、会员状态、手机号标识</td>
+          <td>提供账户级数据同步、存储与删除处理</td>
+        </tr>
+      </table>
+      <div class="note">
+        游客模式下，账单与资产数据默认仅保存在本地设备，不走账户级云同步。登录手机号账户后，相关数据才会进入阿里云 FC 云同步链路。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>三、我们如何使用这些信息</h2>
+      <ul>
+        <li>提供记账、账单查询、资产管理、沪深 A 股持仓管理等核心功能。</li>
+        <li>在您主动触发时执行票据 OCR、文本记账解析、消费预测等 AI 功能。</li>
+        <li>在手机号登录后完成账户识别、数据同步、购买恢复与会员状态同步。</li>
+        <li>保存必要的本地配置与授权记录，保障应用正常运行。</li>
+        <li>用于故障排查、稳定性改进与账号安全校验。</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>四、数据存储与保留</h2>
+      <ul>
+        <li>游客模式下的数据主要保存在您的设备本地。</li>
+        <li>手机号登录后，账单、资产、持仓及会员相关信息可能同步至云端，用于多设备恢复与访问。</li>
+        <li>您在应用内发起账号注销后，服务端会进入注销处理流程，并按当前后端逻辑保留一定周期用于恢复或处理异常，之后再执行彻底清理。</li>
+        <li>卸载应用通常只会清除设备本地数据，不会自动删除已经同步到云端的账户数据。</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>五、您的选择与权利</h2>
+      <ul>
+        <li>您可以以游客模式使用应用，并选择是否升级为手机号登录账户。</li>
+        <li>您可以删除单条账单、资产或持仓记录。</li>
+        <li>您可以在应用内退出登录、发起账号注销，或通过支持邮箱联系删除云端账户数据。</li>
+        <li>您可以拒绝授予相机、相册、麦克风或语音识别权限，但相关功能可能因此不可用。</li>
+        <li>您可以在应用内撤回 AI 相关授权记录，后续再次使用相关功能时会重新提示。</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>六、未成年人保护</h2>
+      <p>本应用面向一般成年用户设计。若您未满 18 周岁，请在监护人指导下使用，或停止使用相关服务。</p>
+    </section>
+
+    <section class="section">
+      <h2>七、联系我们</h2>
+      <p>如您有隐私、数据删除、账号注销、订阅恢复或其他支持需求，请联系我们：</p>
+      <ul>
+        <li><strong>联系邮箱：</strong>philyu2023@qq.com</li>
+      </ul>
+      <p>我们会在合理时间内处理您的请求。</p>
+    </section>
+
+    <p class="footer">© AI财富账本 · Privacy Policy</p>
+  </div>
+</body>
+</html>

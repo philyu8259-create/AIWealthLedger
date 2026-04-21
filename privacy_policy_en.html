@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy | AI Wealth Ledger</title>
+  <style>
+    :root {
+      --primary: #10b981;
+      --primary-dark: #059669;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --bg: #f8fafc;
+      --card: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.8;
+    }
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 32px 20px 56px;
+    }
+    .hero, .section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    }
+    .hero {
+      padding: 28px;
+      margin-bottom: 18px;
+    }
+    .section {
+      padding: 24px 28px;
+      margin-top: 16px;
+    }
+    h1, h2, h3 { margin: 0 0 12px; }
+    h1 {
+      color: var(--primary-dark);
+      font-size: 32px;
+      line-height: 1.25;
+    }
+    h2 {
+      color: var(--primary-dark);
+      font-size: 22px;
+      margin-top: 4px;
+    }
+    h3 {
+      color: #047857;
+      font-size: 18px;
+      margin-top: 18px;
+    }
+    p { margin: 10px 0; }
+    ul { margin: 10px 0; padding-left: 22px; }
+    li { margin: 6px 0; }
+    .meta {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    .note {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-top: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f0fdf4;
+      color: var(--primary-dark);
+    }
+    .footer {
+      color: var(--muted);
+      font-size: 14px;
+      text-align: center;
+      margin-top: 22px;
+    }
+    a { color: var(--primary-dark); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>Privacy Policy | AI Wealth Ledger</h1>
+      <p class="meta">Updated: April 15, 2026 · Effective: April 15, 2026</p>
+      <p>This Privacy Policy applies to <strong>AI Wealth Ledger</strong>. It explains what information the app may process, how the information is used, which third-party services may be involved, and how you can contact us about privacy or data deletion requests.</p>
+      <div class="note">
+        Data is only sent to relevant providers when you actively use a feature, such as receipt OCR, AI parsing, cloud sync, third-party sign-in, or subscription recovery.
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>1. Information the app may process</h2>
+      <h3>1. Information you provide or create</h3>
+      <ul>
+        <li>Accounting entries, including amount, type, category, date, and notes.</li>
+        <li>Asset and portfolio data, including account names, balances, symbols, quantities, and cost basis.</li>
+        <li>Custom categories and other user-created bookkeeping content.</li>
+        <li>Receipt images that you choose to upload for OCR.</li>
+        <li>Email address or third-party identity information when you sign in.</li>
+      </ul>
+
+      <h3>2. Local app data</h3>
+      <ul>
+        <li>Local sign-in state, language, region, base currency, and consent settings.</li>
+        <li>Cached stock search results, quote timestamps, and limited UI state.</li>
+        <li>Minimal diagnostic information needed for troubleshooting and stability.</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>2. Third-party services and purposes</h2>
+      <table>
+        <tr>
+          <th>Service</th>
+          <th>When used</th>
+          <th>Data involved</th>
+          <th>Purpose</th>
+        </tr>
+        <tr>
+          <td>Google Vision</td>
+          <td>When you scan a receipt</td>
+          <td>Receipt image content</td>
+          <td>OCR text extraction</td>
+        </tr>
+        <tr>
+          <td>Gemini</td>
+          <td>When you use AI parsing, AI insights, or prediction features</td>
+          <td>Submitted text, OCR text, voice-recognized text, and relevant spending summaries</td>
+          <td>Bookkeeping parsing and analysis</td>
+        </tr>
+        <tr>
+          <td>Finnhub</td>
+          <td>When you search or refresh US stock quotes</td>
+          <td>Ticker symbols and search keywords</td>
+          <td>Stock search and market data lookup</td>
+        </tr>
+        <tr>
+          <td>Google Sign-In / Sign in with Apple</td>
+          <td>When you choose third-party sign-in</td>
+          <td>Provider-returned identity data such as email, display name, or account identifier</td>
+          <td>Authentication</td>
+        </tr>
+        <tr>
+          <td>Apple In-App Purchase</td>
+          <td>When you purchase or restore subscriptions</td>
+          <td>Subscription and transaction status</td>
+          <td>Membership management</td>
+        </tr>
+        <tr>
+          <td>Cloud sync backend</td>
+          <td>When signed-in users sync data</td>
+          <td>Entries, assets, positions, and subscription-related account data</td>
+          <td>Cloud storage and multi-device sync</td>
+        </tr>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>3. How your information is used</h2>
+      <ul>
+        <li>To provide bookkeeping, asset tracking, and portfolio features.</li>
+        <li>To perform OCR, AI parsing, AI insights, and spending prediction when you trigger those features.</li>
+        <li>To support sign-in, cloud sync, and subscription recovery.</li>
+        <li>To remember your selected language, currency, and privacy preferences.</li>
+        <li>To improve reliability and diagnose technical issues.</li>
+      </ul>
+      <div class="note">
+        We do not use your app data for unrelated advertising targeting or unrelated marketing purposes.
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>4. Storage and retention</h2>
+      <ul>
+        <li>Some information is stored locally on your device, including settings, cache, and local app state.</li>
+        <li>Signed-in account data may also be stored in the configured cloud backend for sync and recovery.</li>
+        <li>Uninstalling the app may remove local data from the device, but it does not automatically remove cloud-synced account data.</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>5. Your choices</h2>
+      <ul>
+        <li>You can delete individual records, assets, or positions where the app supports it.</li>
+        <li>You can sign out to clear local login state.</li>
+        <li>You can contact us if you want cloud account data deleted or if you have privacy-related questions.</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>6. Children’s privacy</h2>
+      <p>AI Wealth Ledger is designed for general adult users. If you are under 18, please use the app only under guardian supervision or stop using the service.</p>
+    </section>
+
+    <section class="section">
+      <h2>7. Contact</h2>
+      <p>If you have questions about privacy, account deletion, or data handling, please contact us:</p>
+      <ul>
+        <li><strong>Email:</strong> philyu2023@qq.com</li>
+      </ul>
+      <p>We will respond within a reasonable time.</p>
+    </section>
+
+    <p class="footer">© AI Wealth Ledger · Privacy Policy</p>
+  </div>
+</body>
+</html>
