@@ -210,10 +210,10 @@ class MainScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
     final compactNav = MediaQuery.of(context).size.width < 410;
-    final outerHorizontalPadding = compactNav ? 16.0 : 22.0;
-    final innerHorizontalPadding = compactNav ? 8.0 : 14.0;
-    final navGap = compactNav ? 2.0 : 6.0;
-    final centerGap = compactNav ? 10.0 : 14.0;
+    final outerHorizontalPadding = compactNav ? 18.0 : 22.0;
+    final innerHorizontalPadding = compactNav ? 10.0 : 14.0;
+    final navGap = compactNav ? 0.0 : 6.0;
+    final centerGap = compactNav ? 8.0 : 14.0;
 
     return Scaffold(
       extendBody: true,
@@ -459,7 +459,7 @@ class _PremiumNavBarItem extends StatelessWidget {
         curve: Curves.easeOutCubic,
         padding: EdgeInsets.symmetric(
           horizontal: compact
-              ? (isSelected ? 8 : 6)
+              ? (isSelected ? 6 : 4)
               : (isSelected ? 12 : 10),
           vertical: 6,
         ),
@@ -475,7 +475,7 @@ class _PremiumNavBarItem extends StatelessWidget {
             Icon(
               isSelected ? selectedIcon : icon,
               color: isSelected ? AppColors.primary : const Color(0xFF9E9E9E),
-              size: 22,
+              size: compact ? 20 : 22,
             ),
             const SizedBox(height: 2),
             Text(
@@ -483,7 +483,7 @@ class _PremiumNavBarItem extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: compact ? 9.8 : 10.5,
+                fontSize: compact ? 9.2 : 10.5,
                 fontWeight: FontWeight.w400,
                 height: 1.0,
                 letterSpacing: 0.1,
