@@ -36,7 +36,9 @@ class AppProfileService extends ChangeNotifier {
   Future<void> ensureInitialized({Locale? deviceLocale}) async {
     final previousStoredMode = _storedMode;
     final sessionExists = _hasExistingSession;
-    final inferredMode = _inferMode(deviceLocale);
+    final inferredMode = AppFlavorX.hasExplicitBuildFlavor
+        ? AppFlavorX.buildFlavor
+        : _inferMode(deviceLocale);
     final resolvedMode = _resolveEffectiveMode(
       inferredMode: inferredMode,
       sessionExists: sessionExists,

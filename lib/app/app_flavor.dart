@@ -5,10 +5,16 @@ enum AppFlavor { cn, intl }
 
 extension AppFlavorX on AppFlavor {
   static const _modeKey = 'app_mode';
+  static const _rawBuildFlavor = String.fromEnvironment(
+    'APP_FLAVOR',
+    defaultValue: '',
+  );
+
+  static bool get hasExplicitBuildFlavor =>
+      _rawBuildFlavor == 'cn' || _rawBuildFlavor == 'intl';
 
   static AppFlavor get buildFlavor {
-    const raw = String.fromEnvironment('APP_FLAVOR', defaultValue: 'cn');
-    return raw == 'intl' ? AppFlavor.intl : AppFlavor.cn;
+    return _rawBuildFlavor == 'intl' ? AppFlavor.intl : AppFlavor.cn;
   }
 
   static AppFlavor get current {
