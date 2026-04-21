@@ -34,6 +34,7 @@ import '../../../../services/stock_service.dart';
 import '../../../../app/router.dart';
 import '../widgets/press_feedback.dart';
 import '../widgets/ai_bottom_sheet.dart';
+import '../widgets/ai_sparkles_icon.dart';
 import '../widgets/custom_numpad_sheet.dart';
 import '../widgets/animated_number_text.dart';
 import '../widgets/premium_capsule_button.dart';
@@ -156,7 +157,6 @@ String _homeMonthShortLabel(int year, int month) {
 Future<void> showHomeAddEntrySheet(BuildContext context) async {
   await showModalBottomSheet(
     context: context,
-    useRootNavigator: true,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (ctx) => const _AddEntrySheet(),
@@ -1946,19 +1946,13 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
     final effectiveSelectedId =
         _selectedCategoryId ??
         (visibleCategories.isNotEmpty ? visibleCategories.first.id : 'food');
-    final bottomFloatingGap = mediaQuery.padding.bottom + 88;
 
     return Padding(
-      padding: EdgeInsets.only(
-        left: 12,
-        right: 12,
-        top: 16,
-        bottom: mediaQuery.viewInsets.bottom + bottomFloatingGap,
-      ),
+      padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.16),
@@ -1967,176 +1961,219 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
             ),
           ],
         ),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(0, 18, 0, 0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 44,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE4E5EF),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.fromLTRB(24, 20, 18, 20),
+                decoration: const BoxDecoration(
+                  gradient: aiPrimaryGradient,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
                 ),
-                const SizedBox(height: 18),
-                Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: [Color(0xFF5B42F3), Color(0xFFB61FFF)],
-                    ),
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                  ),
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        AppStrings.of(context).text(AppStringKeys.homeQuickAddTitle),
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.add_rounded,
                           color: Colors.white,
+                          size: 25,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        AppStrings.of(context).text(AppStringKeys.homeQuickAddSubtitle),
-                        softWrap: true,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.86),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF7F8FA),
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: TextField(
-                          controller: _amountController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          autofocus: false,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          decoration: InputDecoration(
-                            labelText: AppStrings.of(
-                              context,
-                            ).text(AppStringKeys.homeAmountLabel),
-                            hintText: AppStrings.of(
-                              context,
-                            ).text(AppStringKeys.homeAmountHint),
-                            prefixText: _homeCurrencyPrefix(),
-                            filled: true,
-                            fillColor: Colors.transparent,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 18,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide.none,
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: const BorderSide(color: _primaryColor),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            AppStrings.of(
-                              context,
-                            ).text(AppStringKeys.transactionsSelectCategory),
-                            style: TextStyle(fontSize: 13, color: Colors.grey),
+                            AppStrings.of(context).text(AppStringKeys.homeQuickAddTitle),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                              height: 1.0,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                          const Spacer(),
-                          PressFeedback(
-                            onTap: () => _showCategoryEditSheet(context),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _primaryColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                AppStrings.of(context).text(AppStringKeys.assetsEdit),
-                                style: TextStyle(fontSize: 13, color: _primaryColor),
-                              ),
+                          const SizedBox(height: 10),
+                          Text(
+                            AppStrings.of(context).text(AppStringKeys.homeQuickAddSubtitle),
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.88),
+                              fontSize: 12,
+                              height: 1.0,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: visibleCategories.map((c) {
-                          final isSelected = _selectedCategoryId == c.id;
-                          return PressFeedback(
-                            onTap: () {
-                              setState(() {
-                                _selectedCategoryId = c.id;
-                                _selectedName = _homeCategoryName(c.id, c.name);
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isSelected ? _primaryColor : Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: isSelected ? _primaryColor : Colors.transparent,
-                                ),
-                              ),
-                              child: Text(
-                                '${c.icon} ${_homeCategoryName(c.id, c.name)}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: isSelected ? Colors.white : Colors.black87,
-                                ),
+                    ),
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      height: 108,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F7FB),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: const Color(0xFFEDEDF7)),
+                      ),
+                      child: TextField(
+                        controller: _amountController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        autofocus: false,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: AppStrings.of(
+                            context,
+                          ).text(AppStringKeys.homeAmountLabel),
+                          hintText: AppStrings.of(
+                            context,
+                          ).text(AppStringKeys.homeAmountHint),
+                          prefixText: _homeCurrencyPrefix(),
+                          labelStyle: const TextStyle(
+                            color: Color(0xFFB7B8C7),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          hintStyle: const TextStyle(
+                            color: Color(0xFFB7B8C7),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Text(
+                          AppStrings.of(
+                            context,
+                          ).text(AppStringKeys.transactionsSelectCategory),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: Color(0xFFB7B8C7),
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        const Spacer(),
+                        PressFeedback(
+                          onTap: () => _showCategoryEditSheet(context),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0EBFF),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              AppStrings.of(context).text(AppStringKeys.assetsEdit),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF6C59C8),
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: visibleCategories.map((c) {
+                        final isSelected = _selectedCategoryId == c.id;
+                        return PressFeedback(
+                          onTap: () {
+                            setState(() {
+                              _selectedCategoryId = c.id;
+                              _selectedName = _homeCategoryName(c.id, c.name);
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 160),
+                            curve: Curves.easeOut,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFFF0EBFF)
+                                  : const Color(0xFFF5F6FB),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: isSelected
+                                    ? const Color(0xFFD8C7FF)
+                                    : Colors.transparent,
+                              ),
+                            ),
+                            child: Text(
+                              '${c.icon} ${_homeCategoryName(c.id, c.name)}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: isSelected
+                                    ? const Color(0xFF5A45D8)
+                                    : const Color(0xFF202125),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 22),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _primaryColor,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
                           ),
+                          elevation: 0,
+                          padding: EdgeInsets.zero,
                         ),
                         onPressed: () {
                           final amount = double.tryParse(_amountController.text);
@@ -2148,7 +2185,7 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                                     context,
                                   ).text(AppStringKeys.homeInvalidAmount),
                                 ),
-                                duration: Duration(seconds: 1),
+                                duration: const Duration(seconds: 1),
                               ),
                             );
                             return;
@@ -2190,15 +2227,48 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                             ),
                           );
                         },
-                        child: Text(
-                          AppStrings.of(context).text(AppStringKeys.commonConfirm),
+                        child: Ink(
+                          width: double.infinity,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            gradient: aiPrimaryGradient,
+                            borderRadius: BorderRadius.circular(18),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF7A35FF).withValues(alpha: 0.22),
+                                blurRadius: 12,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const AiSparklesIcon(
+                                size: 17,
+                                color: Colors.white,
+                                accentColor: Colors.white,
+                                strokeWidthFactor: 0.11,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                AppStrings.of(context).text(AppStringKeys.commonConfirm),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  height: 1.0,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
