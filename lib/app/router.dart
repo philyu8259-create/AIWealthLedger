@@ -1,4 +1,7 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/app_profile_service.dart';
@@ -175,133 +178,182 @@ class MainScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: child,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(top: 24),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            GestureDetector(
-              onTap: () {
-                context.go('/home');
-                homeAiTrigger.value++;
-              },
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF5B42F3),
-                      Color(0xFF7D31FF),
-                      Color(0xFFB61FFF),
-                    ],
-                    stops: [0.0, 0.5, 1.0],
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF8C35FF).withValues(alpha: 0.28),
-                      blurRadius: 14,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: const Center(
-                  child: AiSparklesIcon(
-                    size: 27,
-                    color: Color(0xFFF6E27A),
-                    accentColor: Color(0xFFF6E27A),
-                    strokeWidthFactor: 0.115,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            GestureDetector(
-              onTap: () {
-                final currentPath = GoRouterState.of(context).uri.path;
-                if (currentPath.startsWith('/home')) {
-                  showHomeAddEntrySheet(context);
-                  return;
-                }
-                context.go('/home');
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  final shellContext = _shellNavigatorKey.currentContext;
-                  if (shellContext != null) {
-                    showHomeAddEntrySheet(shellContext);
-                  }
-                });
-              },
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF333A4D),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.add,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 16,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _NavBarItem(
-                  icon: Icons.home_outlined,
-                  selectedIcon: Icons.home,
-                  label: '',
-                  isSelected: _getCurrentIndex(context) == 0,
-                  onTap: () => context.go('/home'),
-                ),
-                _NavBarItem(
-                  icon: Icons.receipt_long_outlined,
-                  selectedIcon: Icons.receipt_long,
-                  label: '',
-                  isSelected: _getCurrentIndex(context) == 1,
-                  onTap: () => context.go('/transactions'),
-                ),
-                // 中间留白给 FloatingActionButton
-                const SizedBox(width: 120),
-                _NavBarItem(
-                  icon: Icons.bar_chart_outlined,
-                  selectedIcon: Icons.bar_chart,
-                  label: '',
-                  isSelected: _getCurrentIndex(context) == 2,
-                  onTap: () => context.go('/reports'),
-                ),
-                _NavBarItem(
-                  icon: Icons.auto_awesome_outlined,
-                  selectedIcon: Icons.auto_awesome,
-                  label: '',
-                  isSelected: _getCurrentIndex(context) == 3,
-                  onTap: () => context.go('/analysis'),
+      bottomNavigationBar: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            bottom: MediaQuery.of(context).padding.bottom + 16,
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(36),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1A1A2E).withValues(alpha: 0.12),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
                 ),
               ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(36),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      width: 1.5,
+                    ),
+                    borderRadius: BorderRadius.circular(36),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _PremiumNavBarItem(
+                            icon: Icons.home_outlined,
+                            selectedIcon: Icons.home_rounded,
+                            isSelected: _getCurrentIndex(context) == 0,
+                            onTap: () => context.go('/home'),
+                          ),
+                          const SizedBox(width: 8),
+                          _PremiumNavBarItem(
+                            icon: Icons.receipt_long_outlined,
+                            selectedIcon: Icons.receipt_long_rounded,
+                            isSelected: _getCurrentIndex(context) == 1,
+                            onTap: () => context.go('/transactions'),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              HapticFeedback.mediumImpact();
+                              context.go('/home');
+                              homeAiTrigger.value++;
+                            },
+                            child: Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xFF5B42F3),
+                                    Color(0xFFB61FFF),
+                                  ],
+                                ),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF8C35FF)
+                                        .withValues(alpha: 0.3),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: const Center(
+                                child: AiSparklesIcon(
+                                  size: 24,
+                                  color: Colors.white,
+                                  accentColor: Color(0xFFF6E27A),
+                                  strokeWidthFactor: 0.1,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          GestureDetector(
+                            onTap: () {
+                              HapticFeedback.mediumImpact();
+                              final currentPath =
+                                  GoRouterState.of(context).uri.path;
+                              if (currentPath.startsWith('/home')) {
+                                showHomeAddEntrySheet(context);
+                                return;
+                              }
+                              context.go('/home');
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                final shellContext =
+                                    _shellNavigatorKey.currentContext;
+                                if (shellContext != null) {
+                                  showHomeAddEntrySheet(shellContext);
+                                }
+                              });
+                            },
+                            child: Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xFF6B4DFF),
+                                    Color(0xFF4A47D8),
+                                  ],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF4A47D8)
+                                        .withValues(alpha: 0.35),
+                                    blurRadius: 14,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.3),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.add_rounded,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _PremiumNavBarItem(
+                            icon: Icons.bar_chart_outlined,
+                            selectedIcon: Icons.bar_chart_rounded,
+                            isSelected: _getCurrentIndex(context) == 2,
+                            onTap: () => context.go('/reports'),
+                          ),
+                          const SizedBox(width: 8),
+                          _PremiumNavBarItem(
+                            icon: Icons.auto_awesome_outlined,
+                            selectedIcon: Icons.auto_awesome_rounded,
+                            isSelected: _getCurrentIndex(context) == 3,
+                            onTap: () => context.go('/analysis'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -310,17 +362,15 @@ class MainScaffold extends StatelessWidget {
   }
 }
 
-class _NavBarItem extends StatelessWidget {
+class _PremiumNavBarItem extends StatelessWidget {
   final IconData icon;
   final IconData selectedIcon;
-  final String label;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _NavBarItem({
+  const _PremiumNavBarItem({
     required this.icon,
     required this.selectedIcon,
-    required this.label,
     required this.isSelected,
     required this.onTap,
   });
@@ -328,21 +378,28 @@ class _NavBarItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.symmetric(
+          horizontal: isSelected ? 14 : 10,
+          vertical: 10,
+        ),
         decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Icon(
           isSelected ? selectedIcon : icon,
-          color: isSelected
-              ? AppColors.primary
-              : Colors.grey.shade400,
-          size: 28,
+          color: isSelected ? AppColors.primary : const Color(0xFF9E9E9E),
+          size: 26,
         ),
       ),
     );
