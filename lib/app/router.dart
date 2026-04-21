@@ -177,6 +177,8 @@ class MainScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppStrings.of(context);
+
     return Scaffold(
       extendBody: true,
       body: child,
@@ -230,6 +232,7 @@ class MainScaffold extends StatelessWidget {
                           _PremiumNavBarItem(
                             icon: Icons.home_outlined,
                             selectedIcon: Icons.home_rounded,
+                            label: t.text(AppStringKeys.navHome),
                             isSelected: _getCurrentIndex(context) == 0,
                             onTap: () => context.go('/home'),
                           ),
@@ -237,6 +240,7 @@ class MainScaffold extends StatelessWidget {
                           _PremiumNavBarItem(
                             icon: Icons.receipt_long_outlined,
                             selectedIcon: Icons.receipt_long_rounded,
+                            label: t.text(AppStringKeys.navTransactions),
                             isSelected: _getCurrentIndex(context) == 1,
                             onTap: () => context.go('/transactions'),
                           ),
@@ -347,6 +351,7 @@ class MainScaffold extends StatelessWidget {
                           _PremiumNavBarItem(
                             icon: Icons.bar_chart_outlined,
                             selectedIcon: Icons.bar_chart_rounded,
+                            label: t.text(AppStringKeys.navReports),
                             isSelected: _getCurrentIndex(context) == 2,
                             onTap: () => context.go('/reports'),
                           ),
@@ -354,6 +359,7 @@ class MainScaffold extends StatelessWidget {
                           _PremiumNavBarItem(
                             icon: Icons.auto_awesome_outlined,
                             selectedIcon: Icons.auto_awesome_rounded,
+                            label: t.text(AppStringKeys.navAnalysis),
                             isSelected: _getCurrentIndex(context) == 3,
                             onTap: () => context.go('/analysis'),
                           ),
@@ -374,12 +380,14 @@ class MainScaffold extends StatelessWidget {
 class _PremiumNavBarItem extends StatelessWidget {
   final IconData icon;
   final IconData selectedIcon;
+  final String label;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _PremiumNavBarItem({
     required this.icon,
     required this.selectedIcon,
+    required this.label,
     required this.isSelected,
     required this.onTap,
   });
@@ -396,8 +404,8 @@ class _PremiumNavBarItem extends StatelessWidget {
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutCubic,
         padding: EdgeInsets.symmetric(
-          horizontal: isSelected ? 13 : 9,
-          vertical: 9,
+          horizontal: isSelected ? 12 : 10,
+          vertical: 6,
         ),
         decoration: BoxDecoration(
           color: isSelected
@@ -405,10 +413,30 @@ class _PremiumNavBarItem extends StatelessWidget {
               : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
-        child: Icon(
-          isSelected ? selectedIcon : icon,
-          color: isSelected ? AppColors.primary : const Color(0xFF9E9E9E),
-          size: 24,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? selectedIcon : icon,
+              color: isSelected ? AppColors.primary : const Color(0xFF9E9E9E),
+              size: 22,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w400,
+                height: 1.0,
+                letterSpacing: 0.1,
+                color: isSelected
+                    ? AppColors.primary
+                    : const Color(0xFF8F8F9D),
+              ),
+            ),
+          ],
         ),
       ),
     );
