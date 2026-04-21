@@ -577,32 +577,33 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
-  void _showAmountDialog(String categoryId, String note, String icon) {
+  void _showAmountDialog(String categoryId, String note, String icon) async {
     final isIncome = CategoryDef.incomeCategories.any(
       (c) => c.id == categoryId,
     );
     final type = isIncome ? 'income' : 'expense';
     final entryType = isIncome ? EntryType.income : EntryType.expense;
 
-    showModalBottomSheet(
+    final amount = await showModalBottomSheet<double>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => CustomNumpadSheet(
         title: '$icon $note',
         isIncome: isIncome,
-        onConfirm: (amount) async {
-          await _confirmAndSave([
-            ParsedResult(
-              amount: amount,
-              category: categoryId,
-              type: type,
-              note: note,
-            ),
-          ], entryType);
-        },
       ),
     );
+
+    if (!mounted || amount == null || amount <= 0) return;
+
+    await _confirmAndSave([
+      ParsedResult(
+        amount: amount,
+        category: categoryId,
+        type: type,
+        note: note,
+      ),
+    ], entryType);
   }
 
   void _showVipUpgradeDialog(BuildContext ctx) {

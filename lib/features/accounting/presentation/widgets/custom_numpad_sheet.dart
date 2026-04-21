@@ -7,13 +7,11 @@ import '../../../../core/theme/app_colors.dart';
 class CustomNumpadSheet extends StatefulWidget {
   final String title;
   final bool isIncome;
-  final Function(double amount) onConfirm;
 
   const CustomNumpadSheet({
     super.key,
     required this.title,
     required this.isIncome,
-    required this.onConfirm,
   });
 
   @override
@@ -144,8 +142,7 @@ class _CustomNumpadSheetState extends State<CustomNumpadSheet> {
                   HapticFeedback.mediumImpact();
                   final amount = double.tryParse(_amountStr) ?? 0.0;
                   if (amount > 0) {
-                    Navigator.pop(context);
-                    widget.onConfirm(amount);
+                    Navigator.pop(context, amount);
                   }
                 },
                 child: Container(
