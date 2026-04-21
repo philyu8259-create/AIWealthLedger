@@ -797,35 +797,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                               crossAxisAlignment:
                                                   CrossAxisAlignment.start,
                                               children: [
-                                                ShaderMask(
-                                                  blendMode: BlendMode.srcIn,
-                                                  shaderCallback: (bounds) =>
-                                                      const LinearGradient(
-                                                        colors: [
-                                                          Color(0xFF6B4DFF),
-                                                          Color(0xFF4A47D8),
-                                                        ],
-                                                        begin: Alignment.topLeft,
-                                                        end: Alignment.bottomRight,
-                                                      ).createShader(
-                                                        Rect.fromLTWH(
-                                                          0,
-                                                          0,
-                                                          bounds.width,
-                                                          bounds.height,
-                                                        ),
-                                                      ),
-                                                  child: Text(
-                                                    getIt<AppProfileService>()
-                                                        .appTitle,
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: TextStyle(
-                                                      fontSize: compact ? 20 : 22,
-                                                      fontWeight: FontWeight.w900,
-                                                      letterSpacing: -0.5,
-                                                    ),
+                                                Text(
+                                                  getIt<AppProfileService>()
+                                                      .appTitle,
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    fontSize: compact ? 17 : 19,
+                                                    fontWeight: FontWeight.w800,
+                                                    letterSpacing: -0.2,
+                                                    color: const Color(0xFF1A1A2E),
                                                   ),
                                                 ),
                                                 Text(
