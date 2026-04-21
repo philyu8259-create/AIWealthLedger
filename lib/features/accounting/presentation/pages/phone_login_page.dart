@@ -340,26 +340,25 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
                                 width: heroSize,
                                 height: heroSize,
                                 decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [Color(0xFF4A47D8), Color(0xFF6D5DF6)],
-                                  ),
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
                                       color: const Color(
                                         0xFF4A47D8,
-                                      ).withValues(alpha: 0.3),
-                                      blurRadius: 16,
+                                      ).withValues(alpha: 0.18),
+                                      blurRadius: 18,
                                       offset: const Offset(0, 8),
                                     ),
                                   ],
                                 ),
-                                child: Icon(
-                                  Icons.account_balance_wallet,
-                                  color: Colors.white,
-                                  size: compact ? 32 : 36,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Image.asset(
+                                    'assets/icon_brand_primary.png',
+                                    width: heroSize,
+                                    height: heroSize,
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                               ),
                               SizedBox(height: compact ? 16 : 20),

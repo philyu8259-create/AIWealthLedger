@@ -45,24 +45,23 @@ class IntlEmailLoginPage extends StatelessWidget {
                     width: 72,
                     height: 72,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF6D5DF6), Color(0xFF4A47D8)],
-                      ),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF4A47D8).withValues(alpha: 0.28),
-                          blurRadius: 16,
+                          color: const Color(0xFF4A47D8).withValues(alpha: 0.18),
+                          blurRadius: 18,
                           offset: const Offset(0, 8),
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.alternate_email,
-                      color: Colors.white,
-                      size: 36,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Image.asset(
+                        'assets/icon_brand_primary.png',
+                        width: 72,
+                        height: 72,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
