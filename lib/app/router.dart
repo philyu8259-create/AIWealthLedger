@@ -143,10 +143,13 @@ class _SplashPageState extends State<_SplashPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.account_balance_wallet,
-              size: 64,
-              color: AppColors.primary,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Image.asset(
+                'assets/icon_brand_primary.png',
+                width: 72,
+                height: 72,
+              ),
             ),
             const SizedBox(height: 16),
             Text(
