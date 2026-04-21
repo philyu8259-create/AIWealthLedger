@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import 'ai_sparkles_icon.dart';
+import 'voice_pulse_button.dart';
 
 const _sheetRadius = 30.0;
 
@@ -160,19 +160,19 @@ void showAiBottomSheet({
                                   onPickGallery();
                                 },
                               ),
-                              _aiActionButton(
-                                icon: isListening ? Icons.stop : Icons.mic_none_outlined,
-                                label: isListening ? '停止' : '语音',
-                                color: isListening ? AppColors.primary : null,
-                                onTap: () {
-                                  if (isListening) {
-                                    onStopListening();
-                                    setModalState(() => isListening = false);
-                                  } else {
-                                    onStartListening();
-                                    setModalState(() => isListening = true);
-                                  }
-                                },
+                              Expanded(
+                                child: VoicePulseButton(
+                                  isListening: isListening,
+                                  onTap: () {
+                                    if (isListening) {
+                                      onStopListening();
+                                      setModalState(() => isListening = false);
+                                    } else {
+                                      onStartListening();
+                                      setModalState(() => isListening = true);
+                                    }
+                                  },
+                                ),
                               ),
                             ],
                           ),

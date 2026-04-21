@@ -35,6 +35,8 @@ import '../../../../app/router.dart';
 import '../widgets/press_feedback.dart';
 import '../widgets/ai_bottom_sheet.dart';
 import '../widgets/custom_numpad_sheet.dart';
+import '../widgets/animated_number_text.dart';
+import '../widgets/shimmer_loading.dart';
 
 String _homeMoney(num amount, {int decimalDigits = 2}) {
   final service = getIt<AppProfileService>();
@@ -954,13 +956,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                               ],
                                             ),
                                             const SizedBox(height: 10),
-                                            Text(
-                                              _homeMoney(state.totalExpense),
+                                            AnimatedNumberText(
+                                              value: state.totalExpense.toDouble(),
+                                              formatter: (val) => _homeMoney(val),
                                               style: const TextStyle(
                                                 color: Colors.white,
-                                                fontSize: 22,
+                                                fontSize: 28,
                                                 fontWeight: FontWeight.bold,
-                                                letterSpacing: -0.5,
+                                                letterSpacing: -1.0,
                                               ),
                                             ),
                                             if (state.lastMonthExpense !=
@@ -1079,13 +1082,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                               ],
                                             ),
                                             const SizedBox(height: 10),
-                                            Text(
-                                              _homeMoney(state.totalIncome),
+                                            AnimatedNumberText(
+                                              value: state.totalIncome.toDouble(),
+                                              formatter: (val) => _homeMoney(val),
                                               style: const TextStyle(
                                                 color: Colors.white,
-                                                fontSize: 22,
+                                                fontSize: 28,
                                                 fontWeight: FontWeight.bold,
-                                                letterSpacing: -0.5,
+                                                letterSpacing: -1.0,
                                               ),
                                             ),
                                             if (state.lastMonthIncome != null &&
@@ -1531,6 +1535,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             ),
 
                             // ── 8. 最近账单列表 ─────────────────────────────────────
+                            if (state.isParsing)
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  child: ShimmerLoading(
+                                    child: Column(
+                                      children: const [
+                                        EntrySkeleton(),
+                                        EntrySkeleton(),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
                             state.entries.isEmpty
                                 ? SliverToBoxAdapter(
                                     child: Center(
