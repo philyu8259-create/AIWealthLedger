@@ -212,8 +212,8 @@ class MainScaffold extends StatelessWidget {
     final compactNav = MediaQuery.of(context).size.width < 410;
     final outerHorizontalPadding = compactNav ? 18.0 : 22.0;
     final innerHorizontalPadding = compactNav ? 10.0 : 14.0;
-    final navGap = compactNav ? 0.0 : 6.0;
-    final centerGap = compactNav ? 8.0 : 14.0;
+    final navGap = compactNav ? 4.0 : 6.0;
+    final centerGap = compactNav ? 10.0 : 14.0;
 
     return Scaffold(
       extendBody: true,
@@ -260,35 +260,37 @@ class MainScaffold extends StatelessWidget {
                     borderRadius: BorderRadius.circular(34),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _PremiumNavBarItem(
-                            icon: Icons.home_outlined,
-                            selectedIcon: Icons.home_rounded,
-                            label: t.text(AppStringKeys.navHome),
-                            isSelected: _getCurrentIndex(context) == 0,
-                            compact: compactNav,
-                            onTap: () {
-                              clearPendingHomeOverlayRequests();
-                              context.go('/home');
-                            },
-                          ),
-                          SizedBox(width: navGap),
-                          _PremiumNavBarItem(
-                            icon: Icons.receipt_long_outlined,
-                            selectedIcon: Icons.receipt_long_rounded,
-                            label: t.text(AppStringKeys.navTransactions),
-                            isSelected: _getCurrentIndex(context) == 1,
-                            compact: compactNav,
-                            onTap: () {
-                              clearPendingHomeOverlayRequests();
-                              context.go('/transactions');
-                            },
-                          ),
-                        ],
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _PremiumNavBarItem(
+                              icon: Icons.home_outlined,
+                              selectedIcon: Icons.home_rounded,
+                              label: t.text(AppStringKeys.navHome),
+                              isSelected: _getCurrentIndex(context) == 0,
+                              compact: compactNav,
+                              onTap: () {
+                                clearPendingHomeOverlayRequests();
+                                context.go('/home');
+                              },
+                            ),
+                            SizedBox(width: navGap),
+                            _PremiumNavBarItem(
+                              icon: Icons.receipt_long_outlined,
+                              selectedIcon: Icons.receipt_long_rounded,
+                              label: t.text(AppStringKeys.navTransactions),
+                              isSelected: _getCurrentIndex(context) == 1,
+                              compact: compactNav,
+                              onTap: () {
+                                clearPendingHomeOverlayRequests();
+                                context.go('/transactions');
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                       Row(
                         mainAxisSize: MainAxisSize.min,
@@ -389,33 +391,36 @@ class MainScaffold extends StatelessWidget {
                           ),
                         ],
                       ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _PremiumNavBarItem(
-                            icon: Icons.bar_chart_outlined,
-                            selectedIcon: Icons.bar_chart_rounded,
-                            label: t.text(AppStringKeys.navReports),
-                            isSelected: _getCurrentIndex(context) == 2,
-                            compact: compactNav,
-                            onTap: () {
-                              clearPendingHomeOverlayRequests();
-                              context.go('/reports');
-                            },
-                          ),
-                          SizedBox(width: navGap),
-                          _PremiumNavBarItem(
-                            icon: Icons.auto_awesome_outlined,
-                            selectedIcon: Icons.auto_awesome_rounded,
-                            label: t.text(AppStringKeys.navAnalysis),
-                            isSelected: _getCurrentIndex(context) == 3,
-                            compact: compactNav,
-                            onTap: () {
-                              clearPendingHomeOverlayRequests();
-                              context.go('/analysis');
-                            },
-                          ),
-                        ],
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _PremiumNavBarItem(
+                              icon: Icons.bar_chart_outlined,
+                              selectedIcon: Icons.bar_chart_rounded,
+                              label: t.text(AppStringKeys.navReports),
+                              isSelected: _getCurrentIndex(context) == 2,
+                              compact: compactNav,
+                              onTap: () {
+                                clearPendingHomeOverlayRequests();
+                                context.go('/reports');
+                              },
+                            ),
+                            SizedBox(width: navGap),
+                            _PremiumNavBarItem(
+                              icon: Icons.auto_awesome_outlined,
+                              selectedIcon: Icons.auto_awesome_rounded,
+                              label: t.text(AppStringKeys.navAnalysis),
+                              isSelected: _getCurrentIndex(context) == 3,
+                              compact: compactNav,
+                              onTap: () {
+                                clearPendingHomeOverlayRequests();
+                                context.go('/analysis');
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -459,7 +464,7 @@ class _PremiumNavBarItem extends StatelessWidget {
         curve: Curves.easeOutCubic,
         padding: EdgeInsets.symmetric(
           horizontal: compact
-              ? (isSelected ? 6 : 4)
+              ? (isSelected ? 8 : 6)
               : (isSelected ? 12 : 10),
           vertical: 6,
         ),
@@ -475,7 +480,7 @@ class _PremiumNavBarItem extends StatelessWidget {
             Icon(
               isSelected ? selectedIcon : icon,
               color: isSelected ? AppColors.primary : const Color(0xFF9E9E9E),
-              size: compact ? 20 : 22,
+              size: 22,
             ),
             const SizedBox(height: 2),
             Text(
@@ -483,7 +488,7 @@ class _PremiumNavBarItem extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: compact ? 9.2 : 10.5,
+                fontSize: compact ? 10.0 : 10.5,
                 fontWeight: FontWeight.w400,
                 height: 1.0,
                 letterSpacing: 0.1,
