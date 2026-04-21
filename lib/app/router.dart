@@ -27,6 +27,7 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 /// 用于跨页面触发首页 AI 弹窗
 final homeAiTrigger = ValueNotifier<int>(0);
+final homeQuickAddTrigger = ValueNotifier<int>(0);
 bool _pendingHomeAiOpen = false;
 bool _pendingHomeQuickAddOpen = false;
 
@@ -53,10 +54,6 @@ bool consumePendingHomeQuickAddOpen() {
 void clearPendingHomeOverlayRequests() {
   _pendingHomeAiOpen = false;
   _pendingHomeQuickAddOpen = false;
-}
-
-double _floatingNavBodyInset(BuildContext context) {
-  return MediaQuery.of(context).padding.bottom + 110;
 }
 
 
@@ -212,26 +209,10 @@ class MainScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
-    final currentPath = GoRouterState.of(context).uri.path;
-
-    if (currentPath.startsWith('/home')) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final shellContext = _shellNavigatorKey.currentContext ?? context;
-        if (consumePendingHomeAiOpen()) {
-          homeAiTrigger.value++;
-        }
-        if (consumePendingHomeQuickAddOpen()) {
-          showHomeAddEntrySheet(shellContext);
-        }
-      });
-    }
 
     return Scaffold(
       extendBody: true,
-      body: Padding(
-        padding: EdgeInsets.only(bottom: _floatingNavBodyInset(context)),
-        child: child,
-      ),
+      body: child,
       bottomNavigationBar: SafeArea(
         bottom: false,
         child: Padding(
@@ -359,10 +340,8 @@ class MainScaffold extends StatelessWidget {
                               HapticFeedback.mediumImpact();
                               final currentPath =
                                   GoRouterState.of(context).uri.path;
-                              final shellContext =
-                                  _shellNavigatorKey.currentContext;
                               if (currentPath.startsWith('/home')) {
-                                showHomeAddEntrySheet(shellContext ?? context);
+                                homeQuickAddTrigger.value++;
                                 return;
                               }
                               queueHomeQuickAddOpenAfterNavigation();

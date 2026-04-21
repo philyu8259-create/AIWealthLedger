@@ -230,6 +230,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     context.read<AccountBloc>().add(const LoadCurrentMonthEntries());
     _loadAssetPrivacyHidden();
     homeAiTrigger.addListener(_onAiTriggered);
+    homeQuickAddTrigger.addListener(_onQuickAddTriggered);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (consumePendingHomeAiOpen()) {
+        homeAiTrigger.value++;
+      }
+      if (consumePendingHomeQuickAddOpen()) {
+        homeQuickAddTrigger.value++;
+      }
+    });
   }
 
   void _onAiTriggered() {
@@ -247,9 +257,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
+  void _onQuickAddTriggered() {
+    if (mounted) {
+      showHomeAddEntrySheet(context);
+    }
+  }
+
   @override
   void dispose() {
     homeAiTrigger.removeListener(_onAiTriggered);
+    homeQuickAddTrigger.removeListener(_onQuickAddTriggered);
     WidgetsBinding.instance.removeObserver(this);
     _textController.dispose();
     super.dispose();
@@ -1688,8 +1705,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     ),
                                   ),
 
-                            const SliverToBoxAdapter(
-                              child: SizedBox(height: 24),
+                            SliverToBoxAdapter(
+                              child: SizedBox(
+                                height: MediaQuery.of(context).padding.bottom + 120,
+                              ),
                             ),
                           ],
                         );
@@ -1966,9 +1985,10 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
         ),
         child: SafeArea(
           top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
               Container(
                 padding: const EdgeInsets.fromLTRB(24, 20, 18, 20),
                 decoration: const BoxDecoration(
@@ -2275,7 +2295,8 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }
 
