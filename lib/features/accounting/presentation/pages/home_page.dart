@@ -230,11 +230,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     context.read<AccountBloc>().add(const LoadCurrentMonthEntries());
     _loadAssetPrivacyHidden();
     homeAiTrigger.addListener(_onAiTriggered);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && consumePendingHomeAiOpen()) {
-        homeAiTrigger.value++;
-      }
-    });
   }
 
   void _onAiTriggered() {
@@ -1951,9 +1946,12 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
     final effectiveSelectedId =
         _selectedCategoryId ??
         (visibleCategories.isNotEmpty ? visibleCategories.first.id : 'food');
+    final floatingNavInset = mediaQuery.padding.bottom + 110;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: mediaQuery.viewInsets.bottom + floatingNavInset,
+      ),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,

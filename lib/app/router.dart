@@ -28,6 +28,7 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 /// 用于跨页面触发首页 AI 弹窗
 final homeAiTrigger = ValueNotifier<int>(0);
 bool _pendingHomeAiOpen = false;
+bool _pendingHomeQuickAddOpen = false;
 
 void queueHomeAiOpenAfterNavigation() {
   _pendingHomeAiOpen = true;
@@ -37,6 +38,25 @@ bool consumePendingHomeAiOpen() {
   if (!_pendingHomeAiOpen) return false;
   _pendingHomeAiOpen = false;
   return true;
+}
+
+void queueHomeQuickAddOpenAfterNavigation() {
+  _pendingHomeQuickAddOpen = true;
+}
+
+bool consumePendingHomeQuickAddOpen() {
+  if (!_pendingHomeQuickAddOpen) return false;
+  _pendingHomeQuickAddOpen = false;
+  return true;
+}
+
+void clearPendingHomeOverlayRequests() {
+  _pendingHomeAiOpen = false;
+  _pendingHomeQuickAddOpen = false;
+}
+
+double _floatingNavBodyInset(BuildContext context) {
+  return MediaQuery.of(context).padding.bottom + 110;
 }
 
 
@@ -192,10 +212,26 @@ class MainScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final currentPath = GoRouterState.of(context).uri.path;
+
+    if (currentPath.startsWith('/home')) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final shellContext = _shellNavigatorKey.currentContext ?? context;
+        if (consumePendingHomeAiOpen()) {
+          homeAiTrigger.value++;
+        }
+        if (consumePendingHomeQuickAddOpen()) {
+          showHomeAddEntrySheet(shellContext);
+        }
+      });
+    }
 
     return Scaffold(
       extendBody: true,
-      body: child,
+      body: Padding(
+        padding: EdgeInsets.only(bottom: _floatingNavBodyInset(context)),
+        child: child,
+      ),
       bottomNavigationBar: SafeArea(
         bottom: false,
         child: Padding(
@@ -248,7 +284,10 @@ class MainScaffold extends StatelessWidget {
                             selectedIcon: Icons.home_rounded,
                             label: t.text(AppStringKeys.navHome),
                             isSelected: _getCurrentIndex(context) == 0,
-                            onTap: () => context.go('/home'),
+                            onTap: () {
+                              clearPendingHomeOverlayRequests();
+                              context.go('/home');
+                            },
                           ),
                           const SizedBox(width: 6),
                           _PremiumNavBarItem(
@@ -256,7 +295,10 @@ class MainScaffold extends StatelessWidget {
                             selectedIcon: Icons.receipt_long_rounded,
                             label: t.text(AppStringKeys.navTransactions),
                             isSelected: _getCurrentIndex(context) == 1,
-                            onTap: () => context.go('/transactions'),
+                            onTap: () {
+                              clearPendingHomeOverlayRequests();
+                              context.go('/transactions');
+                            },
                           ),
                         ],
                       ),
@@ -323,14 +365,8 @@ class MainScaffold extends StatelessWidget {
                                 showHomeAddEntrySheet(shellContext ?? context);
                                 return;
                               }
+                              queueHomeQuickAddOpenAfterNavigation();
                               context.go('/home');
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                final nextShellContext =
-                                    _shellNavigatorKey.currentContext;
-                                if (nextShellContext != null) {
-                                  showHomeAddEntrySheet(nextShellContext);
-                                }
-                              });
                             },
                             child: Container(
                               width: 50,
@@ -375,7 +411,10 @@ class MainScaffold extends StatelessWidget {
                             selectedIcon: Icons.bar_chart_rounded,
                             label: t.text(AppStringKeys.navReports),
                             isSelected: _getCurrentIndex(context) == 2,
-                            onTap: () => context.go('/reports'),
+                            onTap: () {
+                              clearPendingHomeOverlayRequests();
+                              context.go('/reports');
+                            },
                           ),
                           const SizedBox(width: 6),
                           _PremiumNavBarItem(
@@ -383,7 +422,10 @@ class MainScaffold extends StatelessWidget {
                             selectedIcon: Icons.auto_awesome_rounded,
                             label: t.text(AppStringKeys.navAnalysis),
                             isSelected: _getCurrentIndex(context) == 3,
-                            onTap: () => context.go('/analysis'),
+                            onTap: () {
+                              clearPendingHomeOverlayRequests();
+                              context.go('/analysis');
+                            },
                           ),
                         ],
                       ),

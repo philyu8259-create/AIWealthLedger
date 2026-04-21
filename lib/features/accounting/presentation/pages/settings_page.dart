@@ -14,6 +14,7 @@ import 'dart:convert';
 import '../../../../app/profile/capability_profile.dart';
 import '../../../../core/formatters/app_formatter.dart';
 import '../../../../core/formatters/category_formatter.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../l10n/app_string_keys.dart';
 import '../../../../l10n/app_strings.dart';
 import '../../../../services/injection.dart';
@@ -179,7 +180,12 @@ class _SettingsPageState extends State<SettingsPage> {
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: maxContentWidth),
               child: ListView(
-                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  0,
+                  horizontalPadding,
+                  MediaQuery.of(context).padding.bottom + 120,
+                ),
                 children: [
                   // 会员专属卡片（页面最顶部）
                   _VipBanner(),
@@ -1352,7 +1358,12 @@ class _CategoryManagerBody extends StatelessWidget {
             Expanded(
               child: ListView(
                 controller: scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  0,
+                  16,
+                  MediaQuery.of(context).padding.bottom + 120,
+                ),
                 children: [
                   // 支出类目
                   Padding(
@@ -1369,6 +1380,7 @@ class _CategoryManagerBody extends StatelessWidget {
                     categories: CategoryDef.expenseCategories
                         .map(
                           (c) => _CategoryItem(
+                            id: c.id,
                             name: localizedCategoryName(
                               id: c.id,
                               fallback: c.name,
@@ -1434,6 +1446,7 @@ class _CategoryManagerBody extends StatelessWidget {
                     categories: CategoryDef.incomeCategories
                         .map(
                           (c) => _CategoryItem(
+                            id: c.id,
                             name: localizedCategoryName(
                               id: c.id,
                               fallback: c.name,
@@ -1592,11 +1605,16 @@ class _CategoryGrid extends StatelessWidget {
                 height: 26,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0EBFF),
+                  color: c.isSystem
+                      ? AppColors.getCategoryColor(c.id).withValues(alpha: 0.15)
+                      : const Color(0xFFF0EBFF),
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF7A35FF).withValues(alpha: 0.10),
+                      color: (c.isSystem
+                              ? AppColors.getCategoryColor(c.id)
+                              : const Color(0xFF7A35FF))
+                          .withValues(alpha: 0.10),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),
@@ -1770,7 +1788,9 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
         left: 16,
         right: 16,
         top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom +
+            MediaQuery.of(context).padding.bottom +
+            120,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
