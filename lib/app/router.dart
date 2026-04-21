@@ -179,43 +179,78 @@ class MainScaffold extends StatelessWidget {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(top: 24),
-        child: GestureDetector(
-          onTap: () {
-            context.go('/home');
-            homeAiTrigger.value++;
-          },
-          child: Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF5B42F3),
-                  Color(0xFF7D31FF),
-                  Color(0xFFB61FFF),
-                ],
-                stops: [0.0, 0.5, 1.0],
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF8C35FF).withValues(alpha: 0.28),
-                  blurRadius: 14,
-                  offset: const Offset(0, 5),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GestureDetector(
+              onTap: () {
+                context.go('/home');
+                homeAiTrigger.value++;
+              },
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF5B42F3),
+                      Color(0xFF7D31FF),
+                      Color(0xFFB61FFF),
+                    ],
+                    stops: [0.0, 0.5, 1.0],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF8C35FF).withValues(alpha: 0.28),
+                      blurRadius: 14,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: const Center(
-              child: AiSparklesIcon(
-                size: 27,
-                color: Color(0xFFF6E27A),
-                accentColor: Color(0xFFF6E27A),
-                strokeWidthFactor: 0.115,
+                child: const Center(
+                  child: AiSparklesIcon(
+                    size: 27,
+                    color: Color(0xFFF6E27A),
+                    accentColor: Color(0xFFF6E27A),
+                    strokeWidthFactor: 0.115,
+                  ),
+                ),
               ),
             ),
-          ),
+            const SizedBox(width: 12),
+            GestureDetector(
+              onTap: () {
+                final currentPath = GoRouterState.of(context).uri.path;
+                if (currentPath.startsWith('/home')) {
+                  showHomeAddEntrySheet(context);
+                  return;
+                }
+                context.go('/home');
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  final shellContext = _shellNavigatorKey.currentContext;
+                  if (shellContext != null) {
+                    showHomeAddEntrySheet(shellContext);
+                  }
+                });
+              },
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF333A4D),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.add,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: Container(
