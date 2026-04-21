@@ -156,6 +156,7 @@ String _homeMonthShortLabel(int year, int month) {
 Future<void> showHomeAddEntrySheet(BuildContext context) async {
   await showModalBottomSheet(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
