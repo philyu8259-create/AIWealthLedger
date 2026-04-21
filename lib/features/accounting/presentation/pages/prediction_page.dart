@@ -354,10 +354,12 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).padding.bottom + 130;
+
     return RefreshIndicator(
       onRefresh: () async {},
       child: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.fromLTRB(20, 20, 20, bottomInset),
         children: [
           _InsightCard(insight: prediction.aiInsight),
           const SizedBox(height: 16),
