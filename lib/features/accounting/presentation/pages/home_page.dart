@@ -36,6 +36,7 @@ import '../widgets/press_feedback.dart';
 import '../widgets/ai_bottom_sheet.dart';
 import '../widgets/custom_numpad_sheet.dart';
 import '../widgets/animated_number_text.dart';
+import '../widgets/premium_capsule_button.dart';
 import '../widgets/shimmer_loading.dart';
 
 String _homeMoney(num amount, {int decimalDigits = 2}) {
@@ -829,22 +830,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                         width: compact ? 40 : 44,
                                         height: compact ? 40 : 44,
                                         decoration: BoxDecoration(
-                                          color: AppColors.primary,
+                                          color: Colors.white,
                                           borderRadius: BorderRadius.circular(
                                             14,
                                           ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: AppColors.primary
-                                                  .withValues(alpha: 0.28),
-                                              blurRadius: 12,
-                                              offset: const Offset(0, 4),
-                                            ),
-                                          ],
+                                          boxShadow: AppColors.softShadow,
                                         ),
                                         child: const Icon(
                                           Icons.settings_outlined,
-                                          color: Colors.white,
+                                          color: Color(0xFF1A1A2E),
                                           size: 22,
                                         ),
                                       ),
@@ -1517,17 +1511,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    PressFeedback(
-                                      onTap: () => context.go('/transactions'),
-                                      child: Text(
-                                        AppStrings.of(context).text(
-                                          AppStringKeys.homeRecentEntriesSeeAll,
-                                        ),
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: AppColors.primary,
-                                        ),
+                                    PremiumCapsuleButton(
+                                      text: AppStrings.of(context).text(
+                                        AppStringKeys.homeRecentEntriesSeeAll,
                                       ),
+                                      icon: Icons.arrow_forward_ios_rounded,
+                                      onTap: () => context.go('/transactions'),
                                     ),
                                   ],
                                 ),
@@ -2336,7 +2325,9 @@ class _QuickChipsGridState extends State<_QuickChipsGrid> {
                 ).text(AppStringKeys.homeQuickAccountingTitle),
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              PressFeedback(
+              PremiumCapsuleButton(
+                text: AppStrings.of(context).text(AppStringKeys.homeManage),
+                icon: Icons.tune_rounded,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -2348,10 +2339,6 @@ class _QuickChipsGridState extends State<_QuickChipsGrid> {
                     ),
                   );
                 },
-                child: Text(
-                  AppStrings.of(context).text(AppStringKeys.homeManage),
-                  style: TextStyle(fontSize: 13, color: AppColors.primary),
-                ),
               ),
             ],
           ),

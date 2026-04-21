@@ -13,6 +13,7 @@ import '../../domain/entities/entities.dart';
 import '../bloc/account_bloc.dart';
 import '../bloc/account_event.dart';
 import '../bloc/account_state.dart';
+import '../widgets/breathing_float.dart';
 import '../widgets/press_feedback.dart';
 
 String _reportsMoney(num amount, {int decimalDigits = 2}) {
@@ -216,11 +217,29 @@ class _ReportsBody extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.bar_chart, size: 64, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
+            BreathingFloat(
+              child: Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.bar_chart_rounded,
+                  size: 32,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
             Text(
               t.text(AppStringKeys.reportsEmptyTitle),
-              style: TextStyle(color: Colors.grey.shade500),
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1A1A2E),
+              ),
             ),
             const SizedBox(height: 8),
             Text(

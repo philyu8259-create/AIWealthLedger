@@ -13,6 +13,7 @@ import '../../domain/entities/entities.dart';
 import '../bloc/account_bloc.dart';
 import '../bloc/account_event.dart';
 import '../bloc/account_state.dart';
+import '../widgets/breathing_float.dart';
 import '../widgets/press_feedback.dart';
 
 class TransactionsPage extends StatefulWidget {
@@ -967,29 +968,31 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF4F1FF),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.receipt_long,
-              size: 36,
-              color: Color(0xFF4A47D8),
+          BreathingFloat(
+            child: Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.receipt_long_rounded,
+                size: 32,
+                color: AppColors.primary,
+              ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           Text(
             t.text(AppStringKeys.transactionsEmptyTitle),
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: Color(0xFF1A1A2E),
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
             t.text(AppStringKeys.transactionsEmptySubtitle),
             style: TextStyle(color: Colors.grey, fontSize: 13),
