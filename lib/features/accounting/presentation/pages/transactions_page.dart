@@ -318,6 +318,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
       return const Center(child: CircularProgressIndicator());
     }
 
+    final bottomInset = MediaQuery.of(context).padding.bottom + 130;
     final entries = _filteredEntries(state);
 
     if (entries.isEmpty) {
@@ -333,7 +334,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
     final sortedDates = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, bottomInset),
       itemCount: sortedDates.length,
       itemBuilder: (context, index) {
         final date = sortedDates[index];

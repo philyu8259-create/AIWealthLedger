@@ -259,8 +259,10 @@ class _ReportsBody extends StatelessWidget {
     final sortedCats = catMap.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
+    final bottomInset = MediaQuery.of(context).padding.bottom + 130;
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.fromLTRB(20, 20, 20, bottomInset),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

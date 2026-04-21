@@ -568,7 +568,12 @@ class _AssetManagementPageState extends State<AssetManagementPage>
                 child: RefreshIndicator(
                   onRefresh: () => _loadAll(autoRefreshQuotes: true),
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      16,
+                      16,
+                      MediaQuery.of(context).padding.bottom + 130,
+                    ),
                     children: [
                       _AssetSummaryCard(
                         totalAssets: _totalAssets,
