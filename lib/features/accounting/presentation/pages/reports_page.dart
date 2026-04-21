@@ -8,6 +8,7 @@ import '../../../../l10n/app_string_keys.dart';
 import '../../../../l10n/app_strings.dart';
 import '../../../../services/app_profile_service.dart';
 import '../../../../services/injection.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/entities.dart';
 import '../bloc/account_bloc.dart';
 import '../bloc/account_event.dart';
@@ -109,7 +110,10 @@ class _MonthSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final monthLabel = _reportsMonthLabel(state.selectedYear, state.selectedMonth);
+    final monthLabel = _reportsMonthLabel(
+      state.selectedYear,
+      state.selectedMonth,
+    );
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 360;
@@ -126,11 +130,7 @@ class _MonthSelector extends StatelessWidget {
                 color: const Color(0xFF4A47D8),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: compact ? 20 : 24,
-              ),
+              child: Icon(icon, color: Colors.white, size: compact ? 20 : 24),
             ),
           );
         }
@@ -162,7 +162,10 @@ class _MonthSelector extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: const Color(0xFFF4F1FF),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFF4A47D8), width: 1.5),
+                    border: Border.all(
+                      color: const Color(0xFF4A47D8),
+                      width: 1.5,
+                    ),
                   ),
                   child: Text(
                     monthLabel,
@@ -236,17 +239,6 @@ class _ReportsBody extends StatelessWidget {
     }
     final sortedCats = catMap.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-
-    final colors = [
-      const Color(0xFF4A47D8),
-      const Color(0xFF3B82F6),
-      const Color(0xFFF59E0B),
-      const Color(0xFFEF4444),
-      const Color(0xFF8B5CF6),
-      const Color(0xFF06B6D4),
-      const Color(0xFF84CC16),
-      const Color(0xFFF97316),
-    ];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -391,7 +383,7 @@ class _ReportsBody extends StatelessWidget {
                               return PieChartSectionData(
                                 value: e.value.value,
                                 title: '',
-                                color: colors[e.key % colors.length],
+                                color: AppColors.getCategoryColor(e.value.key),
                                 radius: 55,
                               );
                             })
@@ -419,7 +411,9 @@ class _ReportsBody extends StatelessWidget {
                                   width: 10,
                                   height: 10,
                                   decoration: BoxDecoration(
-                                    color: colors[e.key % colors.length],
+                                    color: AppColors.getCategoryColor(
+                                      e.value.key,
+                                    ),
                                     shape: BoxShape.circle,
                                   ),
                                 ),
@@ -428,7 +422,10 @@ class _ReportsBody extends StatelessWidget {
                                   child: Text(
                                     cat == null
                                         ? e.value.key
-                                        : _reportsCategoryName(cat.id, cat.name),
+                                        : _reportsCategoryName(
+                                            cat.id,
+                                            cat.name,
+                                          ),
                                     style: const TextStyle(fontSize: 13),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -462,6 +459,7 @@ class _ReportsBody extends StatelessWidget {
             ...sortedCats.take(5).toList().asMap().entries.map((e) {
               final cat = CategoryDef.findById(e.value.key);
               final pct = e.value.value / state.totalExpense;
+              final catColor = AppColors.getCategoryColor(e.value.key);
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Column(
@@ -486,15 +484,8 @@ class _ReportsBody extends StatelessWidget {
                               height: 28,
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFFA11A),
+                                color: catColor.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(10),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFFFFA11A).withValues(alpha: 0.24),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
                               ),
                               child: Text(
                                 cat?.icon ?? '📦',
@@ -523,7 +514,7 @@ class _ReportsBody extends StatelessWidget {
                         value: pct,
                         backgroundColor: Colors.grey.shade200,
                         valueColor: AlwaysStoppedAnimation(
-                          colors[e.key % colors.length],
+                          AppColors.getCategoryColor(e.value.key),
                         ),
                         minHeight: 6,
                       ),

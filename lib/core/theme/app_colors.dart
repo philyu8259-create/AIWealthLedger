@@ -80,4 +80,85 @@ abstract final class AppColors {
 
   /// Skeleton 骨架屏色
   static const Color skeleton = Color(0xFFEEF0F3);
+
+  // ── UI/UX 进阶优化补充 ──────────────────────────────────────────
+
+  /// 全局高级弥散阴影（替代原本生硬的纯黑高透明度阴影）
+  static List<BoxShadow> get softShadow => [
+    BoxShadow(
+      color: const Color(0xFF1A1A2E).withValues(alpha: 0.04),
+      blurRadius: 24,
+      offset: const Offset(0, 8),
+    ),
+    BoxShadow(
+      color: const Color(0xFF1A1A2E).withValues(alpha: 0.02),
+      blurRadius: 8,
+      offset: const Offset(0, 4),
+    ),
+  ];
+
+  /// 获取分类专属的主题色（建立用户的色彩肌肉记忆）
+  static Color getCategoryColor(String id) {
+    const map = {
+      'food': Color(0xFFFF9800),
+      'transport': Color(0xFF03A9F4),
+      'shopping': Color(0xFFE91E63),
+      'entertainment': Color(0xFF9C27B0),
+      'housing': Color(0xFF00BCD4),
+      'coffee': Color(0xFF795548),
+      'fruit': Color(0xFF8BC34A),
+      'grocery': Color(0xFFFFC107),
+      'takeout': Color(0xFFFF5722),
+      'daily': Color(0xFF607D8B),
+      'salary': Color(0xFF4CAF50),
+      'bonus': Color(0xFF009688),
+      'health': Color(0xFFEF5350),
+      'education': Color(0xFF5C6BC0),
+      'beauty': Color(0xFFEC407A),
+      'social': Color(0xFFAB47BC),
+      'travel': Color(0xFF26A69A),
+      'sports': Color(0xFF42A5F5),
+      'snack': Color(0xFFFF7043),
+      'vegetable': Color(0xFF66BB6A),
+      'drink': Color(0xFF29B6F6),
+      'clothing': Color(0xFF7E57C2),
+      'phone': Color(0xFF5C6BC0),
+      'rent': Color(0xFF26C6DA),
+      'mortgage': Color(0xFF26A69A),
+      'housing2': Color(0xFF00ACC1),
+      'gift_exp': Color(0xFFFFCA28),
+      'tobacco': Color(0xFF8D6E63),
+      'express': Color(0xFF78909C),
+      'fandom': Color(0xFFEC407A),
+      'game': Color(0xFF7E57C2),
+      'digital': Color(0xFF5C6BC0),
+      'movie': Color(0xFF8E24AA),
+      'car': Color(0xFF42A5F5),
+      'motorcycle': Color(0xFF29B6F6),
+      'gas': Color(0xFFFF7043),
+      'book': Color(0xFF5C6BC0),
+      'study': Color(0xFF7986CB),
+      'pet': Color(0xFFFFB74D),
+      'water': Color(0xFF26C6DA),
+      'electric': Color(0xFFFFD54F),
+      'gas_fee': Color(0xFFFF8A65),
+      'childcare': Color(0xFF66BB6A),
+      'elder': Color(0xFF8D6E63),
+      'lease': Color(0xFF26A69A),
+      'office': Color(0xFF78909C),
+      'repair': Color(0xFF90A4AE),
+      'lottery': Color(0xFFAB47BC),
+      'donation': Color(0xFFEF5350),
+      'mahjong': Color(0xFF8E24AA),
+      'investment': Color(0xFF26A69A),
+      'gift': Color(0xFFFF7043),
+      'refund': Color(0xFF29B6F6),
+      'other_income': Color(0xFF9E9E9E),
+      'cash_gift': Color(0xFF66BB6A),
+      'lend': Color(0xFF5C6BC0),
+      'repay': Color(0xFF26A69A),
+      'transfer_in': Color(0xFF42A5F5),
+    };
+    return map[id] ?? const Color(0xFF9E9E9E);
+  }
 }

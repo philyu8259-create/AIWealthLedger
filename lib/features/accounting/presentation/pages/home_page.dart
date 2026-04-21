@@ -34,6 +34,7 @@ import '../../../../services/stock_service.dart';
 import '../../../../app/router.dart';
 import '../widgets/press_feedback.dart';
 import '../widgets/ai_bottom_sheet.dart';
+import '../widgets/custom_numpad_sheet.dart';
 
 String _homeMoney(num amount, {int decimalDigits = 2}) {
   final service = getIt<AppProfileService>();
@@ -62,7 +63,8 @@ String _homeCategoryName(String id, String fallback) {
 }
 
 String _homeAiProviderLabel(AppStrings t) {
-  final provider = getIt<AppProfileService>().currentProfile.capabilityProfile.aiProvider;
+  final provider =
+      getIt<AppProfileService>().currentProfile.capabilityProfile.aiProvider;
   switch (provider) {
     case AiProviderType.gemini:
       return t.text(AppStringKeys.providerAiGemini);
@@ -72,7 +74,8 @@ String _homeAiProviderLabel(AppStrings t) {
 }
 
 String _homeOcrProviderLabel(AppStrings t) {
-  final provider = getIt<AppProfileService>().currentProfile.capabilityProfile.ocrProvider;
+  final provider =
+      getIt<AppProfileService>().currentProfile.capabilityProfile.ocrProvider;
   switch (provider) {
     case OcrProviderType.googleVisionGemini:
     case OcrProviderType.googleExpenseParser:
@@ -83,10 +86,8 @@ String _homeOcrProviderLabel(AppStrings t) {
 }
 
 bool _homeAiReady() {
-  final provider = getIt<AppProfileService>()
-      .currentProfile
-      .capabilityProfile
-      .aiProvider;
+  final provider =
+      getIt<AppProfileService>().currentProfile.capabilityProfile.aiProvider;
   switch (provider) {
     case AiProviderType.gemini:
       return ConfigService.instance.isGeminiConfigured;
@@ -96,10 +97,8 @@ bool _homeAiReady() {
 }
 
 bool _homeOcrReady() {
-  final provider = getIt<AppProfileService>()
-      .currentProfile
-      .capabilityProfile
-      .ocrProvider;
+  final provider =
+      getIt<AppProfileService>().currentProfile.capabilityProfile.ocrProvider;
   switch (provider) {
     case OcrProviderType.googleVisionGemini:
     case OcrProviderType.googleExpenseParser:
@@ -214,6 +213,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     );
     return false;
   }
+
   bool _assetPrivacyHidden = false;
   late final CustomCategoryBloc _bloc;
   late Future<_HomeAssetSummary> _assetSummaryFuture;
@@ -279,10 +279,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final available = await _ensureSpeechInitialized();
     if (!mounted) return;
     if (!available) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
-        SnackBar(content: Text(AppStrings.of(context).text(AppStringKeys.homeVoiceUnavailable))),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppStrings.of(context).text(AppStringKeys.homeVoiceUnavailable),
+          ),
+        ),
       );
       return;
     }
@@ -383,10 +385,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       );
       if (!mounted) return;
       if (!agreed) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
-          SnackBar(content: Text(AppStrings.of(context).text(AppStringKeys.homeOcrCancelled))),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppStrings.of(context).text(AppStringKeys.homeOcrCancelled),
+            ),
+          ),
         );
         return;
       }
@@ -404,17 +408,21 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       );
       if (image == null) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
-          SnackBar(content: Text(AppStrings.of(context).text(AppStringKeys.homeNoImage))),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppStrings.of(context).text(AppStringKeys.homeNoImage),
+            ),
+          ),
         );
         return;
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppStrings.of(context).text(AppStringKeys.homeRecognizingReceipt)),
+          content: Text(
+            AppStrings.of(context).text(AppStringKeys.homeRecognizingReceipt),
+          ),
           duration: Duration(seconds: 1),
         ),
       );
@@ -423,32 +431,29 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       final text = await ocr.recognizeText(bytes);
       if (!mounted) return;
       if (text == null || text.isEmpty) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
-          SnackBar(content: Text(AppStrings.of(context).text(AppStringKeys.homeOcrUnavailable))),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppStrings.of(context).text(AppStringKeys.homeOcrUnavailable),
+            ),
+          ),
         );
         return;
       }
       context.read<AccountBloc>().add(ParseTextInput(text));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            AppStrings.of(context).text(
-              AppStringKeys.homeOcrFailed,
-              params: {'error': '$e'},
-            ),
+            AppStrings.of(
+              context,
+            ).text(AppStringKeys.homeOcrFailed, params: {'error': '$e'}),
           ),
         ),
       );
     }
   }
-
-
 
   void _submitText(String text) async {
     if (text.isEmpty) return;
@@ -462,17 +467,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         AppStrings.of(context).text(AppStringKeys.homeTextConsentTitle),
         AppStrings.of(context).text(
           AppStringKeys.homeTextConsentContent,
-          params: {
-            'aiProvider': _homeAiProviderLabel(AppStrings.of(context)),
-          },
+          params: {'aiProvider': _homeAiProviderLabel(AppStrings.of(context))},
         ),
       );
       if (!mounted) return;
       if (!agreed) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
-          SnackBar(content: Text(AppStrings.of(context).text(AppStringKeys.homeTextCancelled))),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppStrings.of(context).text(AppStringKeys.homeTextCancelled),
+            ),
+          ),
         );
         return;
       }
@@ -551,9 +556,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       } else {
         messenger.showSnackBar(
           SnackBar(
-            content: Text(
-              t.text(AppStringKeys.homeSaveMissing),
-            ),
+            content: Text(t.text(AppStringKeys.homeSaveMissing)),
             duration: Duration(seconds: 3),
           ),
         );
@@ -575,92 +578,29 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   void _showAmountDialog(String categoryId, String note, String icon) {
-    final controller = TextEditingController();
-    final messenger = ScaffoldMessenger.of(context);
-    final t = AppStrings.of(context);
-
-    // 根据类目 ID 判断是收入还是支出
     final isIncome = CategoryDef.incomeCategories.any(
       (c) => c.id == categoryId,
     );
     final type = isIncome ? 'income' : 'expense';
     final entryType = isIncome ? EntryType.income : EntryType.expense;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('$icon $note'),
-        content: TextField(
-          controller: controller,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          autofocus: true,
-          decoration: InputDecoration(
-            labelText: t.text(AppStringKeys.homeAmountLabel),
-            prefixText: _homeCurrencyPrefix(),
-            border: const OutlineInputBorder(),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(
-                color: isIncome ? AppColors.primary : Colors.red,
-              ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => CustomNumpadSheet(
+        title: '$icon $note',
+        isIncome: isIncome,
+        onConfirm: (amount) async {
+          await _confirmAndSave([
+            ParsedResult(
+              amount: amount,
+              category: categoryId,
+              type: type,
+              note: note,
             ),
-          ),
-          onSubmitted: (val) async {
-            final amount = double.tryParse(val);
-            if (amount != null && amount > 0) {
-              Navigator.pop(ctx);
-              // 先保存，等待完成后再显示结果
-              await _confirmAndSave([
-                ParsedResult(
-                  amount: amount,
-                  category: categoryId,
-                  type: type,
-                  note: note,
-                ),
-              ], entryType);
-            } else {
-              messenger.showSnackBar(
-                SnackBar(
-                  content: Text(t.text(AppStringKeys.homeInvalidAmount)),
-                  duration: Duration(seconds: 1),
-                ),
-              );
-            }
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(t.text(AppStringKeys.commonCancel)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isIncome ? AppColors.primary : null,
-            ),
-            onPressed: () async {
-              final amount = double.tryParse(controller.text);
-              if (amount == null || amount <= 0) {
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text(t.text(AppStringKeys.homeInvalidAmount)),
-                    duration: Duration(seconds: 1),
-                  ),
-                );
-                return;
-              }
-              Navigator.pop(ctx);
-              // 先保存，等待完成后再显示结果
-              await _confirmAndSave([
-                ParsedResult(
-                  amount: amount,
-                  category: categoryId,
-                  type: type,
-                  note: note,
-                ),
-              ], entryType);
-            },
-            child: Text(t.text(AppStringKeys.commonConfirm)),
-          ),
-        ],
+          ], entryType);
+        },
       ),
     );
   }
@@ -671,9 +611,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       context: ctx,
       builder: (ctx) => AlertDialog(
         title: Text(t.text(AppStringKeys.homeVipUpgradeTitle)),
-        content: Text(
-          t.text(AppStringKeys.homeVipUpgradeContent),
-        ),
+        content: Text(t.text(AppStringKeys.homeVipUpgradeContent)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -701,9 +639,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       context: ctx,
       builder: (ctx) => AlertDialog(
         title: Text(t.text(AppStringKeys.homeLoginPromptTitle)),
-        content: Text(
-          t.text(AppStringKeys.homeLoginPromptContent),
-        ),
+        content: Text(t.text(AppStringKeys.homeLoginPromptContent)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -775,17 +711,22 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: maxContentWidth),
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                    ),
                     child: BlocBuilder<AccountBloc, AccountState>(
                       builder: (context, state) {
                         final t = AppStrings.of(context);
                         // AI 解析完成，显示确认弹窗
-                        if (state.isAiPanelVisible && state.parsedResults.isNotEmpty) {
+                        if (state.isAiPanelVisible &&
+                            state.parsedResults.isNotEmpty) {
                           WidgetsBinding.instance.addPostFrameCallback((_) {
                             if (!context.mounted) return;
                             _showAiConfirmDialog(context, state.parsedResults);
                           });
-                          context.read<AccountBloc>().add(const ClearParsedResults());
+                          context.read<AccountBloc>().add(
+                            const ClearParsedResults(),
+                          );
                         }
 
                         // VIP 限额弹窗
@@ -794,7 +735,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             if (!context.mounted) return;
                             _showVipUpgradeDialog(context);
                           });
-                          context.read<AccountBloc>().add(const ClearVipLimitDialog());
+                          context.read<AccountBloc>().add(
+                            const ClearVipLimitDialog(),
+                          );
                         }
 
                         // 游客登录提示弹窗
@@ -803,7 +746,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             if (!context.mounted) return;
                             _showLoginPromptDialog(context);
                           });
-                          context.read<AccountBloc>().add(const ClearLoginLimitDialog());
+                          context.read<AccountBloc>().add(
+                            const ClearLoginLimitDialog(),
+                          );
                         }
 
                         final monthStr = _homeMonthLabel(
@@ -812,731 +757,936 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         );
 
                         return CustomScrollView(
-                slivers: [
-                  // ── 1. 头部：图标 + 标题 + 添加按钮 ─────────────────────
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(compact ? 16 : 20, 16, compact ? 16 : 20, 0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.asset(
-                                    'assets/icon_brand_primary.png',
-                                    width: compact ? 32 : 36,
-                                    height: compact ? 32 : 36,
-                                  ),
+                          slivers: [
+                            // ── 1. 头部：图标 + 标题 + 添加按钮 ─────────────────────
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(
+                                  compact ? 16 : 20,
+                                  16,
+                                  compact ? 16 : 20,
+                                  0,
                                 ),
-                                SizedBox(width: compact ? 6 : 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        getIt<AppProfileService>().appTitle,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: compact ? 18 : 20,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        monthStr,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: compact ? 12 : 13,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(width: compact ? 12 : 16),
-                          PressFeedback(
-                            onTap: () => context.go('/settings'),
-                            child: Container(
-                              width: compact ? 40 : 44,
-                              height: compact ? 40 : 44,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                borderRadius: BorderRadius.circular(14),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.primary.withValues(alpha: 0.28),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.settings_outlined,
-                                color: Colors.white,
-                                size: 22,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-                  // ── 3. 本月收支汇总卡片 ────────────────────────────────
-                  SliverToBoxAdapter(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 20),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF6B4DFF), Color(0xFF4A47D8)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.25),
-                            blurRadius: 16,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 18,
-                              ),
-                              decoration: const BoxDecoration(
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(16),
-                                  bottomLeft: Radius.circular(16),
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.2,
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            child: Image.asset(
+                                              'assets/icon_brand_primary.png',
+                                              width: compact ? 32 : 36,
+                                              height: compact ? 32 : 36,
+                                            ),
                                           ),
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: Icon(
-                                          (state.lastMonthExpense == null ||
-                                                  state.totalExpense >=
-                                                      state.lastMonthExpense!)
-                                              ? Icons.arrow_upward
-                                              : Icons.arrow_downward,
-                                          color: Colors.white,
-                                          size: 14,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          t.text(
-                                            AppStringKeys.homeMonthExpense,
-                                            params: {
-                                              'month': _homeMonthShortLabel(
-                                                state.selectedYear,
-                                                state.selectedMonth,
-                                              ),
-                                            },
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    _homeMoney(state.totalExpense),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  if (state.lastMonthExpense != null &&
-                                      state.lastMonthExpense! > 0)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 4),
-                                      child: Text(
-                                        t.text(
-                                          AppStringKeys.homeVsLastMonth,
-                                          params: {
-                                            'direction': state.totalExpense >= state.lastMonthExpense! ? '↑' : '↓',
-                                            'percent': (((state.totalExpense - state.lastMonthExpense!) / state.lastMonthExpense!).abs() * 100).toStringAsFixed(0),
-                                          },
-                                        ),
-                                        style: TextStyle(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.6,
-                                          ),
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Container(
-                            width: 1,
-                            height: 60,
-                            color: Colors.white30,
-                          ),
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 18,
-                              ),
-                              decoration: const BoxDecoration(
-                                borderRadius: BorderRadius.only(
-                                  topRight: Radius.circular(16),
-                                  bottomRight: Radius.circular(16),
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.2,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: Icon(
-                                          (state.lastMonthIncome == null ||
-                                                  state.totalIncome >=
-                                                      state.lastMonthIncome!)
-                                              ? Icons.arrow_upward
-                                              : Icons.arrow_downward,
-                                          color: Colors.white,
-                                          size: 14,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          t.text(
-                                            AppStringKeys.homeMonthIncome,
-                                            params: {
-                                              'month': _homeMonthShortLabel(
-                                                state.selectedYear,
-                                                state.selectedMonth,
-                                              ),
-                                            },
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    _homeMoney(state.totalIncome),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  if (state.lastMonthIncome != null &&
-                                      state.lastMonthIncome! > 0)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 4),
-                                      child: Text(
-                                        t.text(
-                                          AppStringKeys.homeVsLastMonth,
-                                          params: {
-                                            'direction': state.totalIncome >= state.lastMonthIncome! ? '↑' : '↓',
-                                            'percent': (((state.totalIncome - state.lastMonthIncome!) / state.lastMonthIncome!).abs() * 100).toStringAsFixed(0),
-                                          },
-                                        ),
-                                        style: TextStyle(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.6,
-                                          ),
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // ── 4. 资产管理入口 ───────────────────────────────────────
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                      child: FutureBuilder<_HomeAssetSummary>(
-                        future: _assetSummaryFuture,
-                        builder: (context, snapshot) {
-                          final summary = snapshot.data;
-                          return PressFeedback(
-                            onTap: () async {
-                              await context.push('/asset');
-                              if (!mounted) return;
-                              setState(() {
-                                _assetSummaryFuture = _loadAssetSummary();
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF4F1FF),
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.04),
-                                    blurRadius: 16,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primary.withValues(alpha: 0.08),
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    child: const Icon(
-                                      Icons.account_balance_wallet_outlined,
-                                      color: AppColors.primary,
-                                      size: 22,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                t.text(AppStringKeys.homeAssetsTitle),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Color(0xFF1A1A2E),
+                                          SizedBox(width: compact ? 6 : 8),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  getIt<AppProfileService>()
+                                                      .appTitle,
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    fontSize: compact ? 18 : 20,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
                                                 ),
+                                                Text(
+                                                  monthStr,
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    fontSize: compact ? 12 : 13,
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(width: compact ? 12 : 16),
+                                    PressFeedback(
+                                      onTap: () => context.go('/settings'),
+                                      child: Container(
+                                        width: compact ? 40 : 44,
+                                        height: compact ? 40 : 44,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary,
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: AppColors.primary
+                                                  .withValues(alpha: 0.28),
+                                              blurRadius: 12,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Icon(
+                                          Icons.settings_outlined,
+                                          color: Colors.white,
+                                          size: 22,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 16),
+                            ),
+
+                            // ── 3. 本月收支汇总卡片 ────────────────────────────────
+                            SliverToBoxAdapter(
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFF6B4DFF),
+                                      Color(0xFF4A47D8),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primary.withValues(
+                                        alpha: 0.25,
+                                      ),
+                                      blurRadius: 16,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                          vertical: 18,
+                                        ),
+                                        decoration: const BoxDecoration(
+                                          borderRadius: BorderRadius.only(
+                                            topLeft: Radius.circular(16),
+                                            bottomLeft: Radius.circular(16),
+                                          ),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.all(
+                                                    6,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white
+                                                        .withValues(alpha: 0.2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                  ),
+                                                  child: Icon(
+                                                    (state.lastMonthExpense ==
+                                                                null ||
+                                                            state.totalExpense >=
+                                                                state
+                                                                    .lastMonthExpense!)
+                                                        ? Icons.arrow_upward
+                                                        : Icons.arrow_downward,
+                                                    color: Colors.white,
+                                                    size: 14,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    t.text(
+                                                      AppStringKeys
+                                                          .homeMonthExpense,
+                                                      params: {
+                                                        'month':
+                                                            _homeMonthShortLabel(
+                                                              state
+                                                                  .selectedYear,
+                                                              state
+                                                                  .selectedMonth,
+                                                            ),
+                                                      },
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: TextStyle(
+                                                      color: Colors.white70,
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 10),
+                                            Text(
+                                              _homeMoney(state.totalExpense),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.bold,
+                                                letterSpacing: -0.5,
                                               ),
                                             ),
-                                            const SizedBox(width: 6),
-                                            Container(
-                                              constraints: const BoxConstraints(
-                                                maxWidth: 112,
-                                              ),
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 7,
-                                                vertical: 3,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.primary.withValues(alpha: 0.08),
-                                                borderRadius:
-                                                    BorderRadius.circular(7),
-                                              ),
-                                              child: FittedBox(
-                                                fit: BoxFit.scaleDown,
+                                            if (state.lastMonthExpense !=
+                                                    null &&
+                                                state.lastMonthExpense! > 0)
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                  top: 4,
+                                                ),
                                                 child: Text(
-                                                  t.text(AppStringKeys.homeAssetsBadge),
-                                                  maxLines: 1,
-                                                  style: const TextStyle(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: AppColors.primary,
+                                                  t.text(
+                                                    AppStringKeys
+                                                        .homeVsLastMonth,
+                                                    params: {
+                                                      'direction':
+                                                          state.totalExpense >=
+                                                              state
+                                                                  .lastMonthExpense!
+                                                          ? '↑'
+                                                          : '↓',
+                                                      'percent':
+                                                          (((state.totalExpense -
+                                                                              state.lastMonthExpense!) /
+                                                                          state
+                                                                              .lastMonthExpense!)
+                                                                      .abs() *
+                                                                  100)
+                                                              .toStringAsFixed(
+                                                                0,
+                                                              ),
+                                                    },
+                                                  ),
+                                                  style: TextStyle(
+                                                    color: Colors.white
+                                                        .withValues(alpha: 0.6),
+                                                    fontSize: 12,
                                                   ),
                                                 ),
                                               ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      width: 1,
+                                      height: 60,
+                                      color: Colors.white30,
+                                    ),
+                                    Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                          vertical: 18,
+                                        ),
+                                        decoration: const BoxDecoration(
+                                          borderRadius: BorderRadius.only(
+                                            topRight: Radius.circular(16),
+                                            bottomRight: Radius.circular(16),
+                                          ),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.all(
+                                                    6,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white
+                                                        .withValues(alpha: 0.2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                  ),
+                                                  child: Icon(
+                                                    (state.lastMonthIncome ==
+                                                                null ||
+                                                            state.totalIncome >=
+                                                                state
+                                                                    .lastMonthIncome!)
+                                                        ? Icons.arrow_upward
+                                                        : Icons.arrow_downward,
+                                                    color: Colors.white,
+                                                    size: 14,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    t.text(
+                                                      AppStringKeys
+                                                          .homeMonthIncome,
+                                                      params: {
+                                                        'month':
+                                                            _homeMonthShortLabel(
+                                                              state
+                                                                  .selectedYear,
+                                                              state
+                                                                  .selectedMonth,
+                                                            ),
+                                                      },
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: TextStyle(
+                                                      color: Colors.white70,
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                            const SizedBox(width: 6),
-                                            PressFeedback(
-                                              onTap: () => _setAssetPrivacyHidden(
-                                                !_assetPrivacyHidden,
+                                            const SizedBox(height: 10),
+                                            Text(
+                                              _homeMoney(state.totalIncome),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.bold,
+                                                letterSpacing: -0.5,
                                               ),
-                                              child: Container(
-                                                width: 32,
-                                                height: 32,
-                                                alignment: Alignment.center,
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xFFF6F6F9),
-                                                  borderRadius:
-                                                      BorderRadius.circular(9),
+                                            ),
+                                            if (state.lastMonthIncome != null &&
+                                                state.lastMonthIncome! > 0)
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                  top: 4,
                                                 ),
-                                                child: Icon(
+                                                child: Text(
+                                                  t.text(
+                                                    AppStringKeys
+                                                        .homeVsLastMonth,
+                                                    params: {
+                                                      'direction':
+                                                          state.totalIncome >=
+                                                              state
+                                                                  .lastMonthIncome!
+                                                          ? '↑'
+                                                          : '↓',
+                                                      'percent':
+                                                          (((state.totalIncome -
+                                                                              state.lastMonthIncome!) /
+                                                                          state
+                                                                              .lastMonthIncome!)
+                                                                      .abs() *
+                                                                  100)
+                                                              .toStringAsFixed(
+                                                                0,
+                                                              ),
+                                                    },
+                                                  ),
+                                                  style: TextStyle(
+                                                    color: Colors.white
+                                                        .withValues(alpha: 0.6),
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            // ── 4. 资产管理入口 ───────────────────────────────────────
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  20,
+                                  16,
+                                  20,
+                                  0,
+                                ),
+                                child: FutureBuilder<_HomeAssetSummary>(
+                                  future: _assetSummaryFuture,
+                                  builder: (context, snapshot) {
+                                    final summary = snapshot.data;
+                                    return PressFeedback(
+                                      onTap: () async {
+                                        await context.push('/asset');
+                                        if (!mounted) return;
+                                        setState(() {
+                                          _assetSummaryFuture =
+                                              _loadAssetSummary();
+                                        });
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF4F1FF),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(
+                                                alpha: 0.04,
+                                              ),
+                                              blurRadius: 16,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            Container(
+                                              width: 44,
+                                              height: 44,
+                                              decoration: BoxDecoration(
+                                                color: AppColors.primary
+                                                    .withValues(alpha: 0.08),
+                                                borderRadius:
+                                                    BorderRadius.circular(14),
+                                              ),
+                                              child: const Icon(
+                                                Icons
+                                                    .account_balance_wallet_outlined,
+                                                color: AppColors.primary,
+                                                size: 22,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 14),
+                                            Expanded(
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: Text(
+                                                          t.text(
+                                                            AppStringKeys
+                                                                .homeAssetsTitle,
+                                                          ),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style:
+                                                              const TextStyle(
+                                                                fontSize: 14,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                color: Color(
+                                                                  0xFF1A1A2E,
+                                                                ),
+                                                              ),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 6),
+                                                      Container(
+                                                        constraints:
+                                                            const BoxConstraints(
+                                                              maxWidth: 112,
+                                                            ),
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 7,
+                                                              vertical: 3,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color: AppColors
+                                                              .primary
+                                                              .withValues(
+                                                                alpha: 0.08,
+                                                              ),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                7,
+                                                              ),
+                                                        ),
+                                                        child: FittedBox(
+                                                          fit: BoxFit.scaleDown,
+                                                          child: Text(
+                                                            t.text(
+                                                              AppStringKeys
+                                                                  .homeAssetsBadge,
+                                                            ),
+                                                            maxLines: 1,
+                                                            style:
+                                                                const TextStyle(
+                                                                  fontSize: 11,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500,
+                                                                  color: AppColors
+                                                                      .primary,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 6),
+                                                      PressFeedback(
+                                                        onTap: () =>
+                                                            _setAssetPrivacyHidden(
+                                                              !_assetPrivacyHidden,
+                                                            ),
+                                                        child: Container(
+                                                          width: 32,
+                                                          height: 32,
+                                                          alignment:
+                                                              Alignment.center,
+                                                          decoration: BoxDecoration(
+                                                            color: const Color(
+                                                              0xFFF6F6F9,
+                                                            ),
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  9,
+                                                                ),
+                                                          ),
+                                                          child: Icon(
+                                                            _assetPrivacyHidden
+                                                                ? Icons
+                                                                      .visibility_off_outlined
+                                                                : Icons
+                                                                      .visibility_outlined,
+                                                            color: const Color(
+                                                              0xFF8E8E8E,
+                                                            ),
+                                                            size: 19,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 10),
+                                                  LayoutBuilder(
+                                                    builder: (context, constraints) {
+                                                      final amountRow =
+                                                          _assetPrivacyHidden
+                                                          ? Text(
+                                                              '${AppFormatter.currencySymbol(currencyCode: getIt<AppProfileService>().currentBaseCurrency, locale: getIt<AppProfileService>().currentLocale)} ••••••••',
+                                                              style: const TextStyle(
+                                                                fontSize: 18,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                color: Color(
+                                                                  0xFF1A1A2E,
+                                                                ),
+                                                              ),
+                                                            )
+                                                          : Row(
+                                                              mainAxisSize:
+                                                                  MainAxisSize
+                                                                      .min,
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .baseline,
+                                                              textBaseline:
+                                                                  TextBaseline
+                                                                      .alphabetic,
+                                                              children: [
+                                                                Text(
+                                                                  summary ==
+                                                                          null
+                                                                      ? '--'
+                                                                      : _homeMoney(
+                                                                          summary
+                                                                              .totalAssets,
+                                                                        ),
+                                                                  style: const TextStyle(
+                                                                    fontSize:
+                                                                        18,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    color: Color(
+                                                                      0xFF1A1A2E,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                if (summary !=
+                                                                        null &&
+                                                                    summary.totalAssetChangeAmount !=
+                                                                        0) ...[
+                                                                  const SizedBox(
+                                                                    width: 8,
+                                                                  ),
+                                                                  Icon(
+                                                                    summary.totalAssetChangeAmount >=
+                                                                            0
+                                                                        ? Icons
+                                                                              .arrow_upward
+                                                                        : Icons
+                                                                              .arrow_downward,
+                                                                    color: _homeMarketChangeColor(
+                                                                      summary
+                                                                          .totalAssetChangeAmount,
+                                                                    ),
+                                                                    size: 14,
+                                                                  ),
+                                                                  const SizedBox(
+                                                                    width: 2,
+                                                                  ),
+                                                                  Text(
+                                                                    '${summary.totalAssetChangeAmount >= 0 ? '+' : ''}${summary.totalAssetChangeAmount.toStringAsFixed(0)}',
+                                                                    style: TextStyle(
+                                                                      fontSize:
+                                                                          13,
+                                                                      color: _homeMarketChangeColor(
+                                                                        summary
+                                                                            .totalAssetChangeAmount,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                  if (summary
+                                                                          .totalAssetChangePercent !=
+                                                                      null)
+                                                                    Text(
+                                                                      ' (${summary.totalAssetChangePercent! >= 0 ? '+' : ''}${summary.totalAssetChangePercent!.toStringAsFixed(2)}%)',
+                                                                      style: TextStyle(
+                                                                        fontSize:
+                                                                            13,
+                                                                        color: _homeMarketChangeColor(
+                                                                          summary
+                                                                              .totalAssetChangePercent!,
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                ],
+                                                              ],
+                                                            );
+
+                                                      return SizedBox(
+                                                        width: constraints
+                                                            .maxWidth,
+                                                        child: FittedBox(
+                                                          fit: BoxFit.scaleDown,
+                                                          alignment: Alignment
+                                                              .centerLeft,
+                                                          child: amountRow,
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                  const SizedBox(height: 8),
                                                   _assetPrivacyHidden
-                                                      ? Icons
-                                                            .visibility_off_outlined
-                                                      : Icons.visibility_outlined,
-                                                  color: const Color(0xFF8E8E8E),
-                                                  size: 19,
-                                                ),
+                                                      ? Text(
+                                                          t.text(
+                                                            AppStringKeys
+                                                                .homeStocksSummaryHidden,
+                                                            params: {
+                                                              'count':
+                                                                  '${summary?.stockCount ?? '--'}',
+                                                            },
+                                                          ),
+                                                          style:
+                                                              const TextStyle(
+                                                                fontSize: 12,
+                                                                color: Color(
+                                                                  0xFF8E8E8E,
+                                                                ),
+                                                              ),
+                                                        )
+                                                      : Text(
+                                                          (() {
+                                                            final count =
+                                                                summary
+                                                                    ?.stockCount ??
+                                                                '--';
+                                                            final percent = summary
+                                                                ?.stockProfitPercent;
+                                                            final percentText =
+                                                                percent == null
+                                                                ? '--'
+                                                                : '${percent >= 0 ? '+' : ''}${percent.toStringAsFixed(2)}%';
+                                                            return t.text(
+                                                              AppStringKeys
+                                                                  .homeStocksSummaryVisible,
+                                                              params: {
+                                                                'count':
+                                                                    '$count',
+                                                                'percent':
+                                                                    percentText,
+                                                              },
+                                                            );
+                                                          })(),
+                                                          style:
+                                                              const TextStyle(
+                                                                fontSize: 12,
+                                                                color: Color(
+                                                                  0xFF8E8E8E,
+                                                                ),
+                                                              ),
+                                                        ),
+                                                ],
                                               ),
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(height: 10),
-                                        LayoutBuilder(
-                                          builder: (context, constraints) {
-                                            final amountRow =
-                                                _assetPrivacyHidden
-                                                ? Text(
-                                                    '${AppFormatter.currencySymbol(currencyCode: getIt<AppProfileService>().currentBaseCurrency, locale: getIt<AppProfileService>().currentLocale)} ••••••••',
-                                                    style: const TextStyle(
-                                                      fontSize: 18,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: Color(0xFF1A1A2E),
-                                                    ),
-                                                  )
-                                                : Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .baseline,
-                                                    textBaseline:
-                                                        TextBaseline.alphabetic,
-                                                    children: [
-                                                      Text(
-                                                        summary == null ? '--' : _homeMoney(summary.totalAssets),
-                                                        style: const TextStyle(
-                                                          fontSize: 18,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          color: Color(
-                                                            0xFF1A1A2E,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      if (summary != null &&
-                                                          summary.totalAssetChangeAmount !=
-                                                              0) ...[
-                                                        const SizedBox(
-                                                          width: 8,
-                                                        ),
-                                                        Icon(
-                                                          summary.totalAssetChangeAmount >=
-                                                                  0
-                                                              ? Icons
-                                                                    .arrow_upward
-                                                              : Icons
-                                                                    .arrow_downward,
-                                                          color: _homeMarketChangeColor(
-                                                            summary.totalAssetChangeAmount,
-                                                          ),
-                                                          size: 14,
-                                                        ),
-                                                        const SizedBox(
-                                                          width: 2,
-                                                        ),
-                                                        Text(
-                                                          '${summary.totalAssetChangeAmount >= 0 ? '+' : ''}${summary.totalAssetChangeAmount.toStringAsFixed(0)}',
-                                                          style: TextStyle(
-                                                            fontSize: 13,
-                                                            color: _homeMarketChangeColor(
-                                                              summary.totalAssetChangeAmount,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        if (summary
-                                                                .totalAssetChangePercent !=
-                                                            null)
-                                                          Text(
-                                                            ' (${summary.totalAssetChangePercent! >= 0 ? '+' : ''}${summary.totalAssetChangePercent!.toStringAsFixed(2)}%)',
-                                                            style: TextStyle(
-                                                              fontSize: 13,
-                                                              color: _homeMarketChangeColor(
-                                                                summary.totalAssetChangePercent!,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                      ],
-                                                    ],
-                                                  );
-
-                                            return SizedBox(
-                                              width: constraints.maxWidth,
-                                              child: FittedBox(
-                                                fit: BoxFit.scaleDown,
-                                                alignment: Alignment.centerLeft,
-                                                child: amountRow,
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                        const SizedBox(height: 8),
-                                        _assetPrivacyHidden
-                                            ? Text(
-                                                t.text(
-                                                  AppStringKeys.homeStocksSummaryHidden,
-                                                  params: {'count': '${summary?.stockCount ?? '--'}'},
-                                                ),
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: Color(0xFF8E8E8E),
-                                                ),
-                                              )
-                                            : Text(
-                                                (() {
-                                                  final count =
-                                                      summary?.stockCount ?? '--';
-                                                  final percent =
-                                                      summary?.stockProfitPercent;
-                                                  final percentText =
-                                                      percent == null
-                                                      ? '--'
-                                                      : '${percent >= 0 ? '+' : ''}${percent.toStringAsFixed(2)}%';
-                                                  return t.text(
-                                                    AppStringKeys.homeStocksSummaryVisible,
-                                                    params: {
-                                                      'count': '$count',
-                                                      'percent': percentText,
-                                                    },
-                                                  );
-                                                })(),
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: Color(0xFF8E8E8E),
-                                                ),
-                                              ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-
-                  // ── 5. AI记账区域 ────────────────────────────────────────
-
-
-                  // ── 6. 快捷记账区域 ──────────────────────────────────────
-                  SliverToBoxAdapter(
-                    child: BlocBuilder<CustomCategoryBloc, CustomCategoryState>(
-                      builder: (context, catState) => _QuickChipsGrid(
-                        bloc: _bloc,
-                        catState: catState,
-                        onTap: (id, name, icon) =>
-                            _showAmountDialog(id, name, icon),
-                      ),
-                    ),
-                  ),
-
-                  // ── 7. 最近账单标题 ────────────────────────────────────
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            AppStrings.of(context).text(AppStringKeys.homeRecentEntriesTitle),
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          PressFeedback(
-                            onTap: () => context.go('/transactions'),
-                            child: Text(
-                              AppStrings.of(context).text(AppStringKeys.homeRecentEntriesSeeAll),
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // ── 8. 最近账单列表 ─────────────────────────────────────
-                  state.entries.isEmpty
-                      ? SliverToBoxAdapter(
-                          child: Center(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 40),
-                              child: Column(
-                                children: [
-                                  Container(
-                                    width: 72,
-                                    height: 72,
-                                    decoration: BoxDecoration(
-                                      color: const Color(
-                                        0xFF4A47D8,
-                                      ).withValues(alpha: 0.1),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.receipt_long,
-                                      size: 36,
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    AppStrings.of(context).text(AppStringKeys.homeRecentEntriesEmptyTitle),
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    AppStrings.of(context).text(AppStringKeys.homeRecentEntriesEmptySubtitle),
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        )
-                      : SliverToBoxAdapter(
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 20),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFAF9FF),
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.04),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              padding: EdgeInsets.zero,
-                              itemCount: state.entries.take(20).length,
-                              itemBuilder: (context, index) {
-                                final entry = state.entries[index];
-                                final catDef =
-                                    CategoryDef.findById(entry.category) ??
-                                    CategoryDef(
-                                      id: 'other',
-                                      name: AppStrings.of(context).text(
-                                        AppStringKeys.transactionsOtherCategory,
                                       ),
-                                      icon: '📦',
                                     );
-                                final categoryName = _homeCategoryName(
-                                  catDef.id,
-                                  catDef.name,
-                                );
-                                return ListTile(
-                                  leading: Container(
-                                    width: 44,
-                                    height: 44,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFFA11A),
-                                      borderRadius: BorderRadius.circular(14),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: const Color(0xFFFFA11A).withValues(alpha: 0.28),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Text(
-                                      catDef.icon,
-                                      style: const TextStyle(fontSize: 22),
-                                    ),
-                                  ),
-                                  title: Text(
-                                    entry.description.isEmpty
-                                        ? categoryName
-                                        : entry.description,
-                                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                                  ),
-                                  subtitle: Text(
-                                    _formatTime(entry.date),
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                  trailing: Text(
-                                    '${entry.type == EntryType.income ? '+' : '-'}${_homeMoney(entry.amount)}',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: entry.type == EntryType.income
-                                          ? AppColors.primary
-                                          : Colors.black87,
-                                    ),
-                                  ),
-                                );
-                              },
+                                  },
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
 
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                ],
+                            // ── 5. AI记账区域 ────────────────────────────────────────
+
+                            // ── 6. 快捷记账区域 ──────────────────────────────────────
+                            SliverToBoxAdapter(
+                              child:
+                                  BlocBuilder<
+                                    CustomCategoryBloc,
+                                    CustomCategoryState
+                                  >(
+                                    builder: (context, catState) =>
+                                        _QuickChipsGrid(
+                                          bloc: _bloc,
+                                          catState: catState,
+                                          onTap: (id, name, icon) =>
+                                              _showAmountDialog(id, name, icon),
+                                        ),
+                                  ),
+                            ),
+
+                            // ── 7. 最近账单标题 ────────────────────────────────────
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  20,
+                                  16,
+                                  20,
+                                  8,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      AppStrings.of(context).text(
+                                        AppStringKeys.homeRecentEntriesTitle,
+                                      ),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    PressFeedback(
+                                      onTap: () => context.go('/transactions'),
+                                      child: Text(
+                                        AppStrings.of(context).text(
+                                          AppStringKeys.homeRecentEntriesSeeAll,
+                                        ),
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            // ── 8. 最近账单列表 ─────────────────────────────────────
+                            state.entries.isEmpty
+                                ? SliverToBoxAdapter(
+                                    child: Center(
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 40,
+                                        ),
+                                        child: Column(
+                                          children: [
+                                            Container(
+                                              width: 72,
+                                              height: 72,
+                                              decoration: BoxDecoration(
+                                                color: const Color(
+                                                  0xFF4A47D8,
+                                                ).withValues(alpha: 0.1),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(
+                                                Icons.receipt_long,
+                                                size: 36,
+                                                color: AppColors.primary,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Text(
+                                              AppStrings.of(context).text(
+                                                AppStringKeys
+                                                    .homeRecentEntriesEmptyTitle,
+                                              ),
+                                              style: TextStyle(
+                                                fontSize: 17,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              AppStrings.of(context).text(
+                                                AppStringKeys
+                                                    .homeRecentEntriesEmptySubtitle,
+                                              ),
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : SliverToBoxAdapter(
+                                    child: Container(
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFAF9FF),
+                                        borderRadius: BorderRadius.circular(20),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.04,
+                                            ),
+                                            blurRadius: 16,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                      child: ListView.builder(
+                                        shrinkWrap: true,
+                                        physics:
+                                            const NeverScrollableScrollPhysics(),
+                                        padding: EdgeInsets.zero,
+                                        itemCount: state.entries
+                                            .take(20)
+                                            .length,
+                                        itemBuilder: (context, index) {
+                                          final entry = state.entries[index];
+                                          final catDef =
+                                              CategoryDef.findById(
+                                                entry.category,
+                                              ) ??
+                                              CategoryDef(
+                                                id: 'other',
+                                                name: AppStrings.of(context).text(
+                                                  AppStringKeys
+                                                      .transactionsOtherCategory,
+                                                ),
+                                                icon: '📦',
+                                              );
+                                          final categoryName =
+                                              _homeCategoryName(
+                                                catDef.id,
+                                                catDef.name,
+                                              );
+                                          final catColor =
+                                              AppColors.getCategoryColor(
+                                                catDef.id,
+                                              );
+                                          return ListTile(
+                                            leading: Container(
+                                              width: 44,
+                                              height: 44,
+                                              alignment: Alignment.center,
+                                              decoration: BoxDecoration(
+                                                color: catColor.withValues(
+                                                  alpha: 0.15,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(14),
+                                              ),
+                                              child: Text(
+                                                catDef.icon,
+                                                style: const TextStyle(
+                                                  fontSize: 22,
+                                                ),
+                                              ),
+                                            ),
+                                            title: Text(
+                                              entry.description.isEmpty
+                                                  ? categoryName
+                                                  : entry.description,
+                                              style: const TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            subtitle: Text(
+                                              _formatTime(entry.date),
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                            trailing: Text(
+                                              '${entry.type == EntryType.income ? '+' : '-'}${_homeMoney(entry.amount)}',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                                color:
+                                                    entry.type ==
+                                                        EntryType.income
+                                                    ? AppColors.primary
+                                                    : Colors.black87,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ),
+
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 24),
+                            ),
+                          ],
                         );
                       },
                     ),
@@ -1561,11 +1711,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: Text(AppStrings.of(ctx).text(AppStringKeys.commonCancel)),
+                child: Text(
+                  AppStrings.of(ctx).text(AppStringKeys.commonCancel),
+                ),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: Text(AppStrings.of(ctx).text(AppStringKeys.homePrivacyAgree)),
+                child: Text(
+                  AppStrings.of(ctx).text(AppStringKeys.homePrivacyAgree),
+                ),
               ),
             ],
           ),
@@ -1691,16 +1845,16 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  AppStrings.of(sheetCtx).text(
-                    AppStringKeys.homeEditCategoriesTitle,
-                  ),
+                  AppStrings.of(
+                    sheetCtx,
+                  ).text(AppStringKeys.homeEditCategoriesTitle),
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  AppStrings.of(sheetCtx).text(
-                    AppStringKeys.homeEditCategoriesSubtitle,
-                  ),
+                  AppStrings.of(
+                    sheetCtx,
+                  ).text(AppStringKeys.homeEditCategoriesSubtitle),
                   style: TextStyle(fontSize: 13, color: Colors.grey),
                 ),
                 const SizedBox(height: 16),
@@ -1710,9 +1864,9 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _CategorySection(
-                          title: AppStrings.of(sheetCtx).text(
-                            AppStringKeys.reportsExpense,
-                          ),
+                          title: AppStrings.of(
+                            sheetCtx,
+                          ).text(AppStringKeys.reportsExpense),
                           categories: allExpense,
                           selected: selected,
                           onToggle: (id) => setSheetState(() {
@@ -1725,9 +1879,9 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                         ),
                         const SizedBox(height: 16),
                         _CategorySection(
-                          title: AppStrings.of(sheetCtx).text(
-                            AppStringKeys.reportsIncome,
-                          ),
+                          title: AppStrings.of(
+                            sheetCtx,
+                          ).text(AppStringKeys.reportsIncome),
                           categories: allIncome,
                           selected: selected,
                           onToggle: (id) => setSheetState(() {
@@ -1817,7 +1971,9 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        AppStrings.of(context).text(AppStringKeys.homeQuickAddTitle),
+                        AppStrings.of(
+                          context,
+                        ).text(AppStringKeys.homeQuickAddTitle),
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -1825,9 +1981,9 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        AppStrings.of(context).text(
-                          AppStringKeys.homeQuickAddSubtitle,
-                        ),
+                        AppStrings.of(
+                          context,
+                        ).text(AppStringKeys.homeQuickAddSubtitle),
                         softWrap: true,
                         style: TextStyle(
                           fontSize: 12,
@@ -1856,12 +2012,12 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                   fontWeight: FontWeight.w600,
                 ),
                 decoration: InputDecoration(
-                  labelText: AppStrings.of(context).text(
-                    AppStringKeys.homeAmountLabel,
-                  ),
-                  hintText: AppStrings.of(context).text(
-                    AppStringKeys.homeAmountHint,
-                  ),
+                  labelText: AppStrings.of(
+                    context,
+                  ).text(AppStringKeys.homeAmountLabel),
+                  hintText: AppStrings.of(
+                    context,
+                  ).text(AppStringKeys.homeAmountHint),
                   prefixText: _homeCurrencyPrefix(),
                   filled: true,
                   fillColor: Colors.transparent,
@@ -1884,9 +2040,9 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
             Row(
               children: [
                 Text(
-                  AppStrings.of(context).text(
-                    AppStringKeys.transactionsSelectCategory,
-                  ),
+                  AppStrings.of(
+                    context,
+                  ).text(AppStringKeys.transactionsSelectCategory),
                   style: TextStyle(fontSize: 13, color: Colors.grey),
                 ),
                 const Spacer(),
@@ -1961,7 +2117,9 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        AppStrings.of(context).text(AppStringKeys.homeInvalidAmount),
+                        AppStrings.of(
+                          context,
+                        ).text(AppStringKeys.homeInvalidAmount),
                       ),
                       duration: Duration(seconds: 1),
                     ),
@@ -1979,7 +2137,9 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                       amount: amount,
                       type: entryType,
                       category: category.id,
-                      description: _selectedName ?? _homeCategoryName(category.id, category.name),
+                      description:
+                          _selectedName ??
+                          _homeCategoryName(category.id, category.name),
                       date: DateTime.now(),
                       createdAt: DateTime.now(),
                       originalCurrency: _homeBaseCurrency(),
@@ -2003,7 +2163,9 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                   ),
                 );
               },
-              child: Text(AppStrings.of(context).text(AppStringKeys.commonConfirm)),
+              child: Text(
+                AppStrings.of(context).text(AppStringKeys.commonConfirm),
+              ),
             ),
           ],
         ),
@@ -2052,9 +2214,7 @@ class _CategorySection extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primary
-                      : Colors.grey.shade100,
+                  color: isSelected ? AppColors.primary : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -2103,10 +2263,16 @@ class _QuickChipsGridState extends State<_QuickChipsGrid> {
   Widget build(BuildContext context) {
     // 构建所有可用类目（全部系统内置 + 自定义）
     final allExpense = CategoryDef.expenseCategories
-        .map((c) => (id: c.id, name: _homeCategoryName(c.id, c.name), icon: c.icon))
+        .map(
+          (c) =>
+              (id: c.id, name: _homeCategoryName(c.id, c.name), icon: c.icon),
+        )
         .toList();
     final allIncome = CategoryDef.incomeCategories
-        .map((c) => (id: c.id, name: _homeCategoryName(c.id, c.name), icon: c.icon))
+        .map(
+          (c) =>
+              (id: c.id, name: _homeCategoryName(c.id, c.name), icon: c.icon),
+        )
         .toList();
     final custom = widget.catState.status == CustomCategoryStatus.loaded
         ? widget.catState.categories
@@ -2146,7 +2312,9 @@ class _QuickChipsGridState extends State<_QuickChipsGrid> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                AppStrings.of(context).text(AppStringKeys.homeQuickAccountingTitle),
+                AppStrings.of(
+                  context,
+                ).text(AppStringKeys.homeQuickAccountingTitle),
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               PressFeedback(
@@ -2309,10 +2477,20 @@ class _QuickChipEditorPageState extends State<_QuickChipEditorPage> {
     final result = <({String id, String name, String icon, String section})>[];
 
     for (final c in CategoryDef.expenseCategories) {
-      result.add((id: c.id, name: c.name, icon: c.icon, section: _sectionExpense));
+      result.add((
+        id: c.id,
+        name: c.name,
+        icon: c.icon,
+        section: _sectionExpense,
+      ));
     }
     for (final c in CategoryDef.incomeCategories) {
-      result.add((id: c.id, name: c.name, icon: c.icon, section: _sectionIncome));
+      result.add((
+        id: c.id,
+        name: c.name,
+        icon: c.icon,
+        section: _sectionIncome,
+      ));
     }
     for (final c in state.categories) {
       result.add((
@@ -2377,9 +2555,9 @@ class _QuickChipEditorPageState extends State<_QuickChipEditorPage> {
         return Scaffold(
           appBar: AppBar(
             title: Text(
-              AppStrings.of(context).text(
-                AppStringKeys.homeManageQuickCategoriesTitle,
-              ),
+              AppStrings.of(
+                context,
+              ).text(AppStringKeys.homeManageQuickCategoriesTitle),
             ),
             leading: IconButton(
               icon: const Icon(Icons.close),
@@ -2392,13 +2570,17 @@ class _QuickChipEditorPageState extends State<_QuickChipEditorPage> {
               final horizontalPadding = isTablet
                   ? 24.0
                   : (constraints.maxWidth > 520 ? 16.0 : 0.0);
-              final maxContentWidth = isTablet ? 560.0 : (constraints.maxWidth > 560 ? 520.0 : constraints.maxWidth);
+              final maxContentWidth = isTablet
+                  ? 560.0
+                  : (constraints.maxWidth > 560 ? 520.0 : constraints.maxWidth);
 
               return Center(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: maxContentWidth),
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                    ),
                     child: ListView.builder(
                       itemCount: totalItems,
                       itemBuilder: (ctx, index) {
@@ -2424,7 +2606,10 @@ class _QuickChipEditorPageState extends State<_QuickChipEditorPage> {
                             final enabled = _enabledIds.contains(c.id);
                             return ListTile(
                               dense: true,
-                              leading: Text(c.icon, style: const TextStyle(fontSize: 18)),
+                              leading: Text(
+                                c.icon,
+                                style: const TextStyle(fontSize: 18),
+                              ),
                               title: Text(
                                 _homeCategoryName(c.id, c.name),
                                 style: const TextStyle(fontSize: 14),
@@ -2458,7 +2643,9 @@ class _QuickChipEditorPageState extends State<_QuickChipEditorPage> {
                   _bloc.add(SaveQuickChipIds(_enabledIds.toList()));
                   Navigator.pop(context);
                 },
-                child: Text(AppStrings.of(context).text(AppStringKeys.homeDone)),
+                child: Text(
+                  AppStrings.of(context).text(AppStringKeys.homeDone),
+                ),
               ),
             ),
           ),
@@ -2583,7 +2770,9 @@ class _AiConfirmSheetState extends State<_AiConfirmSheet> {
                 padding: EdgeInsets.symmetric(vertical: 20),
                 child: Center(
                   child: Text(
-                    AppStrings.of(context).text(AppStringKeys.homeAiResultsEmpty),
+                    AppStrings.of(
+                      context,
+                    ).text(AppStringKeys.homeAiResultsEmpty),
                   ),
                 ),
               )
@@ -2592,14 +2781,13 @@ class _AiConfirmSheetState extends State<_AiConfirmSheet> {
                 final r = _results[i];
                 final cat = CategoryDef.expenseCategories.firstWhere(
                   (c) => c.id == r.category,
-                  orElse: () =>
-                      CategoryDef(
-                        id: 'other',
-                        name: AppStrings.of(context).text(
-                          AppStringKeys.transactionsOtherCategory,
-                        ),
-                        icon: '📦',
-                      ),
+                  orElse: () => CategoryDef(
+                    id: 'other',
+                    name: AppStrings.of(
+                      context,
+                    ).text(AppStringKeys.transactionsOtherCategory),
+                    icon: '📦',
+                  ),
                 );
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),

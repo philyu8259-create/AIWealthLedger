@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/formatters/app_formatter.dart';
 import '../../../../../core/formatters/category_formatter.dart';
+import '../../../../../core/theme/app_colors.dart';
 import '../../../../../l10n/app_string_keys.dart';
 import '../../../../../l10n/app_strings.dart';
 import '../../../../../services/app_profile_service.dart';
@@ -43,11 +44,10 @@ class _TransactionsPageState extends State<TransactionsPage> {
     if (state.selectedDay != null) {
       return DateFormat.yMMMd(localeTag).format(state.selectedDay!);
     }
-    return DateFormat.yMMMM(localeTag).format(
-      DateTime(state.selectedYear, state.selectedMonth),
-    );
+    return DateFormat.yMMMM(
+      localeTag,
+    ).format(DateTime(state.selectedYear, state.selectedMonth));
   }
-
 
   @override
   void initState() {
@@ -102,11 +102,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                 color: const Color(0xFF4A47D8),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: compact ? 20 : 24,
-              ),
+              child: Icon(icon, color: Colors.white, size: compact ? 20 : 24),
             ),
           );
         }
@@ -141,7 +137,10 @@ class _TransactionsPageState extends State<TransactionsPage> {
                     decoration: BoxDecoration(
                       color: const Color(0xFFF4F1FF),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFF4A47D8), width: 1.5),
+                      border: Border.all(
+                        color: const Color(0xFF4A47D8),
+                        width: 1.5,
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -250,8 +249,8 @@ class _TransactionsPageState extends State<TransactionsPage> {
                     _filter == 'expense'
                         ? t.text(AppStringKeys.reportsExpense)
                         : _filter == 'income'
-                            ? t.text(AppStringKeys.reportsIncome)
-                            : t.text(AppStringKeys.transactionsFilterAll),
+                        ? t.text(AppStringKeys.reportsIncome)
+                        : t.text(AppStringKeys.transactionsFilterAll),
                     style: const TextStyle(fontSize: 14, color: Colors.white),
                   ),
                   const Icon(
@@ -388,7 +387,6 @@ class _TransactionsPageState extends State<TransactionsPage> {
       ),
     );
   }
-
 }
 
 /// 日期分组组件（带吸顶效果）
@@ -470,7 +468,10 @@ class _DateHeader extends StatelessWidget {
             children: [
               if (dayExpense > 0)
                 Text(
-                  '${t.text(AppStringKeys.transactionsDayExpense, params: {'amount': AppFormatter.formatCurrency(dayExpense, currencyCode: currency, locale: locale)})}  ',
+                  '${t.text(
+                    AppStringKeys.transactionsDayExpense,
+                    params: {'amount': AppFormatter.formatCurrency(dayExpense, currencyCode: currency, locale: locale)},
+                  )}  ',
                   style: const TextStyle(
                     color: Color(0xFF606266),
                     fontSize: 12,
@@ -526,13 +527,10 @@ class _EntryTileState extends State<_EntryTile> {
     final locale = getIt<AppProfileService>().currentLocale;
     final currency = widget.entry.baseCurrency;
     final t = AppStrings.of(context);
+    final catColor = AppColors.getCategoryColor(cat?.id ?? 'other');
     final categoryName = cat == null
         ? t.text(AppStringKeys.transactionsOtherCategory)
-        : localizedCategoryName(
-            id: cat.id,
-            fallback: cat.name,
-            locale: locale,
-          );
+        : localizedCategoryName(id: cat.id, fallback: cat.name, locale: locale);
 
     return Dismissible(
       key: Key(widget.entry.id),
@@ -579,17 +577,13 @@ class _EntryTileState extends State<_EntryTile> {
               height: 44,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFA11A),
+                color: catColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFFFA11A).withValues(alpha: 0.28),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
-              child: Text(cat?.icon ?? '📦', style: const TextStyle(fontSize: 24)),
+              child: Text(
+                cat?.icon ?? '📦',
+                style: const TextStyle(fontSize: 24),
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -640,7 +634,7 @@ class _EntryTileState extends State<_EntryTile> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: isEndToStart ? const Color(0xFF67C23A) : const Color(0xFF409EFF),
+        color: isEndToStart ? const Color(0xFF81C784) : const Color(0xFF64B5F6),
         borderRadius: BorderRadius.circular(12),
       ),
       alignment: isEndToStart ? Alignment.centerRight : Alignment.centerLeft,
@@ -725,11 +719,11 @@ class _EntryTileState extends State<_EntryTile> {
                 Clipboard.setData(
                   ClipboardData(text: widget.entry.amount.toStringAsFixed(2)),
                 );
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(
+                ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(t.text(AppStringKeys.transactionsCopySuccess)),
+                    content: Text(
+                      t.text(AppStringKeys.transactionsCopySuccess),
+                    ),
                   ),
                 );
               },
@@ -802,7 +796,9 @@ class _EntryTileState extends State<_EntryTile> {
                         decimal: true,
                       ),
                       decoration: InputDecoration(
-                        labelText: t.text(AppStringKeys.transactionsAmountLabel),
+                        labelText: t.text(
+                          AppStringKeys.transactionsAmountLabel,
+                        ),
                         prefixText: _currencyPrefix,
                         border: const OutlineInputBorder(),
                       ),
@@ -917,7 +913,9 @@ class _EntryTileState extends State<_EntryTile> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      t.text(AppStringKeys.transactionsInvalidAmount),
+                                      t.text(
+                                        AppStringKeys.transactionsInvalidAmount,
+                                      ),
                                     ),
                                   ),
                                 );
@@ -952,9 +950,7 @@ class _EntryTileState extends State<_EntryTile> {
     if (updatedEntry == null || !context.mounted) return;
 
     context.read<AccountBloc>().add(UpdateAccountEntry(updatedEntry));
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(t.text(AppStringKeys.transactionsUpdated))),
     );
   }
