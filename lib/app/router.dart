@@ -219,7 +219,7 @@ class MainScaffold extends StatelessWidget {
           padding: EdgeInsets.only(
             left: 22,
             right: 22,
-            bottom: MediaQuery.of(context).padding.bottom + 18,
+            bottom: MediaQuery.of(context).padding.bottom + 8,
           ),
           child: Container(
             decoration: BoxDecoration(
