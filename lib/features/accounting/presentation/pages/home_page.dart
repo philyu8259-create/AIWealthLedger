@@ -2028,7 +2028,10 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            AppStrings.of(context).text(AppStringKeys.homeQuickAddSubtitle),
+                            AppStrings.of(context).text(
+                              AppStringKeys.homeQuickAddSubtitle,
+                              params: {'count': visibleCategories.length.toString()},
+                            ),
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.88),
                               fontSize: 12,
