@@ -283,7 +283,7 @@ class MainScaffold extends StatelessWidget {
                               ),
                               child: const Center(
                                 child: AiSparklesIcon(
-                                  size: 24,
+                                  size: 27,
                                   color: Colors.white,
                                   accentColor: Color(0xFFF6E27A),
                                   strokeWidthFactor: 0.1,
@@ -339,7 +339,7 @@ class MainScaffold extends StatelessWidget {
                               child: const Icon(
                                 Icons.add_rounded,
                                 color: Colors.white,
-                                size: 28,
+                                size: 31,
                               ),
                             ),
                           ),
