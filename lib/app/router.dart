@@ -184,37 +184,42 @@ class MainScaffold extends StatelessWidget {
         bottom: false,
         child: Padding(
           padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            bottom: MediaQuery.of(context).padding.bottom + 16,
+            left: 22,
+            right: 22,
+            bottom: MediaQuery.of(context).padding.bottom + 18,
           ),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(36),
+              borderRadius: BorderRadius.circular(34),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF1A1A2E).withValues(alpha: 0.12),
-                  blurRadius: 24,
-                  offset: const Offset(0, 10),
+                  color: const Color(0xFF4A47D8).withValues(alpha: 0.10),
+                  blurRadius: 30,
+                  offset: const Offset(0, 12),
+                ),
+                BoxShadow(
+                  color: const Color(0xFF1A1A2E).withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(36),
+              borderRadius: BorderRadius.circular(34),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                    horizontal: 14,
+                    vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.85),
+                    color: Colors.white.withValues(alpha: 0.80),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      width: 1.5,
+                      color: Colors.white.withValues(alpha: 0.72),
+                      width: 1.2,
                     ),
-                    borderRadius: BorderRadius.circular(36),
+                    borderRadius: BorderRadius.circular(34),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -228,7 +233,7 @@ class MainScaffold extends StatelessWidget {
                             isSelected: _getCurrentIndex(context) == 0,
                             onTap: () => context.go('/home'),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                           _PremiumNavBarItem(
                             icon: Icons.receipt_long_outlined,
                             selectedIcon: Icons.receipt_long_rounded,
@@ -247,8 +252,8 @@ class MainScaffold extends StatelessWidget {
                               homeAiTrigger.value++;
                             },
                             child: Container(
-                              width: 48,
-                              height: 48,
+                              width: 44,
+                              height: 44,
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
                                   begin: Alignment.topLeft,
@@ -262,15 +267,19 @@ class MainScaffold extends StatelessWidget {
                                 boxShadow: [
                                   BoxShadow(
                                     color: const Color(0xFF8C35FF)
-                                        .withValues(alpha: 0.3),
-                                    blurRadius: 12,
+                                        .withValues(alpha: 0.24),
+                                    blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   ),
                                 ],
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.18),
+                                  width: 1,
+                                ),
                               ),
                               child: const Center(
                                 child: AiSparklesIcon(
-                                  size: 24,
+                                  size: 22,
                                   color: Colors.white,
                                   accentColor: Color(0xFFF6E27A),
                                   strokeWidthFactor: 0.1,
@@ -298,8 +307,8 @@ class MainScaffold extends StatelessWidget {
                               });
                             },
                             child: Container(
-                              width: 48,
-                              height: 48,
+                              width: 44,
+                              height: 44,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: const LinearGradient(
@@ -313,20 +322,20 @@ class MainScaffold extends StatelessWidget {
                                 boxShadow: [
                                   BoxShadow(
                                     color: const Color(0xFF4A47D8)
-                                        .withValues(alpha: 0.35),
-                                    blurRadius: 14,
+                                        .withValues(alpha: 0.28),
+                                    blurRadius: 12,
                                     offset: const Offset(0, 5),
                                   ),
                                 ],
                                 border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.3),
-                                  width: 1.5,
+                                  color: Colors.white.withValues(alpha: 0.38),
+                                  width: 1.2,
                                 ),
                               ),
                               child: const Icon(
                                 Icons.add_rounded,
                                 color: Colors.white,
-                                size: 28,
+                                size: 26,
                               ),
                             ),
                           ),
@@ -341,7 +350,7 @@ class MainScaffold extends StatelessWidget {
                             isSelected: _getCurrentIndex(context) == 2,
                             onTap: () => context.go('/reports'),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                           _PremiumNavBarItem(
                             icon: Icons.auto_awesome_outlined,
                             selectedIcon: Icons.auto_awesome_rounded,
@@ -387,8 +396,8 @@ class _PremiumNavBarItem extends StatelessWidget {
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutCubic,
         padding: EdgeInsets.symmetric(
-          horizontal: isSelected ? 14 : 10,
-          vertical: 10,
+          horizontal: isSelected ? 13 : 9,
+          vertical: 9,
         ),
         decoration: BoxDecoration(
           color: isSelected
@@ -399,7 +408,7 @@ class _PremiumNavBarItem extends StatelessWidget {
         child: Icon(
           isSelected ? selectedIcon : icon,
           color: isSelected ? AppColors.primary : const Color(0xFF9E9E9E),
-          size: 26,
+          size: 24,
         ),
       ),
     );
