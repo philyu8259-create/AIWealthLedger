@@ -256,8 +256,8 @@ class MainScaffold extends StatelessWidget {
                               homeAiTrigger.value++;
                             },
                             child: Container(
-                              width: 44,
-                              height: 44,
+                              width: 50,
+                              height: 50,
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
                                   begin: Alignment.topLeft,
@@ -283,7 +283,7 @@ class MainScaffold extends StatelessWidget {
                               ),
                               child: const Center(
                                 child: AiSparklesIcon(
-                                  size: 27,
+                                  size: 30,
                                   color: Colors.white,
                                   accentColor: Color(0xFFF6E27A),
                                   strokeWidthFactor: 0.1,
@@ -291,7 +291,7 @@ class MainScaffold extends StatelessWidget {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 14),
                           GestureDetector(
                             onTap: () {
                               HapticFeedback.mediumImpact();
@@ -311,8 +311,8 @@ class MainScaffold extends StatelessWidget {
                               });
                             },
                             child: Container(
-                              width: 44,
-                              height: 44,
+                              width: 50,
+                              height: 50,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: const LinearGradient(
@@ -339,7 +339,7 @@ class MainScaffold extends StatelessWidget {
                               child: const Icon(
                                 Icons.add_rounded,
                                 color: Colors.white,
-                                size: 31,
+                                size: 34,
                               ),
                             ),
                           ),
