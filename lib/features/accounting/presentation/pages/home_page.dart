@@ -1946,7 +1946,7 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
     final effectiveSelectedId =
         _selectedCategoryId ??
         (visibleCategories.isNotEmpty ? visibleCategories.first.id : 'food');
-    final bottomFloatingGap = mediaQuery.padding.bottom + 84;
+    final bottomFloatingGap = mediaQuery.padding.bottom + 88;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -1958,33 +1958,33 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
+              color: Colors.black.withValues(alpha: 0.16),
+              blurRadius: 28,
+              offset: const Offset(0, 12),
             ),
           ],
         ),
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Center(
                   child: Container(
-                    width: 40,
-                    height: 4,
+                    width: 44,
+                    height: 5,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
+                      color: const Color(0xFFE4E5EF),
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 Row(
                   children: [
                     Expanded(
@@ -2020,7 +2020,7 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                 Container(
                   decoration: BoxDecoration(
                     color: const Color(0xFFF7F8FA),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                   child: TextField(
                     controller: _amountController,
@@ -2047,11 +2047,11 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                         vertical: 18,
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(18),
                         borderSide: BorderSide.none,
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(18),
                         borderSide: const BorderSide(color: _primaryColor),
                       ),
                     ),
@@ -2127,9 +2127,9 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _primaryColor,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(18),
                     ),
                   ),
                   onPressed: () {
