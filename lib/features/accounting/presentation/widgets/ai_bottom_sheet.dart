@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/app_string_keys.dart';
+import '../../../../l10n/app_strings.dart';
 import 'ai_sparkles_icon.dart';
 import 'voice_pulse_button.dart';
 
@@ -15,6 +17,8 @@ void showAiBottomSheet({
   required VoidCallback onPickGallery,
   required void Function(String) onSubmitText,
 }) {
+  final t = AppStrings.of(context);
+
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -76,8 +80,8 @@ void showAiBottomSheet({
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'AI 记账',
+                                Text(
+                                  t.text(AppStringKeys.homeAiLedgerTitle),
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 17,
@@ -87,7 +91,7 @@ void showAiBottomSheet({
                                 ),
                                 const SizedBox(height: 10),
                                 Text(
-                                  '智能识别，自动拆分商品',
+                                  t.text(AppStringKeys.homeAiLedgerSubtitle),
                                   style: TextStyle(
                                     color: Colors.white.withValues(alpha: 0.88),
                                     fontSize: 12,
@@ -129,9 +133,9 @@ void showAiBottomSheet({
                               controller: textController,
                               maxLines: 4,
                               minLines: 4,
-                              decoration: const InputDecoration(
-                                hintText: '输入或使用下方按钮...',
-                                hintStyle: TextStyle(
+                              decoration: InputDecoration(
+                                hintText: t.text(AppStringKeys.homeAiInputPlaceholder),
+                                hintStyle: const TextStyle(
                                   color: Color(0xFFB7B8C7),
                                   fontSize: 16,
                                   fontWeight: FontWeight.w400,
@@ -146,7 +150,7 @@ void showAiBottomSheet({
                             children: [
                               _aiActionButton(
                                 icon: Icons.photo_camera_outlined,
-                                label: '拍照',
+                                label: t.text(AppStringKeys.homeTakePhoto),
                                 onTap: () {
                                   Navigator.pop(ctx);
                                   onPickCamera();
@@ -154,7 +158,7 @@ void showAiBottomSheet({
                               ),
                               _aiActionButton(
                                 icon: Icons.image_outlined,
-                                label: '相册',
+                                label: t.text(AppStringKeys.homeChooseFromLibrary),
                                 onTap: () {
                                   Navigator.pop(ctx);
                                   onPickGallery();
@@ -215,19 +219,19 @@ void showAiBottomSheet({
                                     ),
                                   ],
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    AiSparklesIcon(
+                                    const AiSparklesIcon(
                                       size: 17,
                                       color: Colors.white,
                                       accentColor: Colors.white,
                                       strokeWidthFactor: 0.11,
                                     ),
-                                    SizedBox(width: 8),
+                                    const SizedBox(width: 8),
                                     Text(
-                                      '开始智能识别',
-                                      style: TextStyle(
+                                      t.text(AppStringKeys.homeStartAiRecognition),
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 15,
                                         height: 1.0,

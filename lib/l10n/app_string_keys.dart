@@ -95,6 +95,11 @@ class AppStringKeys {
   static const homeStocksSummaryHidden = 'home.stocksSummaryHidden';
   static const homeStocksSummaryVisible = 'home.stocksSummaryVisible';
   static const homeAiLedgerTitle = 'home.aiLedgerTitle';
+  static const homeAiLedgerSubtitle = 'home.aiLedgerSubtitle';
+  static const homeAiInputPlaceholder = 'home.aiInputPlaceholder';
+  static const homeVoiceActionLabel = 'home.voiceActionLabel';
+  static const homeVoiceListeningLabel = 'home.voiceListeningLabel';
+  static const homeStartAiRecognition = 'home.startAiRecognition';
   static const homeInputHint = 'home.inputHint';
   static const homeAiRecognize = 'home.aiRecognize';
   static const homeEditCategoriesTitle = 'home.editCategoriesTitle';

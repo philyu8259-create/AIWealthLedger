@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_string_keys.dart';
+import '../../../../l10n/app_strings.dart';
 
 class VoicePulseButton extends StatefulWidget {
   final bool isListening;
@@ -49,6 +51,8 @@ class _VoicePulseButtonState extends State<VoicePulseButton>
 
   @override
   Widget build(BuildContext context) {
+    final t = AppStrings.of(context);
+
     return GestureDetector(
       onTap: widget.onTap,
       child: AnimatedBuilder(
@@ -88,7 +92,9 @@ class _VoicePulseButtonState extends State<VoicePulseButton>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  widget.isListening ? '正在倾听...' : '语音',
+                  widget.isListening
+                      ? t.text(AppStringKeys.homeVoiceListeningLabel)
+                      : t.text(AppStringKeys.homeVoiceActionLabel),
                   style: TextStyle(
                     color: widget.isListening
                         ? AppColors.primary

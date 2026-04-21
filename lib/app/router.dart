@@ -209,6 +209,11 @@ class MainScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final compactNav = MediaQuery.of(context).size.width < 410;
+    final outerHorizontalPadding = compactNav ? 16.0 : 22.0;
+    final innerHorizontalPadding = compactNav ? 8.0 : 14.0;
+    final navGap = compactNav ? 2.0 : 6.0;
+    final centerGap = compactNav ? 10.0 : 14.0;
 
     return Scaffold(
       extendBody: true,
@@ -217,8 +222,8 @@ class MainScaffold extends StatelessWidget {
         bottom: false,
         child: Padding(
           padding: EdgeInsets.only(
-            left: 22,
-            right: 22,
+            left: outerHorizontalPadding,
+            right: outerHorizontalPadding,
             bottom: MediaQuery.of(context).padding.bottom + 2,
           ),
           child: Container(
@@ -242,8 +247,8 @@ class MainScaffold extends StatelessWidget {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: innerHorizontalPadding,
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
@@ -265,17 +270,19 @@ class MainScaffold extends StatelessWidget {
                             selectedIcon: Icons.home_rounded,
                             label: t.text(AppStringKeys.navHome),
                             isSelected: _getCurrentIndex(context) == 0,
+                            compact: compactNav,
                             onTap: () {
                               clearPendingHomeOverlayRequests();
                               context.go('/home');
                             },
                           ),
-                          const SizedBox(width: 6),
+                          SizedBox(width: navGap),
                           _PremiumNavBarItem(
                             icon: Icons.receipt_long_outlined,
                             selectedIcon: Icons.receipt_long_rounded,
                             label: t.text(AppStringKeys.navTransactions),
                             isSelected: _getCurrentIndex(context) == 1,
+                            compact: compactNav,
                             onTap: () {
                               clearPendingHomeOverlayRequests();
                               context.go('/transactions');
@@ -334,7 +341,7 @@ class MainScaffold extends StatelessWidget {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 14),
+                          SizedBox(width: centerGap),
                           GestureDetector(
                             onTap: () {
                               HapticFeedback.mediumImpact();
@@ -390,17 +397,19 @@ class MainScaffold extends StatelessWidget {
                             selectedIcon: Icons.bar_chart_rounded,
                             label: t.text(AppStringKeys.navReports),
                             isSelected: _getCurrentIndex(context) == 2,
+                            compact: compactNav,
                             onTap: () {
                               clearPendingHomeOverlayRequests();
                               context.go('/reports');
                             },
                           ),
-                          const SizedBox(width: 6),
+                          SizedBox(width: navGap),
                           _PremiumNavBarItem(
                             icon: Icons.auto_awesome_outlined,
                             selectedIcon: Icons.auto_awesome_rounded,
                             label: t.text(AppStringKeys.navAnalysis),
                             isSelected: _getCurrentIndex(context) == 3,
+                            compact: compactNav,
                             onTap: () {
                               clearPendingHomeOverlayRequests();
                               context.go('/analysis');
@@ -425,6 +434,7 @@ class _PremiumNavBarItem extends StatelessWidget {
   final IconData selectedIcon;
   final String label;
   final bool isSelected;
+  final bool compact;
   final VoidCallback onTap;
 
   const _PremiumNavBarItem({
@@ -432,6 +442,7 @@ class _PremiumNavBarItem extends StatelessWidget {
     required this.selectedIcon,
     required this.label,
     required this.isSelected,
+    required this.compact,
     required this.onTap,
   });
 
@@ -447,7 +458,9 @@ class _PremiumNavBarItem extends StatelessWidget {
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutCubic,
         padding: EdgeInsets.symmetric(
-          horizontal: isSelected ? 12 : 10,
+          horizontal: compact
+              ? (isSelected ? 8 : 6)
+              : (isSelected ? 12 : 10),
           vertical: 6,
         ),
         decoration: BoxDecoration(
@@ -470,7 +483,7 @@ class _PremiumNavBarItem extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 10.5,
+                fontSize: compact ? 9.8 : 10.5,
                 fontWeight: FontWeight.w400,
                 height: 1.0,
                 letterSpacing: 0.1,
