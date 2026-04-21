@@ -2310,7 +2310,7 @@ class _QuickChipsGridState extends State<_QuickChipsGrid> {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2334,15 +2334,15 @@ class _QuickChipsGridState extends State<_QuickChipsGrid> {
               },
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 2.0,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 2.35,
             ),
             itemCount: chips.length,
             itemBuilder: (context, index) {
@@ -2384,18 +2384,22 @@ class _QuickChipItemState extends State<_QuickChipItem> {
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFFF5F5F5),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(10),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Text(widget.icon, style: const TextStyle(fontSize: 20)),
-            const SizedBox(width: 6),
+            Text(widget.icon, style: const TextStyle(fontSize: 24, height: 1)),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
                 widget.name,
-                style: const TextStyle(fontSize: 12, color: Color(0xFF333333)),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF333333),
+                  height: 1.1,
+                ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
