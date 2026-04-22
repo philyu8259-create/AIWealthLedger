@@ -1611,10 +1611,11 @@ class _CategoryGrid extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
-                      color: (c.isSystem
-                              ? AppColors.getCategoryColor(c.id)
-                              : const Color(0xFF7A35FF))
-                          .withValues(alpha: 0.10),
+                      color:
+                          (c.isSystem
+                                  ? AppColors.getCategoryColor(c.id)
+                                  : const Color(0xFF7A35FF))
+                              .withValues(alpha: 0.10),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),
@@ -1788,7 +1789,8 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
         left: 16,
         right: 16,
         top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom +
+        bottom:
+            MediaQuery.of(context).viewInsets.bottom +
             MediaQuery.of(context).padding.bottom +
             120,
       ),
@@ -1888,13 +1890,18 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF7A35FF).withValues(alpha: 0.10),
+                            color: const Color(
+                              0xFF7A35FF,
+                            ).withValues(alpha: 0.10),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
                         ],
                       ),
-                      child: Text(_selectedIcon, style: const TextStyle(fontSize: 14)),
+                      child: Text(
+                        _selectedIcon,
+                        style: const TextStyle(fontSize: 14),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -2143,8 +2150,7 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
         _yearlyProduct?.price ?? t.text(AppStringKeys.vipLoadingPrice);
     final yearlyCurrency = _yearlyProduct?.currencyCode;
     final yearlyRawPrice = _yearlyProduct?.rawPrice;
-    final yearlyMonthlyPrice =
-        yearlyRawPrice == null || yearlyCurrency == null
+    final yearlyMonthlyPrice = yearlyRawPrice == null || yearlyCurrency == null
         ? t.text(AppStringKeys.vipLoadingPrice)
         : _settingsMoney(
             yearlyRawPrice / 12,

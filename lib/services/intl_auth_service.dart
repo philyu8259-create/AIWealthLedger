@@ -27,6 +27,7 @@ class IntlAuthService {
   static const _providerKey = 'logged_in_auth_provider';
   static const _displayNameKey = 'logged_in_display_name';
   static const _appleEmailPrefix = 'apple_identity_email_';
+  static const _appleAccountKeyPrefix = 'apple_identity_account_key_';
   static const _intlDemoEmail = 'demo@aimoneyledger.app';
 
   bool get _isIntl {
@@ -46,9 +47,14 @@ class IntlAuthService {
 
   Future<void> signInWithEmail(String email) async {
     final normalizedEmail = email.trim().toLowerCase();
-    debugPrint('[IntlAuthService] signInWithEmail blocked: ${_maskValue(normalizedEmail)}');
+    debugPrint(
+      '[IntlAuthService] signInWithEmail blocked: ${_maskValue(normalizedEmail)}',
+    );
     throw StateError(
-      _message('邮箱登录当前不可用，请稍后再试', 'Email sign in is currently unavailable. Please try again later.'),
+      _message(
+        '邮箱登录当前不可用，请稍后再试',
+        'Email sign in is currently unavailable. Please try again later.',
+      ),
     );
   }
 
@@ -87,7 +93,9 @@ class IntlAuthService {
 
     final signIn = GoogleSignIn(
       scopes: const ['email'],
-      clientId: Platform.isIOS ? ConfigService.instance.googleIosClientId : null,
+      clientId: Platform.isIOS
+          ? ConfigService.instance.googleIosClientId
+          : null,
       serverClientId: ConfigService.instance.googleServerClientId.isEmpty
           ? null
           : ConfigService.instance.googleServerClientId,
@@ -97,11 +105,15 @@ class IntlAuthService {
     final account = await signIn.signIn();
     if (account == null) {
       debugPrint('[IntlAuthService] signInWithGoogle cancelled');
-      throw StateError(_message('已取消 Google 登录', 'Google sign in was cancelled'));
+      throw StateError(
+        _message('已取消 Google 登录', 'Google sign in was cancelled'),
+      );
     }
 
     final email = account.email.trim().toLowerCase();
-    debugPrint('[IntlAuthService] signInWithGoogle success: email=${_maskValue(email)}, displayName=${account.displayName ?? '(null)'}');
+    debugPrint(
+      '[IntlAuthService] signInWithGoogle success: email=${_maskValue(email)}, displayName=${account.displayName ?? '(null)'}',
+    );
     await _completeSignIn(
       accountKey: email,
       email: email,
@@ -144,28 +156,45 @@ class IntlAuthService {
         '[IntlAuthService] signInWithApple credential: user=${_maskValue(credential.userIdentifier)}, email=${_maskValue(credential.email)}',
       );
 
-      final cachedEmail = credential.userIdentifier == null
+      final userIdentifier = credential.userIdentifier?.trim();
+      final cachedEmail = userIdentifier == null || userIdentifier.isEmpty
           ? null
-          : _prefs.getString('$_appleEmailPrefix${credential.userIdentifier}');
-      final email = (credential.email ?? cachedEmail ?? '').trim().toLowerCase();
+          : _prefs.getString('$_appleEmailPrefix$userIdentifier');
+      final email = (credential.email ?? cachedEmail ?? '')
+          .trim()
+          .toLowerCase();
       final displayName = _composeAppleDisplayName(credential, email);
-      final accountKey = email.isNotEmpty
-          ? email
-          : 'apple:${credential.userIdentifier ?? 'unknown'}';
+      final stableAccountKey = _stableAppleAccountKey(userIdentifier);
+      final legacyAccountKey = email.isNotEmpty ? email : null;
 
-      if (credential.userIdentifier != null && email.isNotEmpty) {
-        await _prefs.setString('$_appleEmailPrefix${credential.userIdentifier}', email);
+      if (userIdentifier != null && userIdentifier.isNotEmpty) {
+        await _prefs.setString(
+          '$_appleAccountKeyPrefix$userIdentifier',
+          stableAccountKey,
+        );
+        if (email.isNotEmpty) {
+          await _prefs.setString('$_appleEmailPrefix$userIdentifier', email);
+        }
       }
 
-      debugPrint('[IntlAuthService] signInWithApple resolved: accountKey=${_maskValue(accountKey)}, email=${_maskValue(email)}, displayName=$displayName');
+      await _migrateAppleScopedDataIfNeeded(
+        legacyAccountKey: legacyAccountKey,
+        stableAccountKey: stableAccountKey,
+      );
+
+      debugPrint(
+        '[IntlAuthService] signInWithApple resolved: accountKey=${_maskValue(stableAccountKey)}, email=${_maskValue(email)}, displayName=$displayName',
+      );
       await _completeSignIn(
-        accountKey: accountKey,
+        accountKey: stableAccountKey,
         email: email.isEmpty ? null : email,
         provider: 'apple',
         displayName: displayName,
       );
     } on SignInWithAppleAuthorizationException catch (e) {
-      debugPrint('[IntlAuthService] signInWithApple authorization error: code=${e.code}, message=${e.message}');
+      debugPrint(
+        '[IntlAuthService] signInWithApple authorization error: code=${e.code}, message=${e.message}',
+      );
       if (_isAppleAccountMissingMessage(e.message)) {
         throw StateError(
           _message(
@@ -210,7 +239,9 @@ class IntlAuthService {
   }
 
   Future<void> _signInWithIntlDemoEmail(String email) async {
-    debugPrint('[IntlAuthService] _signInWithIntlDemoEmail: ${_maskValue(email)}');
+    debugPrint(
+      '[IntlAuthService] _signInWithIntlDemoEmail: ${_maskValue(email)}',
+    );
     await DemoDataSeeder.seed(variant: DemoDataVariant.intl);
     await _prefs.setBool(_loggedInKey, true);
     await _prefs.setString(_accountKey, 'DemoAccount');
@@ -287,11 +318,77 @@ class IntlAuthService {
     debugPrint('[IntlAuthService] _postSignInBootstrap end');
   }
 
+  String _stableAppleAccountKey(String? userIdentifier) {
+    final normalized = userIdentifier?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return 'apple:unknown';
+    }
+    return 'apple:$normalized';
+  }
+
+  Future<void> _migrateAppleScopedDataIfNeeded({
+    required String? legacyAccountKey,
+    required String stableAccountKey,
+  }) async {
+    final normalizedLegacy = legacyAccountKey?.trim();
+    if (normalizedLegacy == null ||
+        normalizedLegacy.isEmpty ||
+        normalizedLegacy == stableAccountKey) {
+      return;
+    }
+
+    Future<void> copyString(String oldKey, String newKey) async {
+      if (_prefs.containsKey(newKey)) return;
+      final value = _prefs.getString(oldKey);
+      if (value != null && value.isNotEmpty) {
+        await _prefs.setString(newKey, value);
+      }
+    }
+
+    Future<void> copyInt(String oldKey, String newKey) async {
+      if (_prefs.containsKey(newKey)) return;
+      final value = _prefs.getInt(oldKey);
+      if (value != null) {
+        await _prefs.setInt(newKey, value);
+      }
+    }
+
+    final legacyScopedId = _sanitizeScopedId(normalizedLegacy);
+    final stableScopedId = _sanitizeScopedId(stableAccountKey);
+
+    await copyString('vip_type_$legacyScopedId', 'vip_type_$stableScopedId');
+    await copyInt(
+      'vip_expire_ms_$legacyScopedId',
+      'vip_expire_ms_$stableScopedId',
+    );
+    await copyInt(
+      'last_processed_transaction_date_$legacyScopedId',
+      'last_processed_transaction_date_$stableScopedId',
+    );
+    await copyString(
+      'cloud_assets_v2_$legacyScopedId',
+      'cloud_assets_v2_$stableScopedId',
+    );
+    await copyString(
+      'stock_positions_v2_$legacyScopedId',
+      'stock_positions_v2_$stableScopedId',
+    );
+    await copyString(
+      'stock_deleted_ids_v1_$legacyScopedId',
+      'stock_deleted_ids_v1_$stableScopedId',
+    );
+  }
+
+  String _sanitizeScopedId(String raw) {
+    return raw.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+  }
+
   bool _isAppleAccountMissingMessage(String message) {
     final normalized = message.toLowerCase();
     return normalized.contains('sign in to an apple account') ||
         normalized.contains('sign in to your apple id') ||
-        normalized.contains('apple account') && normalized.contains('settings') ||
+        normalized.contains('apple account') &&
+            normalized.contains('settings') ||
         message.contains('登录 Apple 账户') ||
         message.contains('登录Apple账户') ||
         message.contains('Apple 账户') && message.contains('设置');

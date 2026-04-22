@@ -240,12 +240,14 @@ def _is_vip_expired(expire_ms):
 
 
 def _verify_receipt_with_apple(receipt_data):
-    """向 Apple 验证 receipt，返回 latest_receipt_info 或 None"""
+    """向 Apple 验证 receipt，返回 {environment, receipt_info} 或 None"""
     if not receipt_data:
         return None
     if not APP_STORE_SHARED_SECRET:
         print('[FC] APP_STORE_SHARED_SECRET not configured, skipping Apple verify', flush=True)
         return None
+
+    print(f'[FC] Apple verify start, receipt_len={len(receipt_data)}', flush=True)
 
     payload = json.dumps({
         'receipt-data': receipt_data,
@@ -253,27 +255,38 @@ def _verify_receipt_with_apple(receipt_data):
         'exclude-old-transactions': True,
     })
 
-    for url in [APPLE_VERIFY_URL, SANDBOX_VERIFY_URL]:
-        try:
-            import urllib.request
-            req = urllib.request.Request(
-                url,
-                data=payload.encode(),
-                headers={'Content-Type': 'application/json'},
-                method='POST',
-            )
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = json.loads(resp.read().decode())
-                status = data.get('status', -1)
-                print(f'[FC] Apple verify status={status}', flush=True)
-                if status == 0:
-                    return data.get('latest_receipt_info') or data.get('receipt')
-                else:
-                    print(f'[FC] Apple verify failed: status={status}', flush=True)
-                    return None
-        except Exception as e:
-            print(f'[FC] Apple verify error on {url}: {e}', flush=True)
-            continue
+    def _post(url):
+        import urllib.request
+        req = urllib.request.Request(
+            url,
+            data=payload.encode(),
+            headers={'Content-Type': 'application/json'},
+            method='POST',
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read().decode())
+
+    try:
+        data = _post(APPLE_VERIFY_URL)
+        status = data.get('status', -1)
+        print(f'[FC] Apple verify production status={status}', flush=True)
+        if status == 0:
+            return {
+                'environment': 'production',
+                'receipt_info': data.get('latest_receipt_info') or data.get('receipt'),
+            }
+        if status == 21007:
+            data = _post(SANDBOX_VERIFY_URL)
+            status = data.get('status', -1)
+            print(f'[FC] Apple verify sandbox status={status}', flush=True)
+            if status == 0:
+                return {
+                    'environment': 'sandbox',
+                    'receipt_info': data.get('latest_receipt_info') or data.get('receipt'),
+                }
+        print(f'[FC] Apple verify unresolved status={status}', flush=True)
+    except Exception as e:
+        print(f'[FC] Apple verify error: {e}', flush=True)
     return None
 
 
@@ -609,21 +622,32 @@ def handler(event, context):
             vip_type = body.get('vip_type', '')
             vip_expire_ms = body.get('vip_expire_ms', 0)
             receipt_data = body.get('receipt_data')
+            incoming_environment = body.get('vip_environment', 'unknown') or 'unknown'
 
-            print(f'[FC] /vip/sync phone={phone} vip_type={vip_type} expire_ms={vip_expire_ms}', flush=True)
+            print(
+                f'[FC] /vip/sync phone={phone} vip_type={vip_type} expire_ms={vip_expire_ms} '
+                f'incoming_env={incoming_environment} has_receipt={bool(receipt_data)}',
+                flush=True,
+            )
 
             if receipt_data:
-                receipt_info = _verify_receipt_with_apple(receipt_data)
-                if receipt_info is not None:
+                receipt_result = _verify_receipt_with_apple(receipt_data)
+                if receipt_result is not None:
+                    incoming_environment = receipt_result.get('environment', 'unknown')
+                    receipt_info = receipt_result.get('receipt_info')
                     apple_expire_ms = _apple_subscription_expire_ms(receipt_info)
                     print(f'[FC] Apple verified expire_ms={apple_expire_ms}', flush=True)
                     if apple_expire_ms > 0:
                         vip_expire_ms = apple_expire_ms
-                        product_id = receipt_info.get('product_id', '')
+                        product_id = ''
+                        if isinstance(receipt_info, dict):
+                            product_id = receipt_info.get('product_id', '')
                         if 'year' in product_id:
                             vip_type = 'yearly'
                         elif 'mon' in product_id:
                             vip_type = 'monthly'
+                else:
+                    print('[FC] Apple verify returned None, keeping incoming environment', flush=True)
 
             if vip_expire_ms > 0 and _is_vip_expired(vip_expire_ms):
                 print(f'[FC] /vip/sync REJECTED: subscription expired (expire_ms={vip_expire_ms})', flush=True)
@@ -639,6 +663,7 @@ def handler(event, context):
             profile = {
                 'vip_type': vip_type,
                 'vip_expire_ms': vip_expire_ms,
+                'vip_environment': incoming_environment,
                 'updated_at': datetime.now().isoformat(),
             }
             _save_vip_profile(phone, profile)

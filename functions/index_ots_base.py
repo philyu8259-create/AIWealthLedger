@@ -700,6 +700,8 @@ def _verify_receipt_with_apple(receipt_data):
         print('[VIP] APP_STORE_SHARED_SECRET not configured, skip Apple verify')
         return None
 
+    print(f'[VIP] Apple verify start, receipt_len={len(receipt_data)}')
+
     payload = json.dumps({
         'receipt-data': receipt_data,
         'password': APP_STORE_SHARED_SECRET,
@@ -735,6 +737,7 @@ def _verify_receipt_with_apple(receipt_data):
                     'environment': 'sandbox',
                     'receipt_info': data.get('latest_receipt_info') or data.get('receipt')
                 }
+        print(f'[VIP] Apple verify unresolved status={status}')
     except Exception as e:
         print(f'[VIP] Apple verify error: {e}')
     return None
@@ -996,6 +999,12 @@ class Handler(BaseHTTPRequestHandler):
             existing_profile = _ots_get_vip_profile(user_phone)
             existing_environment = existing_profile.get('vip_environment', 'unknown')
 
+            print(
+                f'[VIP] /vip/sync user={user_phone} vip_type={vip_type} expire_ms={vip_expire_ms} '
+                f'incoming_env={incoming_environment} existing_env={existing_environment} '
+                f'has_receipt={bool(receipt_data)}'
+            )
+
             if receipt_data:
                 receipt_result = _verify_receipt_with_apple(receipt_data)
                 if receipt_result is not None:
@@ -1011,6 +1020,8 @@ class Handler(BaseHTTPRequestHandler):
                             vip_type = 'yearly'
                         elif 'mon' in product_id:
                             vip_type = 'monthly'
+                else:
+                    print('[VIP] receipt verify returned None, keeping incoming environment')
 
             # 保护规则 1：sandbox / unknown 不允许覆盖更高优先级记录
             if existing_profile and _vip_environment_priority(existing_environment) > _vip_environment_priority(incoming_environment):
@@ -1041,6 +1052,7 @@ class Handler(BaseHTTPRequestHandler):
 
             success = _ots_put_vip_profile(user_phone, profile)
             if success:
+                print(f'[VIP] /vip/sync saved profile={profile}')
                 self._respond(200, {'profile': profile})
             else:
                 self._respond(500, {'error': 'OTS vip write failed'})
