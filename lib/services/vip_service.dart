@@ -24,6 +24,8 @@ class VipService extends ChangeNotifier {
   static const _keyVipExpireMs = 'vip_expire_ms';
   static const _keyLastProcessedTransactionDate =
       'last_processed_transaction_date';
+  static const _keyLastProcessedPurchaseSignature =
+      'last_processed_purchase_signature';
 
   final SharedPreferences _prefs;
   final InAppPurchase _iap = InAppPurchase.instance;
@@ -209,19 +211,53 @@ class VipService extends ChangeNotifier {
       return;
     }
 
+    VipType? type;
+    if (id == 'com.phil.AIAccountant.mon') type = VipType.monthly;
+    if (id == 'com.phil.AIAccountant.year') type = VipType.yearly;
+
     final transactionMs = _parseTransactionMs(p.transactionDate);
     final lastProcessedMs = _getScopedInt(_keyLastProcessedTransactionDate);
+    final lastProcessedSignature = _getScopedString(
+      _keyLastProcessedPurchaseSignature,
+    );
     final receiptData = p.verificationData.serverVerificationData;
+    final purchaseSignature = [
+      id,
+      p.status.name,
+      p.transactionDate ?? '',
+      p.purchaseID ?? '',
+    ].join('|');
 
     debugPrint(
-      '[VipService] 交易日期检查: transactionDateStr=${p.transactionDate}, transactionMs=$transactionMs, lastProcessedMs=$lastProcessedMs',
+      '[VipService] 交易日期检查: transactionDateStr=${p.transactionDate}, transactionMs=$transactionMs, lastProcessedMs=$lastProcessedMs, lastProcessedSignature=$lastProcessedSignature, purchaseSignature=$purchaseSignature',
     );
 
     final isRestorePurchase = p.status == PurchaseStatus.restored;
+    final currentTypeStr = _getScopedString(_keyVipType);
+    final incomingTypeStr = switch (type) {
+      VipType.monthly => 'monthly',
+      VipType.yearly => 'yearly',
+      _ => null,
+    };
+
+    if (!isRestorePurchase &&
+        lastProcessedSignature != null &&
+        lastProcessedSignature == purchaseSignature) {
+      debugPrint('[VipService] ⏭️  跳过重复购买签名');
+      if (p.pendingCompletePurchase) {
+        debugPrint('[VipService] 📝 清理重复交易，调用 completePurchase...');
+        await _iap.completePurchase(p);
+        debugPrint('[VipService] ✅ 重复交易清理完成');
+      }
+      debugPrint('[VipService] ========================================');
+      return;
+    }
 
     if (!isRestorePurchase &&
         transactionMs != null &&
-        transactionMs <= lastProcessedMs) {
+        transactionMs <= lastProcessedMs &&
+        incomingTypeStr != null &&
+        incomingTypeStr == currentTypeStr) {
       debugPrint('[VipService] ⏭️  跳过旧交易（已处理过）');
       if (p.pendingCompletePurchase) {
         debugPrint('[VipService] 📝 清理旧交易，调用 completePurchase...');
@@ -236,10 +272,11 @@ class VipService extends ChangeNotifier {
       await _setScopedInt(_keyLastProcessedTransactionDate, transactionMs);
       debugPrint('[VipService] ✅ 记录交易日期: $transactionMs');
     }
-
-    VipType? type;
-    if (id == 'com.phil.AIAccountant.mon') type = VipType.monthly;
-    if (id == 'com.phil.AIAccountant.year') type = VipType.yearly;
+    await _setScopedString(
+      _keyLastProcessedPurchaseSignature,
+      purchaseSignature,
+    );
+    debugPrint('[VipService] ✅ 记录购买签名: $purchaseSignature');
     debugPrint('[VipService] mapped type=$type');
 
     if (type != null) {
