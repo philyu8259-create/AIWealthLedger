@@ -16,6 +16,9 @@ import '../bloc/account_state.dart';
 import '../widgets/breathing_float.dart';
 import '../widgets/press_feedback.dart';
 
+const bool _screenshotReportsMock =
+    String.fromEnvironment('SCREENSHOT_REPORTS_MOCK', defaultValue: '') == '1';
+
 String _reportsMoney(num amount, {int decimalDigits = 2}) {
   final service = getIt<AppProfileService>();
   final symbol = AppFormatter.currencySymbol(
@@ -213,6 +216,9 @@ class _ReportsBody extends StatelessWidget {
     }
 
     if (state.entries.isEmpty) {
+      if (_screenshotReportsMock) {
+        return const _ScreenshotReportsBody();
+      }
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -547,6 +553,156 @@ class _ReportsBody extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _ScreenshotReportsBody extends StatelessWidget {
+  const _ScreenshotReportsBody();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppStrings.of(context);
+    final categories = [
+      (_reportsCategoryName('food', '餐饮'), 1280.0, const Color(0xFF6D5DF6)),
+      (_reportsCategoryName('transport', '交通'), 760.0, const Color(0xFF4A90E2)),
+      (_reportsCategoryName('shopping', '购物'), 540.0, const Color(0xFFFF8A65)),
+      (_reportsCategoryName('coffee', '咖啡'), 320.0, const Color(0xFF8D6E63)),
+    ];
+
+    return ListView(
+      padding: EdgeInsets.fromLTRB(20, 8, 20, MediaQuery.of(context).padding.bottom + 130),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                t.text(AppStringKeys.reportsDistribution),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 220,
+                child: LineChart(
+                  LineChartData(
+                    minX: 0,
+                    maxX: 5,
+                    minY: 0,
+                    maxY: 2600,
+                    titlesData: FlTitlesData(
+                      leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 28,
+                          getTitlesWidget: (value, meta) {
+                            const labels = ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'];
+                            final i = value.toInt();
+                            if (i < 0 || i >= labels.length) return const SizedBox.shrink();
+                            return Text(labels[i], style: const TextStyle(fontSize: 11, color: Color(0xFF8E8E93)));
+                          },
+                        ),
+                      ),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      horizontalInterval: 500,
+                      getDrawingHorizontalLine: (_) => FlLine(color: const Color(0xFFEDEAFB), strokeWidth: 1),
+                    ),
+                    lineBarsData: [
+                      LineChartBarData(
+                        isCurved: true,
+                        color: const Color(0xFF6D5DF6),
+                        barWidth: 4,
+                        dotData: const FlDotData(show: false),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              const Color(0xFF6D5DF6).withValues(alpha: 0.24),
+                              const Color(0xFF6D5DF6).withValues(alpha: 0.02),
+                            ],
+                          ),
+                        ),
+                        spots: const [
+                          FlSpot(0, 980),
+                          FlSpot(1, 1220),
+                          FlSpot(2, 1160),
+                          FlSpot(3, 1490),
+                          FlSpot(4, 1730),
+                          FlSpot(5, 2140),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                t.text(AppStringKeys.reportsCategoryRank),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 16),
+              ...categories.map((item) {
+                final name = item.$1;
+                final amount = item.$2;
+                final color = item.$3;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: Row(
+                    children: [
+                      Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                      ),
+                      Text(_reportsMoney(amount, decimalDigits: 0), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

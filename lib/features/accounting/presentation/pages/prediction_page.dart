@@ -15,6 +15,9 @@ import '../bloc/account_bloc.dart';
 import '../../domain/usecases/get_historical_entries.dart';
 import '../../domain/usecases/predict_spending.dart';
 
+const bool _screenshotPredictionMock =
+    String.fromEnvironment('SCREENSHOT_PREDICTION_MOCK', defaultValue: '') == '1';
+
 Locale _predictionLocale() => getIt<AppProfileService>().currentLocale;
 
 String _predictionCurrency() => getIt<AppProfileService>().currentBaseCurrency;
@@ -200,6 +203,34 @@ class _PredictionPageState extends State<PredictionPage> {
     });
 
     final t = AppStrings.of(context);
+    if (_screenshotPredictionMock) {
+      setState(() {
+        _history = _mockPredictionHistory();
+        _prediction = SpendingPrediction(
+          predictedTotalExpense: _predictionCurrency() == 'USD' ? 2530 : 4860,
+          predictedDailyAverage: _predictionCurrency() == 'USD' ? 84 : 162,
+          categoryPredictions: {
+            'dining': _predictionCurrency() == 'USD' ? 720 : 1380,
+            'shopping': _predictionCurrency() == 'USD' ? 560 : 1160,
+            'transport': _predictionCurrency() == 'USD' ? 340 : 780,
+          },
+          budgetRecommendations: {
+            'dining': _predictionCurrency() == 'USD' ? 650 : 1280,
+            'shopping': _predictionCurrency() == 'USD' ? 480 : 980,
+            'transport': _predictionCurrency() == 'USD' ? 300 : 680,
+          },
+          warnings: [
+            t.text(AppStringKeys.predictionNarrativeWarningFallback),
+          ],
+          aiInsight: _predictionLocale().languageCode == 'zh'
+              ? '本月餐饮和购物支出明显走高，建议优先控制高频小额消费，并为交通和日常支出预留更稳定预算。'
+              : 'Dining and shopping are trending higher this month. Try trimming small frequent expenses first and keep a steadier budget for transport and daily spending.',
+        );
+        _isLoading = false;
+      });
+      return;
+    }
+
     if (!_predictionAiReady()) {
       setState(() {
         _errorMsg = t.text(
@@ -313,6 +344,18 @@ class _PredictionPageState extends State<PredictionPage> {
       ),
     );
   }
+}
+
+List<AccountEntry> _mockPredictionHistory() {
+  final now = DateTime.now();
+  return [
+    AccountEntry(id: 'm1', amount: 58, category: 'food', description: 'Lunch', date: DateTime(now.year, now.month - 2, 4), createdAt: DateTime(now.year, now.month - 2, 4), type: EntryType.expense),
+    AccountEntry(id: 'm2', amount: 120, category: 'shopping', description: 'Shopping', date: DateTime(now.year, now.month - 2, 12), createdAt: DateTime(now.year, now.month - 2, 12), type: EntryType.expense),
+    AccountEntry(id: 'm3', amount: 36, category: 'transport', description: 'Taxi', date: DateTime(now.year, now.month - 1, 3), createdAt: DateTime(now.year, now.month - 1, 3), type: EntryType.expense),
+    AccountEntry(id: 'm4', amount: 82, category: 'food', description: 'Dinner', date: DateTime(now.year, now.month - 1, 10), createdAt: DateTime(now.year, now.month - 1, 10), type: EntryType.expense),
+    AccountEntry(id: 'm5', amount: 148, category: 'shopping', description: 'Groceries', date: DateTime(now.year, now.month, 6), createdAt: DateTime(now.year, now.month, 6), type: EntryType.expense),
+    AccountEntry(id: 'm6', amount: 64, category: 'transport', description: 'Metro', date: DateTime(now.year, now.month, 11), createdAt: DateTime(now.year, now.month, 11), type: EntryType.expense),
+  ];
 }
 
 class _ErrorWidget extends StatelessWidget {

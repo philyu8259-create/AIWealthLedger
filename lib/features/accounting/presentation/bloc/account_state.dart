@@ -4,6 +4,15 @@ import '../../../../services/ai/input_parser_service.dart';
 
 enum AccountStatus { initial, loading, loaded, error }
 
+const int _screenshotSelectedYear = int.fromEnvironment(
+  'SCREENSHOT_SELECTED_YEAR',
+  defaultValue: 0,
+);
+const int _screenshotSelectedMonth = int.fromEnvironment(
+  'SCREENSHOT_SELECTED_MONTH',
+  defaultValue: 0,
+);
+
 class AccountState extends Equatable {
   final AccountStatus status;
   final List<AccountEntry> entries;
@@ -44,9 +53,13 @@ class AccountState extends Equatable {
 
   factory AccountState.initial() {
     final now = DateTime.now();
+    final hasScreenshotMonth =
+        _screenshotSelectedYear > 0 &&
+        _screenshotSelectedMonth >= 1 &&
+        _screenshotSelectedMonth <= 12;
     return AccountState(
-      selectedYear: now.year,
-      selectedMonth: now.month,
+      selectedYear: hasScreenshotMonth ? _screenshotSelectedYear : now.year,
+      selectedMonth: hasScreenshotMonth ? _screenshotSelectedMonth : now.month,
       entries: const [],
     );
   }

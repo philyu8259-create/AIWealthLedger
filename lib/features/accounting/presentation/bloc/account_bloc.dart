@@ -11,6 +11,17 @@ import '../../domain/usecases/get_entries_by_month.dart';
 import 'account_event.dart';
 import 'account_state.dart';
 
+const bool _screenshotAutoLoad =
+    String.fromEnvironment('SCREENSHOT_AUTO_LOAD', defaultValue: '') == '1';
+const int _screenshotSelectedYear = int.fromEnvironment(
+  'SCREENSHOT_SELECTED_YEAR',
+  defaultValue: 0,
+);
+const int _screenshotSelectedMonth = int.fromEnvironment(
+  'SCREENSHOT_SELECTED_MONTH',
+  defaultValue: 0,
+);
+
 class AccountBloc extends Bloc<AccountEvent, AccountState> {
   final GetEntriesByMonth getEntriesByMonth;
   final AddEntry addEntry;
@@ -47,6 +58,19 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     on<ClearVipLimitDialog>(_onClearVipLimitDialog);
     on<ClearLoginLimitDialog>(_onClearLoginLimitDialog);
     on<FilterByDay>(_onFilterByDay);
+
+    final hasScreenshotMonth =
+        _screenshotSelectedYear > 0 &&
+        _screenshotSelectedMonth >= 1 &&
+        _screenshotSelectedMonth <= 12;
+    if (_screenshotAutoLoad && hasScreenshotMonth) {
+      add(
+        LoadEntriesByMonth(
+          year: _screenshotSelectedYear,
+          month: _screenshotSelectedMonth,
+        ),
+      );
+    }
   }
 
   void _onVipServiceChanged() {
@@ -71,6 +95,19 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     Emitter<AccountState> emit,
   ) async {
     debugPrint('[Bloc] LoadCurrentMonthEntries received');
+    final hasScreenshotMonth =
+        _screenshotSelectedYear > 0 &&
+        _screenshotSelectedMonth >= 1 &&
+        _screenshotSelectedMonth <= 12;
+    if (hasScreenshotMonth) {
+      add(
+        LoadEntriesByMonth(
+          year: _screenshotSelectedYear,
+          month: _screenshotSelectedMonth,
+        ),
+      );
+      return;
+    }
     final now = DateTime.now();
     add(LoadEntriesByMonth(year: now.year, month: now.month));
   }

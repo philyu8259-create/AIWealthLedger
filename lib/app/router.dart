@@ -133,6 +133,14 @@ class _SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<_SplashPage> {
+  static const _screenshotOverlay = String.fromEnvironment(
+    'SCREENSHOT_OVERLAY',
+    defaultValue: '',
+  );
+  static const _screenshotTargetRoute = String.fromEnvironment(
+    'SCREENSHOT_TARGET_ROUTE',
+    defaultValue: '',
+  );
   bool _navigated = false;
 
   @override
@@ -156,7 +164,19 @@ class _SplashPageState extends State<_SplashPage> {
       final prefs = getIt<SharedPreferences>();
       final hasLoggedIn = prefs.getBool('has_logged_in') ?? false;
       debugPrint('[Splash] has_logged_in=$hasLoggedIn');
-      _goSafely(hasLoggedIn ? '/home' : '/welcome');
+      if (hasLoggedIn) {
+        if (_screenshotOverlay == 'ai') {
+          queueHomeAiOpenAfterNavigation();
+        } else if (_screenshotOverlay == 'quickadd') {
+          queueHomeQuickAddOpenAfterNavigation();
+        }
+      }
+      final targetRoute = hasLoggedIn
+          ? (_screenshotTargetRoute.startsWith('/')
+                ? _screenshotTargetRoute
+                : '/home')
+          : '/welcome';
+      _goSafely(targetRoute);
     } catch (e, st) {
       debugPrint('[Splash] checkLogin error: $e\n$st');
       _goSafely('/welcome');
