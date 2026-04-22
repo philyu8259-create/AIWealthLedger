@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'config_service.dart';
@@ -27,6 +28,9 @@ class VipService extends ChangeNotifier {
   static const _keyLastProcessedPurchaseSignature =
       'last_processed_purchase_signature';
   static const _keyLastReceiptData = 'last_receipt_data';
+  static const _receiptChannel = MethodChannel(
+    'com.aiaccounting/app_store_receipt',
+  );
 
   final SharedPreferences _prefs;
   final InAppPurchase _iap = InAppPurchase.instance;
@@ -221,7 +225,7 @@ class VipService extends ChangeNotifier {
     final lastProcessedSignature = _getScopedString(
       _keyLastProcessedPurchaseSignature,
     );
-    final receiptData = p.verificationData.serverVerificationData;
+    final receiptData = await _resolveReceiptData(p);
     if (receiptData.isNotEmpty) {
       await _setScopedString(_keyLastReceiptData, receiptData);
       debugPrint('[VipService] ✅ 缓存 receiptData，len=${receiptData.length}');
@@ -519,7 +523,13 @@ class VipService extends ChangeNotifier {
       _refreshSnapshot();
       await _iap.restorePurchases();
 
-      final cachedReceiptData = _getScopedString(_keyLastReceiptData);
+      final nativeReceiptData = await _fetchIosAppStoreReceiptData();
+      if (nativeReceiptData != null && nativeReceiptData.isNotEmpty) {
+        await _setScopedString(_keyLastReceiptData, nativeReceiptData);
+      }
+
+      final cachedReceiptData =
+          nativeReceiptData ?? _getScopedString(_keyLastReceiptData);
       if (cachedReceiptData != null &&
           cachedReceiptData.isNotEmpty &&
           _getScopedInt(_keyVipExpireMs) >
@@ -714,6 +724,8 @@ class VipService extends ChangeNotifier {
     await _removeScopedKey(_keyVipType);
     await _removeScopedKey(_keyVipExpireMs);
     await _removeScopedKey(_keyLastProcessedTransactionDate);
+    await _removeScopedKey(_keyLastProcessedPurchaseSignature);
+    await _removeScopedKey(_keyLastReceiptData);
     _refreshSnapshot(notify: true);
   }
 
@@ -739,5 +751,38 @@ class VipService extends ChangeNotifier {
     notifyListeners();
     debugPrint('[VipService] ✅ VIP 状态已重置');
     debugPrintVipStatus();
+  }
+
+  Future<String> _resolveReceiptData(PurchaseDetails purchase) async {
+    final nativeReceiptData = await _fetchIosAppStoreReceiptData();
+    if (nativeReceiptData != null && nativeReceiptData.isNotEmpty) {
+      return nativeReceiptData;
+    }
+
+    final purchaseReceiptData =
+        purchase.verificationData.serverVerificationData;
+    return purchaseReceiptData;
+  }
+
+  Future<String?> _fetchIosAppStoreReceiptData() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) {
+      return null;
+    }
+
+    try {
+      final receiptData = await _receiptChannel.invokeMethod<String>(
+        'getReceiptData',
+      );
+      if (receiptData != null && receiptData.isNotEmpty) {
+        debugPrint(
+          '[VipService] fetched iOS app receipt data, len=${receiptData.length}',
+        );
+        return receiptData;
+      }
+    } catch (e) {
+      debugPrint('[VipService] fetch iOS app receipt data error: $e');
+    }
+
+    return null;
   }
 }
