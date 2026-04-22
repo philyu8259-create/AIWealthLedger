@@ -688,9 +688,9 @@ def _is_vip_expired(expire_ms):
 def _vip_environment_priority(environment):
     if environment == 'production':
         return 3
-    if environment == 'unknown':
-        return 2
     if environment == 'sandbox':
+        return 2
+    if environment == 'unknown':
         return 1
     return 0
 
