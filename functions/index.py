@@ -1076,7 +1076,13 @@ class Handler(BaseHTTPRequestHandler):
                     latest_receipt_info = _pick_latest_receipt_info(receipt_info)
                     apple_expire_ms = _apple_subscription_expire_ms(latest_receipt_info)
                     if apple_expire_ms > 0:
-                        vip_expire_ms = apple_expire_ms
+                        if apple_expire_ms >= vip_expire_ms:
+                            vip_expire_ms = apple_expire_ms
+                        else:
+                            print(
+                                f'[VIP] keep later incoming expire_ms, apple_expire_ms={apple_expire_ms} '
+                                f'incoming_expire_ms={vip_expire_ms}'
+                            )
                         product_id = ''
                         if isinstance(latest_receipt_info, dict):
                             product_id = latest_receipt_info.get('product_id', '')
