@@ -56,8 +56,6 @@ void clearPendingHomeOverlayRequests() {
   _pendingHomeQuickAddOpen = false;
 }
 
-
-
 // 初始路由由 checkFirstTime() 决定，见下方
 final appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
@@ -229,6 +227,8 @@ class MainScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final compactNav = MediaQuery.of(context).size.width < 410;
     final outerHorizontalPadding = compactNav ? 14.0 : 18.0;
     final innerHorizontalPadding = compactNav ? 8.0 : 12.0;
@@ -253,12 +253,15 @@ class MainScaffold extends StatelessWidget {
               borderRadius: BorderRadius.circular(34),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF4A47D8).withValues(alpha: 0.10),
+                  color: AppColors.primary.withValues(
+                    alpha: isDark ? 0.24 : 0.10,
+                  ),
                   blurRadius: 30,
                   offset: const Offset(0, 12),
                 ),
                 BoxShadow(
-                  color: const Color(0xFF1A1A2E).withValues(alpha: 0.05),
+                  color: (isDark ? Colors.black : const Color(0xFF1A1A2E))
+                      .withValues(alpha: isDark ? 0.28 : 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -274,9 +277,11 @@ class MainScaffold extends StatelessWidget {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.80),
+                    color: (isDark ? colors.cardBackground : Colors.white)
+                        .withValues(alpha: isDark ? 0.74 : 0.80),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.72),
+                      color: (isDark ? Colors.white : colors.textSecondary)
+                          .withValues(alpha: isDark ? 0.10 : 0.14),
                       width: 1.2,
                     ),
                     borderRadius: BorderRadius.circular(34),
@@ -325,8 +330,9 @@ class MainScaffold extends StatelessWidget {
                           GestureDetector(
                             onTap: () {
                               HapticFeedback.mediumImpact();
-                              final currentPath =
-                                  GoRouterState.of(context).uri.path;
+                              final currentPath = GoRouterState.of(
+                                context,
+                              ).uri.path;
                               if (currentPath.startsWith('/home')) {
                                 homeAiTrigger.value++;
                                 return;
@@ -349,8 +355,9 @@ class MainScaffold extends StatelessWidget {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF8C35FF)
-                                        .withValues(alpha: 0.24),
+                                    color: const Color(
+                                      0xFF8C35FF,
+                                    ).withValues(alpha: 0.24),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   ),
@@ -374,8 +381,9 @@ class MainScaffold extends StatelessWidget {
                           GestureDetector(
                             onTap: () {
                               HapticFeedback.mediumImpact();
-                              final currentPath =
-                                  GoRouterState.of(context).uri.path;
+                              final currentPath = GoRouterState.of(
+                                context,
+                              ).uri.path;
                               if (currentPath.startsWith('/home')) {
                                 homeQuickAddTrigger.value++;
                                 return;
@@ -398,8 +406,9 @@ class MainScaffold extends StatelessWidget {
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF4A47D8)
-                                        .withValues(alpha: 0.28),
+                                    color: const Color(
+                                      0xFF4A47D8,
+                                    ).withValues(alpha: 0.28),
                                     blurRadius: 12,
                                     offset: const Offset(0, 5),
                                   ),
@@ -487,6 +496,7 @@ class _PremiumNavBarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -512,7 +522,7 @@ class _PremiumNavBarItem extends StatelessWidget {
           children: [
             Icon(
               isSelected ? selectedIcon : icon,
-              color: isSelected ? AppColors.primary : const Color(0xFF9E9E9E),
+              color: isSelected ? AppColors.primary : colors.textSecondary,
               size: 22,
             ),
             const SizedBox(height: 2),
@@ -526,9 +536,7 @@ class _PremiumNavBarItem extends StatelessWidget {
                 fontWeight: FontWeight.w400,
                 height: 1.0,
                 letterSpacing: 0.1,
-                color: isSelected
-                    ? AppColors.primary
-                    : const Color(0xFF8F8F9D),
+                color: isSelected ? AppColors.primary : colors.textSecondary,
               ),
             ),
           ],

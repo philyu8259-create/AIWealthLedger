@@ -162,3 +162,84 @@ abstract final class AppColors {
     return map[id] ?? const Color(0xFF9E9E9E);
   }
 }
+
+class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
+  final Color cardBackground;
+  final Color background;
+  final Color textPrimary;
+  final Color textSecondary;
+  final List<BoxShadow> softShadow;
+
+  const AppColorsExtension({
+    required this.cardBackground,
+    required this.background,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.softShadow,
+  });
+
+  static final AppColorsExtension light = AppColorsExtension(
+    cardBackground: Colors.white,
+    background: const Color(0xFFF5F6F8),
+    textPrimary: const Color(0xFF1A1A2E),
+    textSecondary: const Color(0xFF909399),
+    softShadow: [
+      BoxShadow(
+        color: const Color(0xFF1A1A2E).withValues(alpha: 0.04),
+        blurRadius: 24,
+        offset: const Offset(0, 8),
+      ),
+      BoxShadow(
+        color: const Color(0xFF1A1A2E).withValues(alpha: 0.02),
+        blurRadius: 8,
+        offset: const Offset(0, 4),
+      ),
+    ],
+  );
+
+  static final AppColorsExtension dark = AppColorsExtension(
+    cardBackground: const Color(0xFF1E1E2C),
+    background: const Color(0xFF0F0F1A),
+    textPrimary: const Color(0xFFFFFFFF),
+    textSecondary: const Color(0xFFA0A0B0),
+    softShadow: [
+      BoxShadow(
+        color: Colors.black.withValues(alpha: 0.5),
+        blurRadius: 24,
+        offset: const Offset(0, 8),
+      ),
+    ],
+  );
+
+  @override
+  ThemeExtension<AppColorsExtension> copyWith({
+    Color? cardBackground,
+    Color? background,
+    Color? textPrimary,
+    Color? textSecondary,
+    List<BoxShadow>? softShadow,
+  }) {
+    return AppColorsExtension(
+      cardBackground: cardBackground ?? this.cardBackground,
+      background: background ?? this.background,
+      textPrimary: textPrimary ?? this.textPrimary,
+      textSecondary: textSecondary ?? this.textSecondary,
+      softShadow: softShadow ?? this.softShadow,
+    );
+  }
+
+  @override
+  ThemeExtension<AppColorsExtension> lerp(
+    covariant ThemeExtension<AppColorsExtension>? other,
+    double t,
+  ) {
+    if (other is! AppColorsExtension) return this;
+    return AppColorsExtension(
+      cardBackground: Color.lerp(cardBackground, other.cardBackground, t)!,
+      background: Color.lerp(background, other.background, t)!,
+      textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
+      textSecondary: Color.lerp(textSecondary, other.textSecondary, t)!,
+      softShadow: t < 0.5 ? softShadow : other.softShadow,
+    );
+  }
+}

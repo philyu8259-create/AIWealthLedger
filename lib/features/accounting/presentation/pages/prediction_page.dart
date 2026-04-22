@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/formatters/app_formatter.dart';
 import '../../../../core/formatters/category_formatter.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../l10n/app_string_keys.dart';
 import '../../../../l10n/app_strings.dart';
 import '../../../../services/app_profile_service.dart';
@@ -14,9 +15,11 @@ import '../../domain/entities/entities.dart';
 import '../bloc/account_bloc.dart';
 import '../../domain/usecases/get_historical_entries.dart';
 import '../../domain/usecases/predict_spending.dart';
+import '../widgets/ai_typewriter_markdown.dart';
 
 const bool _screenshotPredictionMock =
-    String.fromEnvironment('SCREENSHOT_PREDICTION_MOCK', defaultValue: '') == '1';
+    String.fromEnvironment('SCREENSHOT_PREDICTION_MOCK', defaultValue: '') ==
+    '1';
 
 Locale _predictionLocale() => getIt<AppProfileService>().currentLocale;
 
@@ -51,10 +54,8 @@ String _predictionMonthLabel(DateTime date) {
 }
 
 bool _predictionAiReady() {
-  final provider = getIt<AppProfileService>()
-      .currentProfile
-      .capabilityProfile
-      .aiProvider;
+  final provider =
+      getIt<AppProfileService>().currentProfile.capabilityProfile.aiProvider;
   switch (provider) {
     case AiProviderType.gemini:
       return ConfigService.instance.isGeminiConfigured;
@@ -64,10 +65,8 @@ bool _predictionAiReady() {
 }
 
 String _predictionAiProviderLabel(AppStrings t) {
-  final provider = getIt<AppProfileService>()
-      .currentProfile
-      .capabilityProfile
-      .aiProvider;
+  final provider =
+      getIt<AppProfileService>().currentProfile.capabilityProfile.aiProvider;
   switch (provider) {
     case AiProviderType.gemini:
       return t.text(AppStringKeys.providerAiGemini);
@@ -76,8 +75,54 @@ String _predictionAiProviderLabel(AppStrings t) {
   }
 }
 
+const Map<String, String> _predictionCategoryAliases = {
+  'food': 'food',
+  'dining': 'food',
+  'dining out': 'food',
+  'meal': 'food',
+  'meals': 'food',
+  'transport': 'transport',
+  'transportation': 'transport',
+  'shopping': 'shopping',
+  'shop': 'shopping',
+  'entertainment': 'entertainment',
+  'living': 'housing',
+  'housing': 'housing',
+  'healthcare': 'health',
+  'health': 'health',
+  'education': 'education',
+  'beauty': 'beauty',
+  'social': 'social',
+  'travel': 'travel',
+  'sports': 'sports',
+  'coffee': 'coffee',
+  'snack': 'snack',
+  'snacks': 'snack',
+  'fruit': 'fruit',
+  'daily': 'daily',
+  'groceries': 'grocery',
+  'grocery': 'grocery',
+  'takeout': 'takeout',
+  'vegetables': 'vegetable',
+  'vegetable': 'vegetable',
+  'drinks': 'drink',
+  'drink': 'drink',
+};
+
 String _predictionCategoryDisplayFromRaw(String raw, Locale locale) {
   final normalized = raw.trim();
+  final canonicalId = _predictionCategoryAliases[normalized.toLowerCase()];
+  if (canonicalId != null) {
+    final category = CategoryDef.findById(canonicalId);
+    if (category != null) {
+      return localizedCategoryName(
+        id: category.id,
+        fallback: category.name,
+        locale: locale,
+      );
+    }
+  }
+
   final all = [
     ...CategoryDef.expenseCategories,
     ...CategoryDef.incomeCategories,
@@ -141,7 +186,9 @@ String _localizePredictionNarrative(String text) {
     return strings.text(AppStringKeys.predictionNarrativeWarningFallback);
   }
 
-  if (trimmed.contains('较上月') || trimmed.contains('增长') || trimmed.contains('下降')) {
+  if (trimmed.contains('较上月') ||
+      trimmed.contains('增长') ||
+      trimmed.contains('下降')) {
     return strings.text(AppStringKeys.predictionNarrativeTrendFallback);
   }
 
@@ -219,9 +266,7 @@ class _PredictionPageState extends State<PredictionPage> {
             'shopping': _predictionCurrency() == 'USD' ? 480 : 980,
             'transport': _predictionCurrency() == 'USD' ? 300 : 680,
           },
-          warnings: [
-            t.text(AppStringKeys.predictionNarrativeWarningFallback),
-          ],
+          warnings: [t.text(AppStringKeys.predictionNarrativeWarningFallback)],
           aiInsight: _predictionLocale().languageCode == 'zh'
               ? '本月餐饮和购物支出明显走高，建议优先控制高频小额消费，并为交通和日常支出预留更稳定预算。'
               : 'Dining and shopping are trending higher this month. Try trimming small frequent expenses first and keep a steadier budget for transport and daily spending.',
@@ -284,7 +329,9 @@ class _PredictionPageState extends State<PredictionPage> {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         flexibleSpace: Container(
           decoration: const BoxDecoration(
@@ -324,9 +371,13 @@ class _PredictionPageState extends State<PredictionPage> {
           if (_isLoading) {
             child = const Center(child: CircularProgressIndicator());
           } else if (_errorMsg != null) {
-            child = Center(child: _ErrorWidget(msg: _errorMsg!, onRetry: _load));
+            child = Center(
+              child: _ErrorWidget(msg: _errorMsg!, onRetry: _load),
+            );
           } else if (_prediction == null) {
-            child = Center(child: Text(t.text(AppStringKeys.reportsEmptyTitle)));
+            child = Center(
+              child: Text(t.text(AppStringKeys.reportsEmptyTitle)),
+            );
           } else {
             child = _Body(prediction: _prediction!, history: _history);
           }
@@ -349,12 +400,60 @@ class _PredictionPageState extends State<PredictionPage> {
 List<AccountEntry> _mockPredictionHistory() {
   final now = DateTime.now();
   return [
-    AccountEntry(id: 'm1', amount: 58, category: 'food', description: 'Lunch', date: DateTime(now.year, now.month - 2, 4), createdAt: DateTime(now.year, now.month - 2, 4), type: EntryType.expense),
-    AccountEntry(id: 'm2', amount: 120, category: 'shopping', description: 'Shopping', date: DateTime(now.year, now.month - 2, 12), createdAt: DateTime(now.year, now.month - 2, 12), type: EntryType.expense),
-    AccountEntry(id: 'm3', amount: 36, category: 'transport', description: 'Taxi', date: DateTime(now.year, now.month - 1, 3), createdAt: DateTime(now.year, now.month - 1, 3), type: EntryType.expense),
-    AccountEntry(id: 'm4', amount: 82, category: 'food', description: 'Dinner', date: DateTime(now.year, now.month - 1, 10), createdAt: DateTime(now.year, now.month - 1, 10), type: EntryType.expense),
-    AccountEntry(id: 'm5', amount: 148, category: 'shopping', description: 'Groceries', date: DateTime(now.year, now.month, 6), createdAt: DateTime(now.year, now.month, 6), type: EntryType.expense),
-    AccountEntry(id: 'm6', amount: 64, category: 'transport', description: 'Metro', date: DateTime(now.year, now.month, 11), createdAt: DateTime(now.year, now.month, 11), type: EntryType.expense),
+    AccountEntry(
+      id: 'm1',
+      amount: 58,
+      category: 'food',
+      description: 'Lunch',
+      date: DateTime(now.year, now.month - 2, 4),
+      createdAt: DateTime(now.year, now.month - 2, 4),
+      type: EntryType.expense,
+    ),
+    AccountEntry(
+      id: 'm2',
+      amount: 120,
+      category: 'shopping',
+      description: 'Shopping',
+      date: DateTime(now.year, now.month - 2, 12),
+      createdAt: DateTime(now.year, now.month - 2, 12),
+      type: EntryType.expense,
+    ),
+    AccountEntry(
+      id: 'm3',
+      amount: 36,
+      category: 'transport',
+      description: 'Taxi',
+      date: DateTime(now.year, now.month - 1, 3),
+      createdAt: DateTime(now.year, now.month - 1, 3),
+      type: EntryType.expense,
+    ),
+    AccountEntry(
+      id: 'm4',
+      amount: 82,
+      category: 'food',
+      description: 'Dinner',
+      date: DateTime(now.year, now.month - 1, 10),
+      createdAt: DateTime(now.year, now.month - 1, 10),
+      type: EntryType.expense,
+    ),
+    AccountEntry(
+      id: 'm5',
+      amount: 148,
+      category: 'shopping',
+      description: 'Groceries',
+      date: DateTime(now.year, now.month, 6),
+      createdAt: DateTime(now.year, now.month, 6),
+      type: EntryType.expense,
+    ),
+    AccountEntry(
+      id: 'm6',
+      amount: 64,
+      category: 'transport',
+      description: 'Metro',
+      date: DateTime(now.year, now.month, 11),
+      createdAt: DateTime(now.year, now.month, 11),
+      type: EntryType.expense,
+    ),
   ];
 }
 
@@ -428,25 +527,24 @@ class _InsightCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: colors.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.auto_awesome, color: Color(0xFF8B5CF6), size: 18),
+              const Icon(
+                Icons.auto_awesome,
+                color: Color(0xFF8B5CF6),
+                size: 18,
+              ),
               const SizedBox(width: 6),
               Text(
                 t.text(AppStringKeys.predictionInsightTitle),
@@ -459,15 +557,10 @@ class _InsightCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          Text(
-            insight.isEmpty
+          AiTypewriterMarkdown(
+            text: insight.isEmpty
                 ? t.text(AppStringKeys.predictionInsightFallback)
                 : _localizePredictionNarrative(insight),
-            style: const TextStyle(
-              color: Color(0xFF333333),
-              fontSize: 15,
-              height: 1.5,
-            ),
           ),
         ],
       ),
@@ -484,19 +577,14 @@ class _OverviewCard extends StatelessWidget {
     final now = DateTime.now();
     final daysLeft = DateTime(now.year, now.month + 1, 0).day - now.day;
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: colors.softShadow,
       ),
       child: Column(
         children: [
@@ -510,21 +598,26 @@ class _OverviewCard extends StatelessWidget {
                       t.text(AppStringKeys.predictionPredictedTotalExpense),
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey.shade500,
+                        color: colors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       _predictionMoney(prediction.predictedTotalExpense),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
+                        color: colors.textPrimary,
                       ),
                     ),
                   ],
                 ),
               ),
-              Container(width: 1, height: 50, color: Colors.grey.shade200),
+              Container(
+                width: 1,
+                height: 50,
+                color: colors.textSecondary.withValues(alpha: 0.16),
+              ),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(left: 16),
@@ -535,15 +628,16 @@ class _OverviewCard extends StatelessWidget {
                         t.text(AppStringKeys.predictionPredictedDailyAverage),
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.shade500,
+                          color: colors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         _predictionMoney(prediction.predictedDailyAverage),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
+                          color: colors.textPrimary,
                         ),
                       ),
                     ],
@@ -556,7 +650,7 @@ class _OverviewCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.orange.shade50,
+              color: AppColors.warning.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -567,7 +661,7 @@ class _OverviewCard extends StatelessWidget {
                   'amount': _predictionMoney(prediction.predictedDailyAverage),
                 },
               ),
-              style: TextStyle(fontSize: 12, color: Colors.orange.shade700),
+              style: TextStyle(fontSize: 12, color: AppColors.warning),
             ),
           ),
         ],
@@ -583,18 +677,13 @@ class _WarningsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: colors.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -624,7 +713,7 @@ class _WarningsCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       _localizePredictionNarrative(w),
-                      style: TextStyle(color: Color(0xFF333333), fontSize: 13),
+                      style: TextStyle(color: colors.textPrimary, fontSize: 13),
                     ),
                   ),
                 ],
@@ -642,39 +731,45 @@ class _BudgetCard extends StatelessWidget {
   const _BudgetCard({required this.recs});
 
   String _budgetCategoryName(String id, String fallback, Locale locale) {
-    return _predictionCategoryDisplayFromRaw(id, locale);
+    return _predictionCategoryDisplayFromRaw(
+      id == fallback ? id : fallback,
+      locale,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
     final locale = _predictionLocale();
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     final sorted = recs.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: colors.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.lightbulb_outline, color: Color(0xFF4A47D8), size: 20),
+              const Icon(
+                Icons.lightbulb_outline,
+                color: Color(0xFF4A47D8),
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Text(
                 t.text(AppStringKeys.predictionBudgetSuggestions),
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: colors.textPrimary,
+                ),
               ),
             ],
           ),
@@ -689,7 +784,14 @@ class _BudgetCard extends StatelessWidget {
                   Text(cat?.icon ?? '📦', style: const TextStyle(fontSize: 18)),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(name, style: const TextStyle(fontSize: 14)),
+                    child: Text(
+                      name,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: colors.textPrimary,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -697,7 +799,7 @@ class _BudgetCard extends StatelessWidget {
                       AppStringKeys.predictionApproxPerDay,
                       params: {'amount': _predictionMoney(e.value / 30)},
                     ),
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                    style: TextStyle(fontSize: 11, color: colors.textSecondary),
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -705,10 +807,10 @@ class _BudgetCard extends StatelessWidget {
                       AppStringKeys.predictionPerMonth,
                       params: {'amount': _predictionMoney(e.value)},
                     ),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF333333),
+                      color: colors.textPrimary,
                     ),
                   ),
                 ],
@@ -735,6 +837,7 @@ class _TrendCardState extends State<_TrendCard> {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     final monthMap = <String, double>{};
     final now = DateTime.now();
     for (int i = 2; i >= 0; i--) {
@@ -771,15 +874,9 @@ class _TrendCardState extends State<_TrendCard> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: colors.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -789,7 +886,11 @@ class _TrendCardState extends State<_TrendCard> {
               AppStringKeys.predictionTrendTitle,
               params: {'count': '${months.length}'},
             ),
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: colors.textPrimary,
+            ),
           ),
           const SizedBox(height: 20),
           SizedBox(
@@ -798,7 +899,7 @@ class _TrendCardState extends State<_TrendCard> {
                 ? Center(
                     child: Text(
                       t.text(AppStringKeys.reportsEmptyTitle),
-                      style: TextStyle(color: Colors.grey.shade400),
+                      style: TextStyle(color: colors.textSecondary),
                     ),
                   )
                 : _LineChartWidget(
@@ -857,6 +958,8 @@ class _LineChartWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final spots = <FlSpot>[];
     for (int i = 0; i < values.length; i++) {
       spots.add(FlSpot(i.toDouble(), values[i]));
@@ -877,19 +980,42 @@ class _LineChartWidget extends StatelessWidget {
             }
           },
           touchTooltipData: LineTouchTooltipData(
-            getTooltipColor: (_) => Colors.grey.shade800,
+            getTooltipColor: (_) =>
+                isDark ? const Color(0xFF151523) : const Color(0xFF2A2A3F),
             tooltipRoundedRadius: 8,
+            getTooltipItems: (spots) => spots
+                .map(
+                  (spot) => LineTooltipItem(
+                    _predictionMoney(spot.y),
+                    const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                )
+                .toList(),
           ),
         ),
-        gridData: const FlGridData(show: false),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: maxVal <= 0 ? 1 : maxVal / 4,
+          getDrawingHorizontalLine: (_) => FlLine(
+            color: colors.textSecondary.withValues(alpha: isDark ? 0.10 : 0.12),
+            strokeWidth: 1,
+          ),
+        ),
         borderData: FlBorderData(show: false),
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 50,
-              getTitlesWidget: (v, _) =>
-                  Text(_predictionMoney(v, decimalDigits: 0), style: const TextStyle(fontSize: 10)),
+              getTitlesWidget: (v, _) => Text(
+                _predictionMoney(v, decimalDigits: 0),
+                style: TextStyle(fontSize: 10, color: colors.textSecondary),
+              ),
             ),
           ),
           bottomTitles: AxisTitles(
@@ -900,7 +1026,7 @@ class _LineChartWidget extends StatelessWidget {
                 if (idx >= 0 && idx < months.length) {
                   return Text(
                     months[idx],
-                    style: const TextStyle(fontSize: 11),
+                    style: TextStyle(fontSize: 11, color: colors.textSecondary),
                   );
                 }
                 return const SizedBox.shrink();
@@ -939,13 +1065,15 @@ class _LineChartWidget extends StatelessWidget {
                   radius: dotSize,
                   color: dotColor,
                   strokeWidth: 2,
-                  strokeColor: Colors.white,
+                  strokeColor: colors.cardBackground,
                 );
               },
             ),
             belowBarData: BarAreaData(
               show: true,
-              color: const Color(0xFF4A47D8).withValues(alpha: 0.1),
+              color: const Color(
+                0xFF4A47D8,
+              ).withValues(alpha: isDark ? 0.18 : 0.10),
             ),
           ),
         ],

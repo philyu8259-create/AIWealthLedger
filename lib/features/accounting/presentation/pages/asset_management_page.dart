@@ -14,6 +14,7 @@ import '../../../../app/profile/capability_profile.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/entities/stock_position.dart';
 import '../../domain/repositories/asset_repository.dart';
+import '../widgets/parallax_asset_card.dart';
 import '../widgets/press_feedback.dart';
 
 Locale _localeFromTag(String raw) {
@@ -243,10 +244,12 @@ class _AssetManagementPageState extends State<AssetManagementPage>
       final refreshed = await _stockService.refreshQuotes(manual: true);
       if (!mounted) return;
       setState(() => _stocks = refreshed);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
-        SnackBar(content: Text(AppStrings.of(context).text(AppStringKeys.assetsQuotesUpdated))),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppStrings.of(context).text(AppStringKeys.assetsQuotesUpdated),
+          ),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -438,7 +441,10 @@ class _AssetManagementPageState extends State<AssetManagementPage>
       builder: (ctx) => AlertDialog(
         title: Text(t.text(AppStringKeys.assetsDeleteAssetTitle)),
         content: Text(
-          t.text(AppStringKeys.assetsDeleteAssetContent, params: {'name': asset.name}),
+          t.text(
+            AppStringKeys.assetsDeleteAssetContent,
+            params: {'name': asset.name},
+          ),
         ),
         actions: [
           TextButton(
@@ -525,7 +531,9 @@ class _AssetManagementPageState extends State<AssetManagementPage>
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: Text(t.text(AppStringKeys.assetsTitle)),
         backgroundColor: const Color(0xFF4A47D8),
@@ -597,10 +605,13 @@ class _AssetManagementPageState extends State<AssetManagementPage>
                               label: _refreshingQuotes
                                   ? t.text(AppStringKeys.assetsRefreshing)
                                   : (_lastQuoteUpdatedAt == null
-                                        ? t.text(AppStringKeys.assetsRefreshQuotes)
+                                        ? t.text(
+                                            AppStringKeys.assetsRefreshQuotes,
+                                          )
                                         : AppFormatter.formatShortDate(
                                             _lastQuoteUpdatedAt!,
-                                            locale: getIt<AppProfileService>().currentLocale,
+                                            locale: getIt<AppProfileService>()
+                                                .currentLocale,
                                           )),
                               onTap: _refreshingQuotes
                                   ? null
@@ -632,7 +643,9 @@ class _AssetManagementPageState extends State<AssetManagementPage>
                         _AssetEmptyCard(
                           icon: '📈',
                           title: t.text(AppStringKeys.assetsEmptyStocksTitle),
-                          subtitle: t.text(AppStringKeys.assetsEmptyStocksSubtitle),
+                          subtitle: t.text(
+                            AppStringKeys.assetsEmptyStocksSubtitle,
+                          ),
                         )
                       else
                         ..._stocks.map(
@@ -656,7 +669,9 @@ class _AssetManagementPageState extends State<AssetManagementPage>
                         _AssetEmptyCard(
                           icon: '💼',
                           title: t.text(AppStringKeys.assetsEmptyOtherTitle),
-                          subtitle: t.text(AppStringKeys.assetsEmptyOtherSubtitle),
+                          subtitle: t.text(
+                            AppStringKeys.assetsEmptyOtherSubtitle,
+                          ),
                         )
                       else
                         ..._assets.map(
@@ -667,7 +682,9 @@ class _AssetManagementPageState extends State<AssetManagementPage>
                           ),
                         ),
                       const SizedBox(height: 16),
-                      _SectionHeader(title: t.text(AppStringKeys.assetsConfigSection)),
+                      _SectionHeader(
+                        title: t.text(AppStringKeys.assetsConfigSection),
+                      ),
                       const SizedBox(height: 8),
                       _ConfigCard(
                         searchCacheUpdatedAtMs:
@@ -708,104 +725,78 @@ class _AssetSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     final profitColor = _marketChangeBgColor(stockProfitAmount);
     final profitTextColor = _marketChangeColor(stockProfitAmount);
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF4A47D8), Color(0xFF3A38C8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF4A47D8).withValues(alpha: 0.25),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+    return Column(
+      children: [
+        ParallaxAssetCard(totalAssets: totalAssets),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: colors.cardBackground,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: colors.softShadow,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Row 1: 总资产(最大,最突出)
-          Text(
-            t.text(AppStringKeys.assetsTotalAssets),
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.65),
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            _profileMoney(totalAssets),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.5,
-            ),
-          ),
-
-          const SizedBox(height: 14),
-
-          // Row 2: 持仓盈亏（按市场语义色）
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: profitColor,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              stockProfitPercent == null
-                  ? t.text(AppStringKeys.assetsStockProfitEmpty)
-                  : t.text(
-                      AppStringKeys.assetsStockProfit,
-                      params: {
-                        'amount': '${stockProfitAmount >= 0 ? '+' : ''}${_profileMoney(stockProfitAmount.abs())}',
-                        'percent': '${stockProfitPercent!.toStringAsFixed(2)}%',
-                      },
-                    ),
-              style: TextStyle(
-                color: profitTextColor,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Row 3: 股票市值 + 其他资产并列
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: _SummaryMiniCard(
-                  title: t.text(AppStringKeys.assetsStockMarketValue),
-                  value: _profileMoney(stockMarketValue),
-                  subtitle: t.text(
-                    AppStringKeys.assetsHoldingCount,
-                    params: {'count': '$stockCount'},
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: profitColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  stockProfitPercent == null
+                      ? t.text(AppStringKeys.assetsStockProfitEmpty)
+                      : t.text(
+                          AppStringKeys.assetsStockProfit,
+                          params: {
+                            'amount':
+                                '${stockProfitAmount >= 0 ? '+' : ''}${_profileMoney(stockProfitAmount.abs())}',
+                            'percent':
+                                '${stockProfitPercent!.toStringAsFixed(2)}%',
+                          },
+                        ),
+                  style: TextStyle(
+                    color: profitTextColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                   ),
-                  lightText: true,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _SummaryMiniCard(
-                  title: t.text(AppStringKeys.assetsOtherAssets),
-                  value: _profileMoney(otherAssetsTotal),
-                  subtitle: t.text(AppStringKeys.assetsOtherAssetsSubtitle),
-                  lightText: true,
-                ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _SummaryMiniCard(
+                      title: t.text(AppStringKeys.assetsStockMarketValue),
+                      value: _profileMoney(stockMarketValue),
+                      subtitle: t.text(
+                        AppStringKeys.assetsHoldingCount,
+                        params: {'count': '$stockCount'},
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _SummaryMiniCard(
+                      title: t.text(AppStringKeys.assetsOtherAssets),
+                      value: _profileMoney(otherAssetsTotal),
+                      subtitle: t.text(AppStringKeys.assetsOtherAssetsSubtitle),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -815,23 +806,18 @@ class _SummaryMiniCard extends StatelessWidget {
     required this.title,
     required this.value,
     required this.subtitle,
-    this.lightText = false,
   });
 
   final String title;
   final String value;
   final String subtitle;
-  final bool
-  lightText; // true = white text (on dark bg), false = dark text (on light bg)
 
   @override
   Widget build(BuildContext context) {
-    final titleColor = lightText ? Colors.white70 : const Color(0xFF909399);
-    final valueColor = lightText ? Colors.white : const Color(0xFF303133);
-    final subtitleColor = lightText ? Colors.white54 : const Color(0xFF909399);
-    final bgColor = lightText
-        ? Colors.white.withValues(alpha: 0.14)
-        : const Color(0xFFF8F8F8);
+    final titleColor = const Color(0xFF909399);
+    final valueColor = const Color(0xFF303133);
+    final subtitleColor = const Color(0xFF909399);
+    final bgColor = const Color(0xFFF8F8F8);
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1098,12 +1084,17 @@ class _StockTile extends StatelessWidget {
     final statusText = switch (position.quoteStatus) {
       StockQuoteStatus.normal => t.text(AppStringKeys.assetsQuoteStatusNormal),
       StockQuoteStatus.stale => t.text(AppStringKeys.assetsQuoteStatusStale),
-      StockQuoteStatus.loading => t.text(AppStringKeys.assetsQuoteStatusLoading),
+      StockQuoteStatus.loading => t.text(
+        AppStringKeys.assetsQuoteStatusLoading,
+      ),
     };
     final locale = _localeFromTag(position.locale);
     final updatedText = position.quoteUpdatedAt == null
         ? t.text(AppStringKeys.assetsNotUpdated)
-        : AppFormatter.formatShortDate(position.quoteUpdatedAt!, locale: locale);
+        : AppFormatter.formatShortDate(
+            position.quoteUpdatedAt!,
+            locale: locale,
+          );
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -1273,8 +1264,10 @@ class _StockTile extends StatelessWidget {
                         : t.text(
                             AppStringKeys.assetsFloatingProfit,
                             params: {
-                              'amount': '${profit >= 0 ? '+' : ''}${_formatMoney(profit.abs(), currencyCode: position.marketCurrency, locale: locale)}',
-                              'percent': '${profitPercent!.toStringAsFixed(2)}%',
+                              'amount':
+                                  '${profit >= 0 ? '+' : ''}${_formatMoney(profit.abs(), currencyCode: position.marketCurrency, locale: locale)}',
+                              'percent':
+                                  '${profitPercent!.toStringAsFixed(2)}%',
                             },
                           ),
                     style: TextStyle(
@@ -1446,11 +1439,15 @@ class _OtherAssetTile extends StatelessWidget {
               itemBuilder: (_) => [
                 PopupMenuItem(
                   value: 'edit',
-                  child: Text(AppStrings.of(context).text(AppStringKeys.assetsEdit)),
+                  child: Text(
+                    AppStrings.of(context).text(AppStringKeys.assetsEdit),
+                  ),
                 ),
                 PopupMenuItem(
                   value: 'delete',
-                  child: Text(AppStrings.of(context).text(AppStringKeys.commonDelete)),
+                  child: Text(
+                    AppStrings.of(context).text(AppStringKeys.commonDelete),
+                  ),
                 ),
               ],
             ),
@@ -1547,7 +1544,9 @@ class _ConfigCardState extends State<_ConfigCard> {
                   const SizedBox(height: 8),
                   _ConfigRow(
                     label: t.text(AppStringKeys.assetsConfigManualThrottle),
-                    value: t.text(AppStringKeys.assetsConfigManualThrottleValue),
+                    value: t.text(
+                      AppStringKeys.assetsConfigManualThrottleValue,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   _ConfigRow(
@@ -1741,26 +1740,26 @@ class _StockFormSheetState extends State<_StockFormSheet> {
     final t = AppStrings.of(context);
     final selected = _selectedItem;
     if (selected == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(t.text(AppStringKeys.assetsSelectStockFirst))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t.text(AppStringKeys.assetsSelectStockFirst))),
+      );
       return;
     }
 
     final quantity = int.tryParse(_quantityController.text.trim());
     if (quantity == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(t.text(AppStringKeys.assetsInvalidQuantity))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t.text(AppStringKeys.assetsInvalidQuantity))),
+      );
       return;
     }
 
     if (_changeMode == StockQuantityChangeMode.overwrite) {
-      final invalid = _isUsScope ? quantity <= 0 : (quantity <= 0 || quantity % 100 != 0);
+      final invalid = _isUsScope
+          ? quantity <= 0
+          : (quantity <= 0 || quantity % 100 != 0);
       if (invalid) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               t.text(
@@ -1774,7 +1773,9 @@ class _StockFormSheetState extends State<_StockFormSheet> {
         return;
       }
     } else {
-      final invalidDelta = _isUsScope ? quantity == 0 : (quantity == 0 || quantity % 100 != 0);
+      final invalidDelta = _isUsScope
+          ? quantity == 0
+          : (quantity == 0 || quantity % 100 != 0);
       if (invalidDelta) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1791,7 +1792,9 @@ class _StockFormSheetState extends State<_StockFormSheet> {
       }
       final currentQty = widget.position?.quantity ?? 0;
       final nextQty = currentQty + quantity;
-      final invalidNext = _isUsScope ? nextQty <= 0 : (nextQty <= 0 || nextQty % 100 != 0);
+      final invalidNext = _isUsScope
+          ? nextQty <= 0
+          : (nextQty <= 0 || nextQty % 100 != 0);
       if (invalidNext) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1811,9 +1814,9 @@ class _StockFormSheetState extends State<_StockFormSheet> {
     final rawCost = _costController.text.trim();
     final costPrice = rawCost.isEmpty ? null : double.tryParse(rawCost);
     if (rawCost.isNotEmpty && costPrice == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(t.text(AppStringKeys.assetsInvalidCostPrice))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t.text(AppStringKeys.assetsInvalidCostPrice))),
+      );
       return;
     }
 
@@ -1954,10 +1957,7 @@ class _StockFormSheetState extends State<_StockFormSheet> {
                 const SizedBox(height: 8),
                 Text(
                   _searchError!,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.red.shade400,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.red.shade400),
                 ),
               ] else if (_hasSearched &&
                   !_searching &&
@@ -1966,10 +1966,7 @@ class _StockFormSheetState extends State<_StockFormSheet> {
                 const SizedBox(height: 8),
                 Text(
                   t.text(AppStringKeys.assetsSearchNoResults),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
               const SizedBox(height: 16),
@@ -2147,23 +2144,21 @@ class _AssetFormSheetState extends State<_AssetFormSheet> {
               labelText: t.text(AppStringKeys.assetsAssetType),
               border: const OutlineInputBorder(),
             ),
-            items: assetTypes
-                .map((type) {
-                  return DropdownMenuItem(
-                    value: type,
-                    child: Row(
-                      children: [
-                        Text(
-                          Asset.typeIcon(type),
-                          style: const TextStyle(fontSize: 18),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(_localizedAssetTypeName(type, locale)),
-                      ],
+            items: assetTypes.map((type) {
+              return DropdownMenuItem(
+                value: type,
+                child: Row(
+                  children: [
+                    Text(
+                      Asset.typeIcon(type),
+                      style: const TextStyle(fontSize: 18),
                     ),
-                  );
-                })
-                .toList(),
+                    const SizedBox(width: 8),
+                    Text(_localizedAssetTypeName(type, locale)),
+                  ],
+                ),
+              );
+            }).toList(),
             onChanged: (v) {
               if (v != null) setState(() => _selectedType = v);
             },
@@ -2201,10 +2196,10 @@ class _AssetFormSheetState extends State<_AssetFormSheet> {
               onPressed: () {
                 final name = _nameController.text.trim();
                 if (name.isEmpty) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(
-                    SnackBar(content: Text(t.text(AppStringKeys.assetsEnterAssetName))),
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(t.text(AppStringKeys.assetsEnterAssetName)),
+                    ),
                   );
                   return;
                 }

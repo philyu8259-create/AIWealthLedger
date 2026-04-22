@@ -630,10 +630,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => CustomNumpadSheet(
-        title: '$icon $note',
-        isIncome: isIncome,
-      ),
+      builder: (ctx) =>
+          CustomNumpadSheet(title: '$icon $note', isIncome: isIncome),
     );
 
     if (!mounted || amount == null || amount <= 0) return;
@@ -652,27 +650,41 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final t = AppStrings.of(ctx);
     showDialog(
       context: ctx,
-      builder: (ctx) => AlertDialog(
-        title: Text(t.text(AppStringKeys.homeVipUpgradeTitle)),
-        content: Text(t.text(AppStringKeys.homeVipUpgradeContent)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(t.text(AppStringKeys.homeVipUpgradeLater)),
+      builder: (ctx) {
+        final colors = Theme.of(ctx).extension<AppColorsExtension>()!;
+        return AlertDialog(
+          backgroundColor: colors.cardBackground,
+          titleTextStyle: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4A47D8),
-              foregroundColor: Colors.white,
+          contentTextStyle: TextStyle(
+            color: colors.textSecondary,
+            fontSize: 14,
+            height: 1.5,
+          ),
+          title: Text(t.text(AppStringKeys.homeVipUpgradeTitle)),
+          content: Text(t.text(AppStringKeys.homeVipUpgradeContent)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(t.text(AppStringKeys.homeVipUpgradeLater)),
             ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              context.go('/settings');
-            },
-            child: Text(t.text(AppStringKeys.homeVipUpgradeNow)),
-          ),
-        ],
-      ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4A47D8),
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.pop(ctx);
+                context.go('/settings');
+              },
+              child: Text(t.text(AppStringKeys.homeVipUpgradeNow)),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -680,27 +692,41 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final t = AppStrings.of(ctx);
     showDialog(
       context: ctx,
-      builder: (ctx) => AlertDialog(
-        title: Text(t.text(AppStringKeys.homeLoginPromptTitle)),
-        content: Text(t.text(AppStringKeys.homeLoginPromptContent)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(t.text(AppStringKeys.homeLoginPromptLater)),
+      builder: (ctx) {
+        final colors = Theme.of(ctx).extension<AppColorsExtension>()!;
+        return AlertDialog(
+          backgroundColor: colors.cardBackground,
+          titleTextStyle: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4A47D8),
-              foregroundColor: Colors.white,
+          contentTextStyle: TextStyle(
+            color: colors.textSecondary,
+            fontSize: 14,
+            height: 1.5,
+          ),
+          title: Text(t.text(AppStringKeys.homeLoginPromptTitle)),
+          content: Text(t.text(AppStringKeys.homeLoginPromptContent)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(t.text(AppStringKeys.homeLoginPromptLater)),
             ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              context.go('/phone_login');
-            },
-            child: Text(t.text(AppStringKeys.homeLoginPromptNow)),
-          ),
-        ],
-      ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4A47D8),
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.pop(ctx);
+                context.go('/phone_login');
+              },
+              child: Text(t.text(AppStringKeys.homeLoginPromptNow)),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -734,10 +760,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F6F8),
+        backgroundColor: colors.background,
         body: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -845,7 +872,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                     fontSize: compact ? 16 : 18,
                                                     fontWeight: FontWeight.w300,
                                                     letterSpacing: -0.2,
-                                                    color: const Color(0xFF1A1A2E),
+                                                    color: colors.textPrimary,
                                                   ),
                                                 ),
                                                 Text(
@@ -855,7 +882,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                       TextOverflow.ellipsis,
                                                   style: TextStyle(
                                                     fontSize: compact ? 12 : 13,
-                                                    color: Colors.grey,
+                                                    color: colors.textSecondary,
                                                   ),
                                                 ),
                                               ],
@@ -871,15 +898,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                         width: compact ? 40 : 44,
                                         height: compact ? 40 : 44,
                                         decoration: BoxDecoration(
-                                          color: Colors.white,
+                                          color: colors.cardBackground,
                                           borderRadius: BorderRadius.circular(
                                             14,
                                           ),
-                                          boxShadow: AppColors.softShadow,
+                                          boxShadow: colors.softShadow,
                                         ),
-                                        child: const Icon(
+                                        child: Icon(
                                           Icons.settings_outlined,
-                                          color: Color(0xFF1A1A2E),
+                                          color: colors.textPrimary,
                                           size: 22,
                                         ),
                                       ),
@@ -992,8 +1019,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                             ),
                                             const SizedBox(height: 10),
                                             AnimatedNumberText(
-                                              value: state.totalExpense.toDouble(),
-                                              formatter: (val) => _homeMoney(val),
+                                              value: state.totalExpense
+                                                  .toDouble(),
+                                              formatter: (val) =>
+                                                  _homeMoney(val),
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 28,
@@ -1118,8 +1147,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                             ),
                                             const SizedBox(height: 10),
                                             AnimatedNumberText(
-                                              value: state.totalIncome.toDouble(),
-                                              formatter: (val) => _homeMoney(val),
+                                              value: state.totalIncome
+                                                  .toDouble(),
+                                              formatter: (val) =>
+                                                  _homeMoney(val),
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 28,
@@ -1197,19 +1228,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       child: Container(
                                         padding: const EdgeInsets.all(16),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFF4F1FF),
+                                          color: colors.cardBackground,
                                           borderRadius: BorderRadius.circular(
                                             20,
                                           ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withValues(
-                                                alpha: 0.04,
-                                              ),
-                                              blurRadius: 16,
-                                              offset: const Offset(0, 4),
-                                            ),
-                                          ],
+                                          boxShadow: colors.softShadow,
                                         ),
                                         child: Row(
                                           crossAxisAlignment:
@@ -1254,16 +1277,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                           maxLines: 1,
                                                           overflow: TextOverflow
                                                               .ellipsis,
-                                                          style:
-                                                              const TextStyle(
-                                                                fontSize: 14,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w400,
-                                                                color: Color(
-                                                                  0xFF1A1A2E,
-                                                                ),
-                                                              ),
+                                                          style: TextStyle(
+                                                            fontSize: 14,
+                                                            fontWeight:
+                                                                FontWeight.w400,
+                                                            color: colors
+                                                                .textPrimary,
+                                                          ),
                                                         ),
                                                       ),
                                                       const SizedBox(width: 6),
@@ -1320,9 +1340,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                           alignment:
                                                               Alignment.center,
                                                           decoration: BoxDecoration(
-                                                            color: const Color(
-                                                              0xFFF6F6F9,
-                                                            ),
+                                                            color: colors
+                                                                .background,
                                                             borderRadius:
                                                                 BorderRadius.circular(
                                                                   9,
@@ -1334,9 +1353,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                                       .visibility_off_outlined
                                                                 : Icons
                                                                       .visibility_outlined,
-                                                            color: const Color(
-                                                              0xFF8E8E8E,
-                                                            ),
+                                                            color: colors
+                                                                .textSecondary,
                                                             size: 19,
                                                           ),
                                                         ),
@@ -1350,14 +1368,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                           _assetPrivacyHidden
                                                           ? Text(
                                                               '${AppFormatter.currencySymbol(currencyCode: getIt<AppProfileService>().currentBaseCurrency, locale: getIt<AppProfileService>().currentLocale)} ••••••••',
-                                                              style: const TextStyle(
+                                                              style: TextStyle(
                                                                 fontSize: 18,
                                                                 fontWeight:
                                                                     FontWeight
                                                                         .bold,
-                                                                color: Color(
-                                                                  0xFF1A1A2E,
-                                                                ),
+                                                                color: colors
+                                                                    .textPrimary,
                                                               ),
                                                             )
                                                           : Row(
@@ -1379,15 +1396,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                                           summary
                                                                               .totalAssets,
                                                                         ),
-                                                                  style: const TextStyle(
+                                                                  style: TextStyle(
                                                                     fontSize:
                                                                         18,
                                                                     fontWeight:
                                                                         FontWeight
                                                                             .bold,
-                                                                    color: Color(
-                                                                      0xFF1A1A2E,
-                                                                    ),
+                                                                    color: colors
+                                                                        .textPrimary,
                                                                   ),
                                                                 ),
                                                                 if (summary !=
@@ -1465,13 +1481,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                                   '${summary?.stockCount ?? '--'}',
                                                             },
                                                           ),
-                                                          style:
-                                                              const TextStyle(
-                                                                fontSize: 12,
-                                                                color: Color(
-                                                                  0xFF8E8E8E,
-                                                                ),
-                                                              ),
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color: colors
+                                                                .textSecondary,
+                                                          ),
                                                         )
                                                       : Text(
                                                           (() {
@@ -1496,13 +1510,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                               },
                                                             );
                                                           })(),
-                                                          style:
-                                                              const TextStyle(
-                                                                fontSize: 12,
-                                                                color: Color(
-                                                                  0xFF8E8E8E,
-                                                                ),
-                                                              ),
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color: colors
+                                                                .textSecondary,
+                                                          ),
                                                         ),
                                                 ],
                                               ),
@@ -1545,9 +1557,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   8,
                                 ),
                                 child: SectionHeader(
-                                  title: AppStrings.of(context).text(
-                                    AppStringKeys.homeRecentEntriesTitle,
-                                  ),
+                                  title: AppStrings.of(
+                                    context,
+                                  ).text(AppStringKeys.homeRecentEntriesTitle),
                                   showLeadingDot: false,
                                   fontSize: 17,
                                   fontWeight: FontWeight.w300,
@@ -1566,7 +1578,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             if (state.isParsing)
                               SliverToBoxAdapter(
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                  ),
                                   child: ShimmerLoading(
                                     child: Column(
                                       children: const [
@@ -1610,7 +1624,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                               style: TextStyle(
                                                 fontSize: 17,
                                                 fontWeight: FontWeight.w600,
-                                                color: Colors.black87,
+                                                color: colors.textPrimary,
                                               ),
                                             ),
                                             const SizedBox(height: 6),
@@ -1620,7 +1634,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                     .homeRecentEntriesEmptySubtitle,
                                               ),
                                               style: TextStyle(
-                                                color: Colors.grey,
+                                                color: colors.textSecondary,
                                                 fontSize: 13,
                                               ),
                                             ),
@@ -1635,17 +1649,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                         horizontal: 20,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFFAF9FF),
+                                        color: colors.cardBackground,
                                         borderRadius: BorderRadius.circular(20),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.04,
-                                            ),
-                                            blurRadius: 16,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
+                                        boxShadow: colors.softShadow,
                                       ),
                                       child: ListView.builder(
                                         shrinkWrap: true,
@@ -1701,15 +1707,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                               entry.description.isEmpty
                                                   ? categoryName
                                                   : entry.description,
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontSize: 15,
                                                 fontWeight: FontWeight.w500,
+                                                color: colors.textPrimary,
                                               ),
                                             ),
                                             subtitle: Text(
                                               _formatTime(entry.date),
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontSize: 12,
+                                                color: colors.textSecondary,
                                               ),
                                             ),
                                             trailing: Text(
@@ -1721,7 +1729,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                     entry.type ==
                                                         EntryType.income
                                                     ? AppColors.primary
-                                                    : Colors.black87,
+                                                    : colors.textPrimary,
                                               ),
                                             ),
                                           );
@@ -1732,7 +1740,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
                             SliverToBoxAdapter(
                               child: SizedBox(
-                                height: MediaQuery.of(context).padding.bottom + 120,
+                                height:
+                                    MediaQuery.of(context).padding.bottom + 120,
                               ),
                             ),
                           ],
@@ -1754,24 +1763,38 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     return await showDialog<bool>(
           context: context,
           barrierDismissible: false,
-          builder: (ctx) => AlertDialog(
-            title: Text(title),
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: Text(
-                  AppStrings.of(ctx).text(AppStringKeys.commonCancel),
-                ),
+          builder: (ctx) {
+            final colors = Theme.of(ctx).extension<AppColorsExtension>()!;
+            return AlertDialog(
+              backgroundColor: colors.cardBackground,
+              titleTextStyle: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
               ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: Text(
-                  AppStrings.of(ctx).text(AppStringKeys.homePrivacyAgree),
-                ),
+              contentTextStyle: TextStyle(
+                color: colors.textSecondary,
+                fontSize: 14,
+                height: 1.5,
               ),
-            ],
-          ),
+              title: Text(title),
+              content: Text(message),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: Text(
+                    AppStrings.of(ctx).text(AppStringKeys.commonCancel),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: Text(
+                    AppStrings.of(ctx).text(AppStringKeys.homePrivacyAgree),
+                  ),
+                ),
+              ],
+            );
+          },
         ) ??
         false;
   }
@@ -1880,6 +1903,7 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
       backgroundColor: Colors.transparent,
       builder: (sheetCtx) {
         final mediaQuery = MediaQuery.of(sheetCtx);
+        final colors = Theme.of(sheetCtx).extension<AppColorsExtension>()!;
         final extraBottomOffset = mediaQuery.size.width >= 768 ? 96.0 : 20.0;
 
         return StatefulBuilder(
@@ -1892,7 +1916,7 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                 mediaQuery.viewInsets.bottom + extraBottomOffset,
               ),
               child: Material(
-                color: Colors.white,
+                color: colors.cardBackground,
                 borderRadius: BorderRadius.circular(24),
                 clipBehavior: Clip.antiAlias,
                 child: SafeArea(
@@ -1909,7 +1933,9 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                               width: 40,
                               height: 4,
                               decoration: BoxDecoration(
-                                color: Colors.grey.shade300,
+                                color: colors.textSecondary.withValues(
+                                  alpha: 0.24,
+                                ),
                                 borderRadius: BorderRadius.circular(999),
                               ),
                             ),
@@ -1929,7 +1955,10 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                             AppStrings.of(
                               sheetCtx,
                             ).text(AppStringKeys.homeEditCategoriesSubtitle),
-                            style: TextStyle(fontSize: 13, color: Colors.grey),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: colors.textSecondary,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Expanded(
@@ -1977,7 +2006,9 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                                   .where((c) => selected.contains(c.id))
                                   .map((c) => c.id)
                                   .toList();
-                              await getIt<QuickChipService>().saveIds(orderedIds);
+                              await getIt<QuickChipService>().saveIds(
+                                orderedIds,
+                              );
                               setState(() {
                                 _enabledIds = orderedIds;
                                 if (_selectedCategoryId != null &&
@@ -1997,7 +2028,9 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                               ),
                             ),
                             child: Text(
-                              AppStrings.of(sheetCtx).text(AppStringKeys.commonSave),
+                              AppStrings.of(
+                                sheetCtx,
+                              ).text(AppStringKeys.commonSave),
                             ),
                           ),
                         ],
@@ -2016,6 +2049,7 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     final visibleCategories = _visibleCategories;
     final effectiveSelectedId =
         _selectedCategoryId ??
@@ -2029,15 +2063,9 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colors.cardBackground,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.16),
-              blurRadius: 28,
-              offset: const Offset(0, 12),
-            ),
-          ],
+          boxShadow: colors.softShadow,
         ),
         child: SafeArea(
           top: false,
@@ -2045,317 +2073,346 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-              Container(
-                padding: const EdgeInsets.fromLTRB(24, 20, 18, 20),
-                decoration: const BoxDecoration(
-                  gradient: aiPrimaryGradient,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.add_rounded,
-                          color: Colors.white,
-                          size: 25,
+                Container(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 18, 20),
+                  decoration: const BoxDecoration(
+                    gradient: aiPrimaryGradient,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(30),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.add_rounded,
+                            color: Colors.white,
+                            size: 25,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppStrings.of(
+                                context,
+                              ).text(AppStringKeys.homeQuickAddTitle),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 17,
+                                height: 1.0,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              AppStrings.of(context).text(
+                                AppStringKeys.homeQuickAddSubtitle,
+                                params: {
+                                  'count': visibleCategories.length.toString(),
+                                },
+                              ),
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.88),
+                                fontSize: 12,
+                                height: 1.0,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 32,
+                          minHeight: 32,
+                        ),
+                        icon: const Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Container(
+                        height: 108,
+                        decoration: BoxDecoration(
+                          color: colors.background,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: colors.textSecondary.withValues(alpha: 0.16),
+                          ),
+                        ),
+                        child: TextField(
+                          controller: _amountController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          autofocus: false,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
+                          ),
+                          decoration: InputDecoration(
+                            labelText: AppStrings.of(
+                              context,
+                            ).text(AppStringKeys.homeAmountLabel),
+                            hintText: AppStrings.of(
+                              context,
+                            ).text(AppStringKeys.homeAmountHint),
+                            prefixText: _homeCurrencyPrefix(),
+                            labelStyle: TextStyle(
+                              color: colors.textSecondary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                            ),
+                            hintStyle: TextStyle(
+                              color: colors.textSecondary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                            ),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            contentPadding: const EdgeInsets.fromLTRB(
+                              20,
+                              16,
+                              20,
+                              16,
+                            ),
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
                         children: [
                           Text(
-                            AppStrings.of(context).text(AppStringKeys.homeQuickAddTitle),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 17,
-                              height: 1.0,
-                              fontWeight: FontWeight.w700,
+                            AppStrings.of(
+                              context,
+                            ).text(AppStringKeys.transactionsSelectCategory),
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: colors.textSecondary,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          Text(
-                            AppStrings.of(context).text(
-                              AppStringKeys.homeQuickAddSubtitle,
-                              params: {'count': visibleCategories.length.toString()},
-                            ),
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.88),
-                              fontSize: 12,
-                              height: 1.0,
-                              fontWeight: FontWeight.w400,
+                          const Spacer(),
+                          PressFeedback(
+                            onTap: () => _showCategoryEditSheet(context),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(
+                                  alpha: 0.12,
+                                ),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                AppStrings.of(
+                                  context,
+                                ).text(AppStringKeys.assetsEdit),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 32,
-                        minHeight: 32,
-                      ),
-                      icon: const Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Container(
-                      height: 108,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF7F7FB),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: const Color(0xFFEDEDF7)),
-                      ),
-                      child: TextField(
-                        controller: _amountController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        autofocus: false,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: AppStrings.of(
-                            context,
-                          ).text(AppStringKeys.homeAmountLabel),
-                          hintText: AppStrings.of(
-                            context,
-                          ).text(AppStringKeys.homeAmountHint),
-                          prefixText: _homeCurrencyPrefix(),
-                          labelStyle: const TextStyle(
-                            color: Color(0xFFB7B8C7),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          hintStyle: const TextStyle(
-                            color: Color(0xFFB7B8C7),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          filled: true,
-                          fillColor: Colors.transparent,
-                          contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-                          border: InputBorder.none,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Text(
-                          AppStrings.of(
-                            context,
-                          ).text(AppStringKeys.transactionsSelectCategory),
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: Color(0xFFB7B8C7),
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        const Spacer(),
-                        PressFeedback(
-                          onTap: () => _showCategoryEditSheet(context),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF0EBFF),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              AppStrings.of(context).text(AppStringKeys.assetsEdit),
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF6C59C8),
-                                fontWeight: FontWeight.w600,
+                      const SizedBox(height: 14),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: visibleCategories.map((c) {
+                          final isSelected = _selectedCategoryId == c.id;
+                          return PressFeedback(
+                            onTap: () {
+                              setState(() {
+                                _selectedCategoryId = c.id;
+                                _selectedName = _homeCategoryName(c.id, c.name);
+                              });
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 160),
+                              curve: Curves.easeOut,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
                               ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: visibleCategories.map((c) {
-                        final isSelected = _selectedCategoryId == c.id;
-                        return PressFeedback(
-                          onTap: () {
-                            setState(() {
-                              _selectedCategoryId = c.id;
-                              _selectedName = _homeCategoryName(c.id, c.name);
-                            });
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 160),
-                            curve: Curves.easeOut,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? const Color(0xFFF0EBFF)
-                                  : const Color(0xFFF5F6FB),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
+                              decoration: BoxDecoration(
                                 color: isSelected
-                                    ? const Color(0xFFD8C7FF)
-                                    : Colors.transparent,
+                                    ? AppColors.primary.withValues(alpha: 0.16)
+                                    : colors.background,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.primary.withValues(alpha: 0.4)
+                                      : colors.textSecondary.withValues(
+                                          alpha: 0.08,
+                                        ),
+                                ),
+                              ),
+                              child: Text(
+                                '${c.icon} ${_homeCategoryName(c.id, c.name)}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : colors.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
-                            child: Text(
-                              '${c.icon} ${_homeCategoryName(c.id, c.name)}',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: isSelected
-                                    ? const Color(0xFF5A45D8)
-                                    : const Color(0xFF202125),
-                                fontWeight: FontWeight.w600,
-                              ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 22),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
                             ),
+                            elevation: 0,
+                            padding: EdgeInsets.zero,
                           ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 22),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          elevation: 0,
-                          padding: EdgeInsets.zero,
-                        ),
-                        onPressed: () {
-                          final amount = double.tryParse(_amountController.text);
-                          if (amount == null || amount <= 0) {
+                          onPressed: () {
+                            final amount = double.tryParse(
+                              _amountController.text,
+                            );
+                            if (amount == null || amount <= 0) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    AppStrings.of(
+                                      context,
+                                    ).text(AppStringKeys.homeInvalidAmount),
+                                  ),
+                                  duration: const Duration(seconds: 1),
+                                ),
+                              );
+                              return;
+                            }
+                            final category =
+                                _categoryMap[effectiveSelectedId] ??
+                                CategoryDef.expenseCategories.first;
+                            final entryType = _resolveType(category.id);
+                            context.read<AccountBloc>().add(
+                              AddAccountEntry(
+                                AccountEntry(
+                                  id: const Uuid().v4(),
+                                  amount: amount,
+                                  type: entryType,
+                                  category: category.id,
+                                  description:
+                                      _selectedName ??
+                                      _homeCategoryName(
+                                        category.id,
+                                        category.name,
+                                      ),
+                                  date: DateTime.now(),
+                                  createdAt: DateTime.now(),
+                                  originalCurrency: _homeBaseCurrency(),
+                                  baseCurrency: _homeBaseCurrency(),
+                                  locale: _homeLocale().toLanguageTag(),
+                                  countryCode: _homeCountryCode(),
+                                  syncStatus: SyncStatus.pending,
+                                ),
+                              ),
+                            );
+                            Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  AppStrings.of(
-                                    context,
-                                  ).text(AppStringKeys.homeInvalidAmount),
+                                  AppStrings.of(context).text(
+                                    AppStringKeys.homeSavedAmount,
+                                    params: {'amount': _homeMoney(amount)},
+                                  ),
                                 ),
                                 duration: const Duration(seconds: 1),
                               ),
                             );
-                            return;
-                          }
-                          final category =
-                              _categoryMap[effectiveSelectedId] ??
-                              CategoryDef.expenseCategories.first;
-                          final entryType = _resolveType(category.id);
-                          context.read<AccountBloc>().add(
-                            AddAccountEntry(
-                              AccountEntry(
-                                id: const Uuid().v4(),
-                                amount: amount,
-                                type: entryType,
-                                category: category.id,
-                                description:
-                                    _selectedName ??
-                                    _homeCategoryName(category.id, category.name),
-                                date: DateTime.now(),
-                                createdAt: DateTime.now(),
-                                originalCurrency: _homeBaseCurrency(),
-                                baseCurrency: _homeBaseCurrency(),
-                                locale: _homeLocale().toLanguageTag(),
-                                countryCode: _homeCountryCode(),
-                                syncStatus: SyncStatus.pending,
-                              ),
-                            ),
-                          );
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                AppStrings.of(context).text(
-                                  AppStringKeys.homeSavedAmount,
-                                  params: {'amount': _homeMoney(amount)},
+                          },
+                          child: Ink(
+                            width: double.infinity,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              gradient: aiPrimaryGradient,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFF7A35FF,
+                                  ).withValues(alpha: 0.22),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 5),
                                 ),
-                              ),
-                              duration: const Duration(seconds: 1),
+                              ],
                             ),
-                          );
-                        },
-                        child: Ink(
-                          width: double.infinity,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            gradient: aiPrimaryGradient,
-                            borderRadius: BorderRadius.circular(18),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF7A35FF).withValues(alpha: 0.22),
-                                blurRadius: 12,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const AiSparklesIcon(
-                                size: 17,
-                                color: Colors.white,
-                                accentColor: Colors.white,
-                                strokeWidthFactor: 0.11,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                AppStrings.of(context).text(AppStringKeys.commonConfirm),
-                                style: const TextStyle(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const AiSparklesIcon(
+                                  size: 17,
                                   color: Colors.white,
-                                  fontSize: 15,
-                                  height: 1.0,
-                                  fontWeight: FontWeight.w700,
+                                  accentColor: Colors.white,
+                                  strokeWidthFactor: 0.11,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 8),
+                                Text(
+                                  AppStrings.of(
+                                    context,
+                                  ).text(AppStringKeys.commonConfirm),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    height: 1.0,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
   }
 }
 
@@ -2374,6 +2431,7 @@ class _CategorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2381,7 +2439,7 @@ class _CategorySection extends StatelessWidget {
           title,
           style: TextStyle(
             fontSize: 13,
-            color: Colors.grey.shade600,
+            color: colors.textSecondary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -2399,13 +2457,13 @@ class _CategorySection extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primary : Colors.grey.shade100,
+                  color: isSelected ? AppColors.primary : colors.background,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   '${c.icon} ${_homeCategoryName(c.id, c.name)}',
                   style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.black87,
+                    color: isSelected ? Colors.white : colors.textPrimary,
                   ),
                 ),
               ),
@@ -2564,12 +2622,14 @@ class _QuickChipItem extends StatefulWidget {
 class _QuickChipItemState extends State<_QuickChipItem> {
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return PressFeedback(
       onTap: widget.onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F5F5),
+          color: colors.cardBackground,
           borderRadius: BorderRadius.circular(10),
+          boxShadow: colors.softShadow,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Row(
@@ -2580,9 +2640,9 @@ class _QuickChipItemState extends State<_QuickChipItem> {
             Expanded(
               child: Text(
                 widget.name,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF333333),
+                  color: colors.textPrimary,
                   height: 1.1,
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -2713,6 +2773,7 @@ class _QuickChipEditorPageState extends State<_QuickChipEditorPage> {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return StreamBuilder<CustomCategoryState>(
       stream: _bloc.stream,
       initialData: _bloc.state,
@@ -2746,6 +2807,7 @@ class _QuickChipEditorPageState extends State<_QuickChipEditorPage> {
         final extraBottomOffset = mediaQuery.size.width >= 768 ? 96.0 : 108.0;
 
         return Scaffold(
+          backgroundColor: colors.background,
           appBar: AppBar(
             title: Text(
               AppStrings.of(
@@ -2787,7 +2849,7 @@ class _QuickChipEditorPageState extends State<_QuickChipEditorPage> {
                                 _sectionLabel(sec, t),
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.grey.shade600,
+                                  color: colors.textSecondary,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -2798,20 +2860,42 @@ class _QuickChipEditorPageState extends State<_QuickChipEditorPage> {
                           if (index < pos + items.length) {
                             final c = items[index - pos];
                             final enabled = _enabledIds.contains(c.id);
-                            return ListTile(
-                              dense: true,
-                              leading: Text(
-                                c.icon,
-                                style: const TextStyle(fontSize: 18),
+                            return Container(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
                               ),
-                              title: Text(
-                                _homeCategoryName(c.id, c.name),
-                                style: const TextStyle(fontSize: 14),
+                              decoration: BoxDecoration(
+                                color: colors.cardBackground,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: colors.softShadow,
                               ),
-                              trailing: Switch(
-                                value: enabled,
-                                activeThumbColor: AppColors.primary,
-                                onChanged: (_) => _toggle(c.id),
+                              child: ListTile(
+                                dense: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                ),
+                                leading: Text(
+                                  c.icon,
+                                  style: const TextStyle(fontSize: 18),
+                                ),
+                                title: Text(
+                                  _homeCategoryName(c.id, c.name),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: colors.textPrimary,
+                                  ),
+                                ),
+                                trailing: Switch(
+                                  value: enabled,
+                                  activeThumbColor: AppColors.primary,
+                                  activeTrackColor: AppColors.primary
+                                      .withValues(alpha: 0.32),
+                                  inactiveThumbColor: colors.cardBackground,
+                                  inactiveTrackColor: colors.textSecondary
+                                      .withValues(alpha: 0.28),
+                                  onChanged: (_) => _toggle(c.id),
+                                ),
                               ),
                             );
                           }
@@ -2939,6 +3023,7 @@ class _AiConfirmSheetState extends State<_AiConfirmSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -2991,8 +3076,9 @@ class _AiConfirmSheetState extends State<_AiConfirmSheet> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: colors.cardBackground,
                     borderRadius: BorderRadius.circular(10),
+                    boxShadow: colors.softShadow,
                   ),
                   child: Row(
                     children: [
@@ -3004,8 +3090,9 @@ class _AiConfirmSheetState extends State<_AiConfirmSheet> {
                           children: [
                             Text(
                               _homeCategoryName(cat.id, cat.name),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w500,
+                                color: colors.textPrimary,
                               ),
                             ),
                             if (r.note.isNotEmpty)
@@ -3013,7 +3100,7 @@ class _AiConfirmSheetState extends State<_AiConfirmSheet> {
                                 r.note,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.grey.shade600,
+                                  color: colors.textSecondary,
                                 ),
                               ),
                           ],
@@ -3037,7 +3124,7 @@ class _AiConfirmSheetState extends State<_AiConfirmSheet> {
                           child: Icon(
                             Icons.delete_outline,
                             size: 24,
-                            color: Colors.grey.shade400,
+                            color: colors.textSecondary,
                           ),
                         ),
                       ),

@@ -42,6 +42,7 @@ import 'intl_auth_service.dart';
 import 'qwen_service.dart';
 import 'qwen_spending_prediction_service.dart';
 import 'sms_service.dart';
+import 'theme_mode_service.dart';
 import 'vip_service.dart';
 import 'avatar_service.dart';
 import 'stock_service.dart';
@@ -55,6 +56,9 @@ Future<void> configureDependencies() async {
   // App profile / migration
   getIt.registerLazySingleton<AppProfileService>(
     () => AppProfileService(getIt<SharedPreferences>()),
+  );
+  getIt.registerLazySingleton<ThemeModeService>(
+    () => ThemeModeService(getIt<SharedPreferences>()),
   );
   getIt.registerLazySingleton<AppMigrationService>(
     () => AppMigrationService(

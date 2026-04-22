@@ -53,7 +53,9 @@ class ReportsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         flexibleSpace: Container(
           decoration: const BoxDecoration(
@@ -114,6 +116,7 @@ class _MonthSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     final monthLabel = _reportsMonthLabel(
       state.selectedYear,
       state.selectedMonth,
@@ -164,10 +167,10 @@ class _MonthSelector extends StatelessWidget {
                     vertical: compact ? 8 : 10,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF4F1FF),
+                    color: AppColors.primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: const Color(0xFF4A47D8),
+                      color: AppColors.primary.withValues(alpha: 0.35),
                       width: 1.5,
                     ),
                   ),
@@ -179,7 +182,9 @@ class _MonthSelector extends StatelessWidget {
                     style: TextStyle(
                       fontSize: compact ? 15 : 16,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF4A47D8),
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? colors.textPrimary
+                          : const Color(0xFF4A47D8),
                     ),
                   ),
                 ),
@@ -211,6 +216,7 @@ class _ReportsBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     if (state.status == AccountStatus.loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -241,16 +247,16 @@ class _ReportsBody extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               t.text(AppStringKeys.reportsEmptyTitle),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1A1A2E),
+                color: colors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               t.text(AppStringKeys.reportsEmptySubtitle),
-              style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+              style: TextStyle(color: colors.textSecondary, fontSize: 13),
             ),
           ],
         ),
@@ -461,7 +467,7 @@ class _ReportsBody extends StatelessWidget {
                                   '${pct.toStringAsFixed(0)}%',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.grey.shade600,
+                                    color: colors.textSecondary,
                                   ),
                                   textAlign: TextAlign.right,
                                 ),
@@ -501,7 +507,7 @@ class _ReportsBody extends StatelessWidget {
                               '${e.key + 1}',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey.shade400,
+                                color: colors.textSecondary,
                                 fontSize: 13,
                               ),
                             ),
@@ -539,7 +545,9 @@ class _ReportsBody extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: pct,
-                        backgroundColor: Colors.grey.shade200,
+                        backgroundColor: AppColors.primary.withValues(
+                          alpha: 0.08,
+                        ),
                         valueColor: AlwaysStoppedAnimation(
                           AppColors.getCategoryColor(e.value.key),
                         ),
@@ -563,6 +571,7 @@ class _ScreenshotReportsBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     final categories = [
       (_reportsCategoryName('food', '餐饮'), 1280.0, const Color(0xFF6D5DF6)),
       (_reportsCategoryName('transport', '交通'), 760.0, const Color(0xFF4A90E2)),
@@ -571,27 +580,29 @@ class _ScreenshotReportsBody extends StatelessWidget {
     ];
 
     return ListView(
-      padding: EdgeInsets.fromLTRB(20, 8, 20, MediaQuery.of(context).padding.bottom + 130),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        8,
+        20,
+        MediaQuery.of(context).padding.bottom + 130,
+      ),
       children: [
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colors.cardBackground,
             borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            boxShadow: colors.softShadow,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 t.text(AppStringKeys.reportsDistribution),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 16),
               SizedBox(
@@ -603,18 +614,39 @@ class _ScreenshotReportsBody extends StatelessWidget {
                     minY: 0,
                     maxY: 2600,
                     titlesData: FlTitlesData(
-                      leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      leftTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
                           reservedSize: 28,
                           getTitlesWidget: (value, meta) {
-                            const labels = ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'];
+                            const labels = [
+                              'Nov',
+                              'Dec',
+                              'Jan',
+                              'Feb',
+                              'Mar',
+                              'Apr',
+                            ];
                             final i = value.toInt();
-                            if (i < 0 || i >= labels.length) return const SizedBox.shrink();
-                            return Text(labels[i], style: const TextStyle(fontSize: 11, color: Color(0xFF8E8E93)));
+                            if (i < 0 || i >= labels.length) {
+                              return const SizedBox.shrink();
+                            }
+                            return Text(
+                              labels[i],
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF8E8E93),
+                              ),
+                            );
                           },
                         ),
                       ),
@@ -624,7 +656,10 @@ class _ScreenshotReportsBody extends StatelessWidget {
                       show: true,
                       drawVerticalLine: false,
                       horizontalInterval: 500,
-                      getDrawingHorizontalLine: (_) => FlLine(color: const Color(0xFFEDEAFB), strokeWidth: 1),
+                      getDrawingHorizontalLine: (_) => FlLine(
+                        color: const Color(0xFFEDEAFB),
+                        strokeWidth: 1,
+                      ),
                     ),
                     lineBarsData: [
                       LineChartBarData(
@@ -663,22 +698,19 @@ class _ScreenshotReportsBody extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colors.cardBackground,
             borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            boxShadow: colors.softShadow,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 t.text(AppStringKeys.reportsCategoryRank),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 16),
               ...categories.map((item) {
@@ -689,12 +721,31 @@ class _ScreenshotReportsBody extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 14),
                   child: Row(
                     children: [
-                      Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Text(name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                        child: Text(
+                          name,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                      Text(_reportsMoney(amount, decimalDigits: 0), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                      Text(
+                        _reportsMoney(amount, decimalDigits: 0),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ],
                   ),
                 );

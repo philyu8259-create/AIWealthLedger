@@ -85,6 +85,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
 
   /// 月份选择器：← [月份 ▼] →
   Widget _buildMonthSelector(AccountState state) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     final monthText = _monthText(state);
 
     return LayoutBuilder(
@@ -136,10 +137,10 @@ class _TransactionsPageState extends State<TransactionsPage> {
                       vertical: compact ? 8 : 10,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF4F1FF),
+                      color: AppColors.primary.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: const Color(0xFF4A47D8),
+                        color: AppColors.primary.withValues(alpha: 0.35),
                         width: 1.5,
                       ),
                     ),
@@ -155,15 +156,21 @@ class _TransactionsPageState extends State<TransactionsPage> {
                             style: TextStyle(
                               fontSize: compact ? 15 : 16,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF4A47D8),
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? colors.textPrimary
+                                  : const Color(0xFF4A47D8),
                             ),
                           ),
                         ),
                         const SizedBox(width: 2),
-                        const Icon(
+                        Icon(
                           Icons.arrow_drop_down,
                           size: 20,
-                          color: Color(0xFF4A47D8),
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? colors.textPrimary
+                              : const Color(0xFF4A47D8),
                         ),
                       ],
                     ),
@@ -210,7 +217,9 @@ class _TransactionsPageState extends State<TransactionsPage> {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         flexibleSpace: Container(
           decoration: const BoxDecoration(
@@ -529,6 +538,7 @@ class _EntryTileState extends State<_EntryTile> {
     final locale = getIt<AppProfileService>().currentLocale;
     final currency = widget.entry.baseCurrency;
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     final catColor = AppColors.getCategoryColor(cat?.id ?? 'other');
     final categoryName = cat == null
         ? t.text(AppStringKeys.transactionsOtherCategory)
@@ -569,8 +579,9 @@ class _EntryTileState extends State<_EntryTile> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colors.cardBackground,
           borderRadius: BorderRadius.circular(12),
+          boxShadow: colors.softShadow,
         ),
         child: Row(
           children: [
@@ -596,18 +607,18 @@ class _EntryTileState extends State<_EntryTile> {
                     widget.entry.description.isEmpty
                         ? categoryName
                         : widget.entry.description,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
-                      color: Color(0xFF303133),
+                      color: colors.textPrimary,
                     ),
                   ),
                   if (widget.entry.description.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
                       categoryName,
-                      style: const TextStyle(
-                        color: Color(0xFF909399),
+                      style: TextStyle(
+                        color: colors.textSecondary,
                         fontSize: 12,
                       ),
                     ),
@@ -965,6 +976,7 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -987,16 +999,16 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 24),
           Text(
             t.text(AppStringKeys.transactionsEmptyTitle),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF1A1A2E),
+              color: colors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             t.text(AppStringKeys.transactionsEmptySubtitle),
-            style: TextStyle(color: Colors.grey, fontSize: 13),
+            style: TextStyle(color: colors.textSecondary, fontSize: 13),
           ),
         ],
       ),

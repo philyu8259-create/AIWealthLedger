@@ -25,6 +25,7 @@ import '../../../../services/quick_chip_service.dart';
 import '../../../../services/cloud_service.dart';
 import '../../../../services/avatar_service.dart';
 import '../../../../services/demo_data_seeder.dart';
+import '../../../../services/theme_mode_service.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/entities/custom_category/custom_category.dart';
 import '../bloc/custom_category/custom_category_bloc.dart';
@@ -81,6 +82,19 @@ String _settingsOcrProviderLabel(AppStrings t) {
       return t.text(AppStringKeys.providerOcrGoogleVision);
     case OcrProviderType.legacyCnOcr:
       return t.text(AppStringKeys.providerOcrBaidu);
+  }
+}
+
+String _settingsThemeModeLabel(
+  BuildContext context,
+  AppThemePreference preference,
+) {
+  final t = AppStrings.of(context);
+  switch (preference) {
+    case AppThemePreference.light:
+      return t.text(AppStringKeys.settingsThemeModeLightLabel);
+    case AppThemePreference.dark:
+      return t.text(AppStringKeys.settingsThemeModeDarkLabel);
   }
 }
 
@@ -146,7 +160,9 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         flexibleSpace: Container(
           decoration: const BoxDecoration(
@@ -235,6 +251,30 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                       onTap: () => _showDeleteAccountDialog(context),
                     ),
+
+                  _SectionDivider(),
+                  _SectionHeader(t.text(AppStringKeys.settingsAppearance)),
+
+                  ListenableBuilder(
+                    listenable: getIt<ThemeModeService>(),
+                    builder: (context, _) {
+                      final themeModeService = getIt<ThemeModeService>();
+                      return _SettingTile(
+                        icon: Icons.contrast_outlined,
+                        title: t.text(AppStringKeys.settingsThemeModeTitle),
+                        subtitle: t.text(
+                          AppStringKeys.settingsThemeModeSubtitle,
+                          params: {
+                            'current': _settingsThemeModeLabel(
+                              context,
+                              themeModeService.preference,
+                            ),
+                          },
+                        ),
+                        onTap: () => _showThemeModeSheet(context),
+                      );
+                    },
+                  ),
 
                   _SectionDivider(),
                   _SectionHeader(t.text(AppStringKeys.settingsData)),
@@ -451,6 +491,19 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  Future<void> _showThemeModeSheet(BuildContext context) async {
+    final service = getIt<ThemeModeService>();
+    final selected = await showModalBottomSheet<AppThemePreference>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => _ThemeModeSheet(currentPreference: service.preference),
+    );
+    if (selected == null) return;
+    await service.setPreference(selected);
+  }
+
   Future<void> _exportData(BuildContext context) async {
     final t = AppStrings.of(context);
     // 同步获取按钮位置锚点（在任何 async 之前，iPad 需要精确位置）
@@ -660,20 +713,34 @@ class _SettingsPageState extends State<SettingsPage> {
     final t = AppStrings.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(t.text(AppStringKeys.settingsWithdrawDialogTitle)),
-        content: Text(t.text(AppStringKeys.settingsWithdrawDialogContent)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(t.text(AppStringKeys.commonCancel)),
+      builder: (ctx) {
+        final colors = Theme.of(ctx).extension<AppColorsExtension>()!;
+        return AlertDialog(
+          backgroundColor: colors.cardBackground,
+          titleTextStyle: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(t.text(AppStringKeys.settingsWithdrawConfirm)),
+          contentTextStyle: TextStyle(
+            color: colors.textSecondary,
+            fontSize: 14,
+            height: 1.5,
           ),
-        ],
-      ),
+          title: Text(t.text(AppStringKeys.settingsWithdrawDialogTitle)),
+          content: Text(t.text(AppStringKeys.settingsWithdrawDialogContent)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(t.text(AppStringKeys.commonCancel)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(t.text(AppStringKeys.settingsWithdrawConfirm)),
+            ),
+          ],
+        );
+      },
     );
 
     if (confirmed == true) {
@@ -728,20 +795,34 @@ class _SettingsPageState extends State<SettingsPage> {
     final t = AppStrings.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(t.text(AppStringKeys.settingsLogoutDialogTitle)),
-        content: Text(t.text(AppStringKeys.settingsLogoutDialogContent)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(MaterialLocalizations.of(ctx).cancelButtonLabel),
+      builder: (ctx) {
+        final colors = Theme.of(ctx).extension<AppColorsExtension>()!;
+        return AlertDialog(
+          backgroundColor: colors.cardBackground,
+          titleTextStyle: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(t.text(AppStringKeys.settingsLogoutConfirm)),
+          contentTextStyle: TextStyle(
+            color: colors.textSecondary,
+            fontSize: 14,
+            height: 1.5,
           ),
-        ],
-      ),
+          title: Text(t.text(AppStringKeys.settingsLogoutDialogTitle)),
+          content: Text(t.text(AppStringKeys.settingsLogoutDialogContent)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(MaterialLocalizations.of(ctx).cancelButtonLabel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(t.text(AppStringKeys.settingsLogoutConfirm)),
+            ),
+          ],
+        );
+      },
     );
 
     if (confirmed != true) return;
@@ -772,21 +853,35 @@ class _SettingsPageState extends State<SettingsPage> {
     final t = AppStrings.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(t.text(AppStringKeys.settingsDeleteAccountTitle)),
-        content: Text(t.text(AppStringKeys.settingsDeleteDialogContent)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(t.text(AppStringKeys.commonCancel)),
+      builder: (ctx) {
+        final colors = Theme.of(ctx).extension<AppColorsExtension>()!;
+        return AlertDialog(
+          backgroundColor: colors.cardBackground,
+          titleTextStyle: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(t.text(AppStringKeys.settingsDeleteConfirmAction)),
+          contentTextStyle: TextStyle(
+            color: colors.textSecondary,
+            fontSize: 14,
+            height: 1.5,
           ),
-        ],
-      ),
+          title: Text(t.text(AppStringKeys.settingsDeleteAccountTitle)),
+          content: Text(t.text(AppStringKeys.settingsDeleteDialogContent)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(t.text(AppStringKeys.commonCancel)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: TextButton.styleFrom(foregroundColor: AppColors.error),
+              child: Text(t.text(AppStringKeys.settingsDeleteConfirmAction)),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed != true) return;
 
@@ -921,41 +1016,146 @@ class _SettingsPageState extends State<SettingsPage> {
     showDialog(
       context: context,
       barrierColor: Colors.black54,
-      builder: (ctx) => AlertDialog(
-        title: Text(t.text(AppStringKeys.settingsAboutAppTitle)),
-        content: Column(
+      builder: (ctx) {
+        final colors = Theme.of(ctx).extension<AppColorsExtension>()!;
+        return AlertDialog(
+          backgroundColor: colors.cardBackground,
+          titleTextStyle: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
+          contentTextStyle: TextStyle(
+            color: colors.textSecondary,
+            fontSize: 14,
+            height: 1.5,
+          ),
+          title: Text(t.text(AppStringKeys.settingsAboutAppTitle)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                t.text(
+                  AppStringKeys.settingsAboutVersion,
+                  params: {'version': _appVersion},
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(t.text(AppStringKeys.settingsAboutTechStack)),
+              const SizedBox(height: 8),
+              Text(
+                t.text(
+                  AppStringKeys.settingsAboutAiServices,
+                  params: {
+                    'aiProvider': _settingsAiProviderLabel(t),
+                    'ocrProvider': _settingsOcrProviderLabel(t),
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(t.text(AppStringKeys.settingsAboutStorage)),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => navigator.pop(),
+              child: Text(t.text(AppStringKeys.commonClose)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ThemeModeSheet extends StatelessWidget {
+  const _ThemeModeSheet({required this.currentPreference});
+
+  final AppThemePreference currentPreference;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    final options = [
+      (preference: AppThemePreference.light, icon: Icons.light_mode_outlined),
+      (preference: AppThemePreference.dark, icon: Icons.dark_mode_outlined),
+    ];
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              t.text(
-                AppStringKeys.settingsAboutVersion,
-                params: {'version': _appVersion},
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(t.text(AppStringKeys.settingsAboutTechStack)),
-            const SizedBox(height: 8),
-            Text(
-              t.text(
-                AppStringKeys.settingsAboutAiServices,
-                params: {
-                  'aiProvider': _settingsAiProviderLabel(t),
-                  'ocrProvider': _settingsOcrProviderLabel(t),
-                },
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colors.textSecondary.withValues(alpha: 0.24),
+                borderRadius: BorderRadius.circular(999),
               ),
             ),
-            const SizedBox(height: 8),
-            Text(t.text(AppStringKeys.settingsAboutStorage)),
+            const SizedBox(height: 16),
+            Text(
+              t.text(AppStringKeys.settingsThemeModeSheetTitle),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: colors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            for (final option in options)
+              PressFeedback(
+                onTap: () => Navigator.pop(context, option.preference),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.cardBackground,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: option.preference == currentPreference
+                          ? AppColors.primary.withValues(alpha: 0.42)
+                          : colors.textSecondary.withValues(alpha: 0.12),
+                    ),
+                    boxShadow: colors.softShadow,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(option.icon, color: colors.textPrimary),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _settingsThemeModeLabel(context, option.preference),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        option.preference == currentPreference
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_off,
+                        color: option.preference == currentPreference
+                            ? AppColors.primary
+                            : colors.textSecondary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => navigator.pop(),
-            child: Text(t.text(AppStringKeys.commonClose)),
-          ),
-        ],
       ),
     );
   }
@@ -968,13 +1168,14 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Text(
         title.toUpperCase(),
         style: TextStyle(
           fontSize: 12,
-          color: Colors.grey.shade500,
+          color: colors.textSecondary,
           fontWeight: FontWeight.w600,
           letterSpacing: 1,
         ),
@@ -987,10 +1188,11 @@ class _SectionHeader extends StatelessWidget {
 class _SectionDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Divider(
       height: 1,
       thickness: 1,
-      color: const Color(0xFFF5F7FA),
+      color: colors.textSecondary.withValues(alpha: 0.12),
       indent: 16,
       endIndent: 16,
     );
@@ -1016,11 +1218,16 @@ class _SettingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     final hasSubtitle = subtitle != null && subtitle!.trim().isNotEmpty;
 
     return PressFeedback(
       onTap: onTap,
       child: Container(
+        decoration: BoxDecoration(
+          color: colors.cardBackground,
+          borderRadius: BorderRadius.circular(16),
+        ),
         constraints: BoxConstraints(minHeight: hasSubtitle ? 64 : 48),
         padding: EdgeInsets.symmetric(
           horizontal: 16,
@@ -1033,7 +1240,7 @@ class _SettingTile extends StatelessWidget {
           children: [
             Padding(
               padding: EdgeInsets.only(top: hasSubtitle ? 4 : 0),
-              child: Icon(icon, size: 24, color: const Color(0xFF303133)),
+              child: Icon(icon, size: 24, color: colors.textPrimary),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -1045,7 +1252,7 @@ class _SettingTile extends StatelessWidget {
                     title,
                     style: TextStyle(
                       fontSize: 14,
-                      color: titleColor ?? const Color(0xFF303133),
+                      color: titleColor ?? colors.textPrimary,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
@@ -1055,10 +1262,10 @@ class _SettingTile extends StatelessWidget {
                       subtitle!,
                       maxLines: 2,
                       overflow: TextOverflow.visible,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         height: 1.35,
-                        color: Color(0xFF606266),
+                        color: colors.textSecondary,
                       ),
                     ),
                   ],
@@ -1068,10 +1275,10 @@ class _SettingTile extends StatelessWidget {
             const SizedBox(width: 8),
             Padding(
               padding: EdgeInsets.only(top: hasSubtitle ? 6 : 0),
-              child: const Icon(
+              child: Icon(
                 Icons.chevron_right,
                 size: 20,
-                color: Color(0xFF999999),
+                color: colors.textSecondary,
               ),
             ),
           ],
@@ -1129,6 +1336,7 @@ class _ExportDateRangeSheetState extends State<_ExportDateRangeSheet> {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       child: SingleChildScrollView(
@@ -1141,7 +1349,7 @@ class _ExportDateRangeSheetState extends State<_ExportDateRangeSheet> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: colors.textSecondary.withValues(alpha: 0.24),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1149,7 +1357,11 @@ class _ExportDateRangeSheetState extends State<_ExportDateRangeSheet> {
             const SizedBox(height: 16),
             Text(
               t.text(AppStringKeys.settingsExportSheetTitle),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: colors.textPrimary,
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -1214,8 +1426,8 @@ class _ExportDateRangeSheetState extends State<_ExportDateRangeSheet> {
                       'end': _settingsShortDate(_customEnd!),
                     },
                   ),
-                  style: const TextStyle(
-                    color: Color(0xFF4A47D8),
+                  style: TextStyle(
+                    color: AppColors.primary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -1260,28 +1472,29 @@ class _RangeOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     final isActive = range != null ? selected : customSelected;
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Icon(
         range != null ? Icons.calendar_today : Icons.date_range,
-        color: isActive ? const Color(0xFF4A47D8) : Colors.grey,
+        color: isActive ? AppColors.primary : colors.textSecondary,
       ),
       title: Text(
         label,
         style: TextStyle(
-          color: isActive ? const Color(0xFF4A47D8) : Colors.black,
+          color: isActive ? AppColors.primary : colors.textPrimary,
           fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
         ),
       ),
       subtitle: range != null
           ? Text(
               '${dateFormat(range!.start)} ~ ${dateFormat(range!.end)}',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+              style: TextStyle(color: colors.textSecondary, fontSize: 12),
             )
           : null,
       trailing: isActive
-          ? const Icon(Icons.check_circle, color: Color(0xFF4A47D8))
+          ? const Icon(Icons.check_circle, color: AppColors.primary)
           : null,
       onTap: onTap,
     );
@@ -1313,195 +1526,209 @@ class _CategoryManagerBody extends StatelessWidget {
     return BlocBuilder<CustomCategoryBloc, CustomCategoryState>(
       builder: (context, state) {
         final t = AppStrings.of(context);
+        final colors = Theme.of(context).extension<AppColorsExtension>()!;
         final customExpense = state.expenseCategories;
         final customIncome = state.incomeCategories;
 
-        return Column(
-          children: [
-            // 拖动条
-            Container(
-              margin: const EdgeInsets.only(top: 8),
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
+        return Container(
+          decoration: BoxDecoration(
+            color: colors.cardBackground,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              // 拖动条
+              Container(
+                margin: const EdgeInsets.only(top: 8),
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colors.textSecondary.withValues(alpha: 0.24),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            // 标题栏
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    t.text(AppStringKeys.categoryManagerTitle),
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              // 标题栏
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      t.text(AppStringKeys.categoryManagerTitle),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.add, color: Color(0xFF4A47D8)),
+                          onPressed: () {
+                            _showAddCategorySheet(
+                              context,
+                              CustomCategoryType.expense,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Divider(
+                height: 1,
+                color: colors.textSecondary.withValues(alpha: 0.12),
+              ),
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    0,
+                    16,
+                    MediaQuery.of(context).padding.bottom + 120,
                   ),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.add, color: Color(0xFF4A47D8)),
-                        onPressed: () {
-                          _showAddCategorySheet(
+                  children: [
+                    // 支出类目
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Text(
+                        t.text(AppStringKeys.categorySystemExpenseTitle),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    _CategoryGrid(
+                      categories: CategoryDef.expenseCategories
+                          .map(
+                            (c) => _CategoryItem(
+                              id: c.id,
+                              name: localizedCategoryName(
+                                id: c.id,
+                                fallback: c.name,
+                                locale: _settingsLocale(),
+                              ),
+                              icon: c.icon,
+                              isSystem: true,
+                            ),
+                          )
+                          .toList(),
+                      onDelete: null,
+                      onEdit: null,
+                    ),
+
+                    if (customExpense.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text(
+                          t.text(AppStringKeys.categoryCustomExpenseTitle),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      _CategoryGrid(
+                        categories: customExpense
+                            .map(
+                              (c) => _CategoryItem(
+                                name: c.name,
+                                icon: c.icon,
+                                isSystem: false,
+                                id: c.id,
+                              ),
+                            )
+                            .toList(),
+                        onDelete: (id) {
+                          context.read<CustomCategoryBloc>().add(
+                            DeleteCustomCategoryEvent(id),
+                          );
+                        },
+                        onEdit: (item) {
+                          _showEditCategorySheet(
                             context,
-                            CustomCategoryType.expense,
+                            customExpense.firstWhere((c) => c.id == item.id),
                           );
                         },
                       ),
                     ],
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: ListView(
-                controller: scrollController,
-                padding: EdgeInsets.fromLTRB(
-                  16,
-                  0,
-                  16,
-                  MediaQuery.of(context).padding.bottom + 120,
+
+                    // 收入类目
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Text(
+                        t.text(AppStringKeys.categorySystemIncomeTitle),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    _CategoryGrid(
+                      categories: CategoryDef.incomeCategories
+                          .map(
+                            (c) => _CategoryItem(
+                              id: c.id,
+                              name: localizedCategoryName(
+                                id: c.id,
+                                fallback: c.name,
+                                locale: _settingsLocale(),
+                              ),
+                              icon: c.icon,
+                              isSystem: true,
+                            ),
+                          )
+                          .toList(),
+                      onDelete: null,
+                      onEdit: null,
+                    ),
+
+                    if (customIncome.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text(
+                          t.text(AppStringKeys.categoryCustomIncomeTitle),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      _CategoryGrid(
+                        categories: customIncome
+                            .map(
+                              (c) => _CategoryItem(
+                                name: c.name,
+                                icon: c.icon,
+                                isSystem: false,
+                                id: c.id,
+                              ),
+                            )
+                            .toList(),
+                        onDelete: (id) {
+                          context.read<CustomCategoryBloc>().add(
+                            DeleteCustomCategoryEvent(id),
+                          );
+                        },
+                        onEdit: (item) {
+                          _showEditCategorySheet(
+                            context,
+                            customIncome.firstWhere((c) => c.id == item.id),
+                          );
+                        },
+                      ),
+                    ],
+
+                    const SizedBox(height: 24),
+                  ],
                 ),
-                children: [
-                  // 支出类目
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text(
-                      t.text(AppStringKeys.categorySystemExpenseTitle),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                  _CategoryGrid(
-                    categories: CategoryDef.expenseCategories
-                        .map(
-                          (c) => _CategoryItem(
-                            id: c.id,
-                            name: localizedCategoryName(
-                              id: c.id,
-                              fallback: c.name,
-                              locale: _settingsLocale(),
-                            ),
-                            icon: c.icon,
-                            isSystem: true,
-                          ),
-                        )
-                        .toList(),
-                    onDelete: null,
-                    onEdit: null,
-                  ),
-
-                  if (customExpense.isNotEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Text(
-                        t.text(AppStringKeys.categoryCustomExpenseTitle),
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF4A47D8),
-                        ),
-                      ),
-                    ),
-                    _CategoryGrid(
-                      categories: customExpense
-                          .map(
-                            (c) => _CategoryItem(
-                              name: c.name,
-                              icon: c.icon,
-                              isSystem: false,
-                              id: c.id,
-                            ),
-                          )
-                          .toList(),
-                      onDelete: (id) {
-                        context.read<CustomCategoryBloc>().add(
-                          DeleteCustomCategoryEvent(id),
-                        );
-                      },
-                      onEdit: (item) {
-                        _showEditCategorySheet(
-                          context,
-                          customExpense.firstWhere((c) => c.id == item.id),
-                        );
-                      },
-                    ),
-                  ],
-
-                  // 收入类目
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text(
-                      t.text(AppStringKeys.categorySystemIncomeTitle),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                  _CategoryGrid(
-                    categories: CategoryDef.incomeCategories
-                        .map(
-                          (c) => _CategoryItem(
-                            id: c.id,
-                            name: localizedCategoryName(
-                              id: c.id,
-                              fallback: c.name,
-                              locale: _settingsLocale(),
-                            ),
-                            icon: c.icon,
-                            isSystem: true,
-                          ),
-                        )
-                        .toList(),
-                    onDelete: null,
-                    onEdit: null,
-                  ),
-
-                  if (customIncome.isNotEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Text(
-                        t.text(AppStringKeys.categoryCustomIncomeTitle),
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF4A47D8),
-                        ),
-                      ),
-                    ),
-                    _CategoryGrid(
-                      categories: customIncome
-                          .map(
-                            (c) => _CategoryItem(
-                              name: c.name,
-                              icon: c.icon,
-                              isSystem: false,
-                              id: c.id,
-                            ),
-                          )
-                          .toList(),
-                      onDelete: (id) {
-                        context.read<CustomCategoryBloc>().add(
-                          DeleteCustomCategoryEvent(id),
-                        );
-                      },
-                      onEdit: (item) {
-                        _showEditCategorySheet(
-                          context,
-                          customIncome.firstWhere((c) => c.id == item.id),
-                        );
-                      },
-                    ),
-                  ],
-
-                  const SizedBox(height: 24),
-                ],
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
@@ -1583,6 +1810,7 @@ class _CategoryGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Wrap(
       spacing: 10,
       runSpacing: 10,
@@ -1591,10 +1819,12 @@ class _CategoryGrid extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
-            color: isActive ? const Color(0xFFF4F1FF) : Colors.grey.shade100,
+            color: isActive
+                ? AppColors.primary.withValues(alpha: 0.14)
+                : colors.background,
             borderRadius: BorderRadius.circular(12),
             border: isActive
-                ? Border.all(color: const Color(0xFF4A47D8), width: 1)
+                ? Border.all(color: AppColors.primary, width: 1)
                 : null,
           ),
           child: Row(
@@ -1607,7 +1837,7 @@ class _CategoryGrid extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: c.isSystem
                       ? AppColors.getCategoryColor(c.id).withValues(alpha: 0.15)
-                      : const Color(0xFFF0EBFF),
+                      : AppColors.primary.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
@@ -1624,12 +1854,16 @@ class _CategoryGrid extends StatelessWidget {
                 child: Text(c.icon, style: const TextStyle(fontSize: 14)),
               ),
               const SizedBox(width: 8),
-              Text(c.name),
+              Text(c.name, style: TextStyle(color: colors.textPrimary)),
               if (!c.isSystem) ...[
                 const SizedBox(width: 4),
                 PressFeedback(
                   onTap: () => onEdit?.call(c),
-                  child: const Icon(Icons.edit, size: 14, color: Colors.grey),
+                  child: Icon(
+                    Icons.edit,
+                    size: 14,
+                    color: colors.textSecondary,
+                  ),
                 ),
                 const SizedBox(width: 2),
                 PressFeedback(
@@ -1652,31 +1886,45 @@ class _CategoryGrid extends StatelessWidget {
     final t = AppStrings.of(context);
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(t.text(AppStringKeys.categoryDeleteTitle)),
-        content: Text(
-          t.text(
-            AppStringKeys.categoryDeleteContent,
-            params: {'name': item.name},
+      builder: (ctx) {
+        final colors = Theme.of(ctx).extension<AppColorsExtension>()!;
+        return AlertDialog(
+          backgroundColor: colors.cardBackground,
+          titleTextStyle: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(t.text(AppStringKeys.commonCancel)),
+          contentTextStyle: TextStyle(
+            color: colors.textSecondary,
+            fontSize: 14,
+            height: 1.5,
           ),
-          TextButton(
-            onPressed: () {
-              onDelete(item.id);
-              Navigator.pop(ctx);
-            },
-            child: Text(
-              t.text(AppStringKeys.commonDelete),
-              style: const TextStyle(color: Colors.red),
+          title: Text(t.text(AppStringKeys.categoryDeleteTitle)),
+          content: Text(
+            t.text(
+              AppStringKeys.categoryDeleteContent,
+              params: {'name': item.name},
             ),
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(t.text(AppStringKeys.commonCancel)),
+            ),
+            TextButton(
+              onPressed: () {
+                onDelete(item.id);
+                Navigator.pop(ctx);
+              },
+              child: Text(
+                t.text(AppStringKeys.commonDelete),
+                style: const TextStyle(color: AppColors.error),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -1784,6 +2032,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -1798,145 +2047,190 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
+          Container(
+            decoration: BoxDecoration(
+              color: colors.cardBackground,
+              borderRadius: BorderRadius.circular(24),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            widget.category == null
-                ? t.text(AppStringKeys.categoryCreateTitle)
-                : t.text(AppStringKeys.categoryEditTitle),
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          // 类目名称
-          TextField(
-            controller: _nameController,
-            decoration: InputDecoration(
-              labelText: t.text(AppStringKeys.categoryNameLabel),
-              hintText: t.text(AppStringKeys.categoryNameHint),
-              border: const OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // 选择图标
-          Text(
-            t.text(AppStringKeys.categorySelectIcon),
-            style: const TextStyle(fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 140,
-            child: GridView.count(
-              crossAxisCount: 8,
-              mainAxisSpacing: 4,
-              crossAxisSpacing: 4,
-              children: _iconOptions.map((icon) {
-                final selected = icon == _selectedIcon;
-                return PressFeedback(
-                  onTap: () => _onIconSelected(icon),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
                   child: Container(
+                    width: 36,
+                    height: 4,
                     decoration: BoxDecoration(
-                      color: selected
-                          ? const Color(0xFFF4F1FF)
-                          : Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(10),
-                      border: selected
-                          ? Border.all(color: const Color(0xFF4A47D8), width: 2)
-                          : null,
-                    ),
-                    child: Center(
-                      child: Text(icon, style: const TextStyle(fontSize: 20)),
+                      color: colors.textSecondary.withValues(alpha: 0.24),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                );
-              }).toList(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // 预览
-          Row(
-            children: [
-              Text(
-                t.text(AppStringKeys.categoryPreview),
-                style: const TextStyle(color: Colors.grey),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
                 ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF4F1FF),
-                  borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 16),
+                Text(
+                  widget.category == null
+                      ? t.text(AppStringKeys.categoryCreateTitle)
+                      : t.text(AppStringKeys.categoryEditTitle),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: colors.textPrimary,
+                  ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _nameController,
+                  style: TextStyle(color: colors.textPrimary),
+                  decoration: InputDecoration(
+                    labelText: t.text(AppStringKeys.categoryNameLabel),
+                    hintText: t.text(AppStringKeys.categoryNameHint),
+                    filled: true,
+                    fillColor: colors.background,
+                    labelStyle: TextStyle(color: colors.textSecondary),
+                    hintStyle: TextStyle(color: colors.textSecondary),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(
+                        color: colors.textSecondary.withValues(alpha: 0.18),
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(
+                        color: colors.textSecondary.withValues(alpha: 0.18),
+                      ),
+                    ),
+                    focusedBorder: const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(14)),
+                      borderSide: BorderSide(
+                        color: AppColors.primary,
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  t.text(AppStringKeys.categorySelectIcon),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 140,
+                  child: GridView.count(
+                    crossAxisCount: 8,
+                    mainAxisSpacing: 4,
+                    crossAxisSpacing: 4,
+                    children: _iconOptions.map((icon) {
+                      final selected = icon == _selectedIcon;
+                      return PressFeedback(
+                        onTap: () => _onIconSelected(icon),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? AppColors.primary.withValues(alpha: 0.14)
+                                : colors.background,
+                            borderRadius: BorderRadius.circular(10),
+                            border: selected
+                                ? Border.all(color: AppColors.primary, width: 2)
+                                : null,
+                          ),
+                          child: Center(
+                            child: Text(
+                              icon,
+                              style: const TextStyle(fontSize: 20),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
                   children: [
+                    Text(
+                      t.text(AppStringKeys.categoryPreview),
+                      style: TextStyle(color: colors.textSecondary),
+                    ),
+                    const SizedBox(width: 8),
                     Container(
-                      width: 26,
-                      height: 26,
-                      alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF0EBFF),
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(
-                              0xFF7A35FF,
-                            ).withValues(alpha: 0.10),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
+                        color: colors.background,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 26,
+                            height: 26,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFF7A35FF,
+                                  ).withValues(alpha: 0.10),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              _selectedIcon,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _nameController.text.isEmpty
+                                ? t.text(AppStringKeys.categoryNamePlaceholder)
+                                : _nameController.text,
+                            style: TextStyle(color: colors.textPrimary),
                           ),
                         ],
                       ),
-                      child: Text(
-                        _selectedIcon,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _nameController.text.isEmpty
-                          ? t.text(AppStringKeys.categoryNamePlaceholder)
-                          : _nameController.text,
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A47D8),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              onPressed:
-                  (_saveCompleter != null && !_saveCompleter!.isCompleted)
-                  ? null
-                  : () => _save(),
-              child: (_saveCompleter != null && !_saveCompleter!.isCompleted)
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Text(t.text(AppStringKeys.commonSave)),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4A47D8),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed:
+                        (_saveCompleter != null && !_saveCompleter!.isCompleted)
+                        ? null
+                        : () => _save(),
+                    child:
+                        (_saveCompleter != null && !_saveCompleter!.isCompleted)
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(t.text(AppStringKeys.commonSave)),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1978,6 +2272,7 @@ class _VipBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final vipService = getIt<VipService>();
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return ListenableBuilder(
       listenable: vipService,
       builder: (context, _) {
@@ -1992,6 +2287,7 @@ class _VipBanner extends StatelessWidget {
               colors: [Color(0xFF5C6BC0), Color(0xFF3F51B5)],
             ),
             borderRadius: BorderRadius.circular(16),
+            boxShadow: colors.softShadow,
           ),
           child: Row(
             children: [
@@ -2146,12 +2442,13 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
   Widget build(BuildContext context) {
     final vipService = getIt<VipService>();
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     final bottomScrollTail = MediaQuery.of(context).padding.bottom + 84.0;
 
     return SafeArea(
       top: false,
       child: Material(
-        color: Colors.white,
+        color: colors.cardBackground,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         clipBehavior: Clip.antiAlias,
         child: ListenableBuilder(
@@ -2190,7 +2487,7 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
+                        color: colors.textSecondary.withValues(alpha: 0.24),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -2198,9 +2495,10 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                   const SizedBox(height: 16),
                   Text(
                     t.text(AppStringKeys.vipOpenTitle),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
+                      color: colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -2240,7 +2538,10 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                   ],
                   Text(
                     t.text(AppStringKeys.vipSelectPlan),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: colors.textPrimary,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   _VipOptionTile(
@@ -2270,7 +2571,7 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                     child: Text(
                       t.text(AppStringKeys.vipConsent),
                       style: TextStyle(
-                        color: Colors.grey.shade600,
+                        color: colors.textSecondary,
                         fontSize: 11,
                       ),
                     ),
@@ -2368,7 +2669,10 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                   Center(
                     child: Text(
                       t.text(AppStringKeys.vipPaymentHint),
-                      style: const TextStyle(color: Colors.grey, fontSize: 11),
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 11,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -2440,19 +2744,22 @@ class _VipOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return PressFeedback(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           border: Border.all(
-            color: isSelected ? const Color(0xFF5C6BC0) : Colors.grey.shade300,
+            color: isSelected
+                ? const Color(0xFF5C6BC0)
+                : colors.textSecondary.withValues(alpha: 0.24),
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(12),
           color: isSelected
               ? const Color(0xFF5C6BC0).withValues(alpha: 0.05)
-              : null,
+              : colors.background,
         ),
         child: Row(
           children: [
@@ -2466,9 +2773,10 @@ class _VipOptionTile extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
+                          color: colors.textPrimary,
                         ),
                       ),
                       if (badge != null) ...[
@@ -2497,7 +2805,7 @@ class _VipOptionTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     period,
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                    style: TextStyle(color: colors.textSecondary, fontSize: 12),
                   ),
                 ],
               ),
@@ -2570,7 +2878,9 @@ class _SmsCodeInputDialogState extends State<_SmsCodeInputDialog> {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return AlertDialog(
+      backgroundColor: colors.cardBackground,
       title: Text(t.text(AppStringKeys.smsCodeDialogTitle)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -2581,7 +2891,7 @@ class _SmsCodeInputDialogState extends State<_SmsCodeInputDialog> {
               AppStringKeys.smsCodeDialogSentTo,
               params: {'phone': widget.phone},
             ),
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: 13, color: colors.textSecondary),
           ),
           const SizedBox(height: 16),
           TextField(
@@ -2589,9 +2899,28 @@ class _SmsCodeInputDialogState extends State<_SmsCodeInputDialog> {
             keyboardType: TextInputType.number,
             maxLength: 8,
             autofocus: true,
+            style: TextStyle(color: colors.textPrimary),
             decoration: InputDecoration(
               hintText: t.text(AppStringKeys.smsCodeDialogHint),
-              border: const OutlineInputBorder(),
+              hintStyle: TextStyle(color: colors.textSecondary),
+              filled: true,
+              fillColor: colors.background,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: colors.textSecondary.withValues(alpha: 0.24),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: colors.textSecondary.withValues(alpha: 0.24),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF5C6BC0)),
+              ),
               counterText: '',
               suffixIcon: _countingDown
                   ? Padding(

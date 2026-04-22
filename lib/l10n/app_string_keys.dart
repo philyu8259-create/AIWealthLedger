@@ -113,14 +113,16 @@ class AppStringKeys {
   static const homeAiResultsTitle = 'home.aiResultsTitle';
   static const homeAiResultsEmpty = 'home.aiResultsEmpty';
   static const homeConfirmSave = 'home.confirmSave';
-  static const homeManageQuickCategoriesTitle = 'home.manageQuickCategoriesTitle';
+  static const homeManageQuickCategoriesTitle =
+      'home.manageQuickCategoriesTitle';
   static const homeDone = 'home.done';
   static const homeCustomExpenseSection = 'home.customExpenseSection';
   static const homeCustomIncomeSection = 'home.customIncomeSection';
   static const homeRecentEntriesTitle = 'home.recentEntries.title';
   static const homeRecentEntriesSeeAll = 'home.recentEntries.seeAll';
   static const homeRecentEntriesEmptyTitle = 'home.recentEntries.emptyTitle';
-  static const homeRecentEntriesEmptySubtitle = 'home.recentEntries.emptySubtitle';
+  static const homeRecentEntriesEmptySubtitle =
+      'home.recentEntries.emptySubtitle';
   static const homePrivacyAgree = 'home.privacyAgree';
   static const reportsTitle = 'reports.title';
   static const reportsMonthBill = 'reports.monthBill';
@@ -170,8 +172,10 @@ class AppStringKeys {
       'prediction.narrativeWarningFallback';
   static const predictionNarrativeTrendFallback =
       'prediction.narrativeTrendFallback';
-  static const predictionPredictedTotalExpense = 'prediction.predictedTotalExpense';
-  static const predictionPredictedDailyAverage = 'prediction.predictedDailyAverage';
+  static const predictionPredictedTotalExpense =
+      'prediction.predictedTotalExpense';
+  static const predictionPredictedDailyAverage =
+      'prediction.predictedDailyAverage';
   static const predictionThisMonthTip = 'prediction.thisMonthTip';
   static const predictionWarningsTitle = 'prediction.warningsTitle';
   static const predictionBudgetSuggestions = 'prediction.budgetSuggestions';
@@ -225,20 +229,28 @@ class AppStringKeys {
   static const assetsConfigSearchCache = 'assets.config.searchCache';
   static const assetsConfigAutoRefresh = 'assets.config.autoRefresh';
   static const assetsConfigAutoRefreshValue = 'assets.config.autoRefreshValue';
-  static const assetsConfigAutoRefreshValueUs = 'assets.config.autoRefreshValueUs';
+  static const assetsConfigAutoRefreshValueUs =
+      'assets.config.autoRefreshValueUs';
   static const assetsConfigManualThrottle = 'assets.config.manualThrottle';
-  static const assetsConfigManualThrottleValue = 'assets.config.manualThrottleValue';
+  static const assetsConfigManualThrottleValue =
+      'assets.config.manualThrottleValue';
   static const assetsConfigSupport = 'assets.config.support';
   static const assetsConfigSupportValue = 'assets.config.supportValue';
-  static const assetsConfigSupportValueUsPending = 'assets.config.supportValueUsPending';
-  static const assetsConfigSupportValueUsFinnhub = 'assets.config.supportValueUsFinnhub';
+  static const assetsConfigSupportValueUsPending =
+      'assets.config.supportValueUsPending';
+  static const assetsConfigSupportValueUsFinnhub =
+      'assets.config.supportValueUsFinnhub';
   static const assetsConfigFallback = 'assets.config.fallback';
   static const assetsConfigFallbackValue = 'assets.config.fallbackValue';
-  static const assetsConfigFallbackValueUsPending = 'assets.config.fallbackValueUsPending';
-  static const assetsConfigSearchCacheOnDemand = 'assets.config.searchCacheOnDemand';
+  static const assetsConfigFallbackValueUsPending =
+      'assets.config.fallbackValueUsPending';
+  static const assetsConfigSearchCacheOnDemand =
+      'assets.config.searchCacheOnDemand';
   static const assetsConfigLoadHint = 'assets.config.loadHint';
-  static const assetsStockProviderPendingTitle = 'assets.stockProviderPending.title';
-  static const assetsStockProviderPendingContent = 'assets.stockProviderPending.content';
+  static const assetsStockProviderPendingTitle =
+      'assets.stockProviderPending.title';
+  static const assetsStockProviderPendingContent =
+      'assets.stockProviderPending.content';
   static const assetsSearchNoResults = 'assets.searchNoResults';
   static const assetsSearchFailed = 'assets.searchFailed';
   static const assetsSelectStockFirst = 'assets.selectStockFirst';
@@ -247,8 +259,10 @@ class AppStringKeys {
   static const assetsQuantityMultiple = 'assets.quantityMultiple';
   static const assetsDeltaQuantityNonZero = 'assets.deltaQuantityNonZero';
   static const assetsDeltaQuantityMultiple = 'assets.deltaQuantityMultiple';
-  static const assetsResultingQuantityPositive = 'assets.resultingQuantityPositive';
-  static const assetsResultingQuantityMultiple = 'assets.resultingQuantityMultiple';
+  static const assetsResultingQuantityPositive =
+      'assets.resultingQuantityPositive';
+  static const assetsResultingQuantityMultiple =
+      'assets.resultingQuantityMultiple';
   static const assetsInvalidCostPrice = 'assets.invalidCostPrice';
   static const assetsAddStockPosition = 'assets.addStockPosition';
   static const assetsEditStockPosition = 'assets.editStockPosition';
@@ -283,10 +297,12 @@ class AppStringKeys {
   static const settingsBaseCurrency = 'settings.baseCurrency';
   static const settingsTitle = 'settings.title';
   static const settingsAccount = 'settings.account';
+  static const settingsAppearance = 'settings.appearance';
   static const settingsData = 'settings.data';
   static const settingsProviders = 'settings.providers';
   static const settingsAbout = 'settings.about';
-  static const settingsCustomCategoriesTitle = 'settings.customCategories.title';
+  static const settingsCustomCategoriesTitle =
+      'settings.customCategories.title';
   static const settingsCustomCategoriesSubtitle =
       'settings.customCategories.subtitle';
   static const settingsAiConsentWithdrawTitle =
@@ -300,12 +316,19 @@ class AppStringKeys {
   static const settingsLogoutConfirm = 'settings.logout.confirm';
   static const settingsLogoutSuccess = 'settings.logout.success';
   static const settingsLogoutFailed = 'settings.logout.failed';
+  static const settingsThemeModeTitle = 'settings.themeMode.title';
+  static const settingsThemeModeSubtitle = 'settings.themeMode.subtitle';
+  static const settingsThemeModeSheetTitle = 'settings.themeMode.sheetTitle';
+  static const settingsThemeModeLightLabel = 'settings.themeMode.lightLabel';
+  static const settingsThemeModeDarkLabel = 'settings.themeMode.darkLabel';
   static const settingsModeTitle = 'settings.mode.title';
   static const settingsModeSubtitle = 'settings.mode.subtitle';
   static const settingsModeCnLabel = 'settings.mode.cnLabel';
   static const settingsModeIntlLabel = 'settings.mode.intlLabel';
-  static const settingsModeSwitchDialogTitle = 'settings.mode.switchDialogTitle';
-  static const settingsModeSwitchDialogContent = 'settings.mode.switchDialogContent';
+  static const settingsModeSwitchDialogTitle =
+      'settings.mode.switchDialogTitle';
+  static const settingsModeSwitchDialogContent =
+      'settings.mode.switchDialogContent';
   static const settingsModeSwitchConfirm = 'settings.mode.switchConfirm';
   static const settingsModeSwitchSuccess = 'settings.mode.switchSuccess';
   static const settingsDeleteAccountTitle = 'settings.deleteAccount.title';
@@ -353,9 +376,9 @@ class AppStringKeys {
   static const settingsDeleteDialogContent = 'settings.delete.dialogContent';
   static const settingsDeleteConfirmAction = 'settings.delete.confirmAction';
   static const settingsDeleteOnlyLoggedIn = 'settings.delete.onlyLoggedIn';
-  static const settingsDeleteAuthNotSupported = 'settings.delete.authNotSupported';
-  static const settingsDeleteSendCodeFailed =
-      'settings.delete.sendCodeFailed';
+  static const settingsDeleteAuthNotSupported =
+      'settings.delete.authNotSupported';
+  static const settingsDeleteSendCodeFailed = 'settings.delete.sendCodeFailed';
   static const settingsDeleteProgress = 'settings.delete.progress';
   static const settingsDeleteCodeWrong = 'settings.delete.codeWrong';
   static const settingsDeleteRequestFailed = 'settings.delete.requestFailed';
@@ -370,8 +393,10 @@ class AppStringKeys {
   static const settingsProviderOcrTitle = 'settings.provider.ocr.title';
   static const settingsProviderStocksTitle = 'settings.provider.stocks.title';
   static const settingsProviderStatusReady = 'settings.provider.status.ready';
-  static const settingsProviderStatusMissing = 'settings.provider.status.missing';
-  static const settingsProviderStatusBuiltin = 'settings.provider.status.builtin';
+  static const settingsProviderStatusMissing =
+      'settings.provider.status.missing';
+  static const settingsProviderStatusBuiltin =
+      'settings.provider.status.builtin';
   static const settingsProviderSubtitle = 'settings.provider.subtitle';
   static const providerStockAshareBuiltin = 'provider.stock.ashareBuiltin';
   static const providerStockFinnhub = 'provider.stock.finnhub';

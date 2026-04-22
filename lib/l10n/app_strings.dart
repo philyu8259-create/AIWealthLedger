@@ -14,7 +14,8 @@ class AppStrings {
   }
 
   String text(String key, {Map<String, String> params = const {}}) {
-    final dictionary = _dictionaries[locale.languageCode] ?? _dictionaries['en']!;
+    final dictionary =
+        _dictionaries[locale.languageCode] ?? _dictionaries['en']!;
     final fallback = _dictionaries['zh']!;
     var template = dictionary[key] ?? fallback[key] ?? key;
     params.forEach((name, value) {
@@ -84,23 +85,27 @@ class AppStrings {
       'provider.ocr.baidu': '百度 OCR',
       'provider.ocr.googleVision': 'Google Vision',
       'home.vipUpgrade.title': '升级 AI财富记账本会员',
-      'home.vipUpgrade.content': '您已记录 50 条账单，作为免费用户额度已用完。升级会员可解锁无限记账次数，享受 AI 智能分析、无限类目自定义等高级功能。',
+      'home.vipUpgrade.content':
+          '您已记录 50 条账单，作为免费用户额度已用完。升级会员可解锁无限记账次数，享受 AI 智能分析、无限类目自定义等高级功能。',
       'home.vipUpgrade.later': '以后再说',
       'home.vipUpgrade.now': '立即升级',
       'home.loginPrompt.title': '登录后可继续记账',
-      'home.loginPrompt.content': '您当前以游客身份已记录 20 条账单。登录账号后可继续免费使用，记录更多账单，还能同步数据到云端。',
+      'home.loginPrompt.content':
+          '您当前以游客身份已记录 20 条账单。登录账号后可继续免费使用，记录更多账单，还能同步数据到云端。',
       'home.loginPrompt.later': '以后再说',
       'home.loginPrompt.now': '立即登录',
       'home.voiceUnavailable': '语音功能暂不可用，请检查麦克风权限',
       'home.ocrConsent.title': 'OCR识别授权',
-      'home.ocrConsent.content': '您的账单图片将发送至 {ocrProvider} 进行文字识别，再由 {aiProvider} 进行智能分析。详细说明请参阅隐私政策。',
+      'home.ocrConsent.content':
+          '您的账单图片将发送至 {ocrProvider} 进行文字识别，再由 {aiProvider} 进行智能分析。详细说明请参阅隐私政策。',
       'home.ocrCancelled': '已取消识别，可在设置中随时撤回授权',
       'home.takePhoto': '拍照',
       'home.chooseFromLibrary': '从相册选择',
       'home.noImage': '未获取到图片，请重试',
       'home.recognizingReceipt': '正在识别票据...',
       'home.ocrUnavailable': '票据识别暂不可用，请稍后再试，或手动输入金额',
-      'home.ocrSetupRequired': '当前构建尚未配置 {ocrProvider} 与 {aiProvider}，暂不能使用拍照记账。',
+      'home.ocrSetupRequired':
+          '当前构建尚未配置 {ocrProvider} 与 {aiProvider}，暂不能使用拍照记账。',
       'home.ocrFailed': 'OCR失败: {error}',
       'home.textConsent.title': '文本输入授权',
       'home.textConsent.content': '您的文本将发送至 {aiProvider} 进行智能分析。详细说明请参阅隐私政策。',
@@ -247,7 +252,8 @@ class AppStrings {
       'assets.config.searchCache': '股票搜索缓存',
       'assets.config.autoRefresh': '自动更新',
       'assets.config.autoRefreshValue': '工作日 11:35 / 15:05（前台触发）',
-      'assets.config.autoRefreshValueUs': '美股交易日 09:35 / 12:00 / 16:05（美东时间，前台触发）',
+      'assets.config.autoRefreshValueUs':
+          '美股交易日 09:35 / 12:00 / 16:05（美东时间，前台触发）',
       'assets.config.manualThrottle': '手动刷新节流',
       'assets.config.manualThrottleValue': '单用户最短 3 秒',
       'assets.config.support': '当前支持',
@@ -302,6 +308,7 @@ class AppStrings {
       'settings.guestUser': '游客（点击登录）',
       'settings.title': '⚙️ 设置',
       'settings.account': '账号',
+      'settings.appearance': '外观',
       'settings.data': '数据',
       'settings.providers': '服务状态',
       'settings.about': '关于',
@@ -316,12 +323,18 @@ class AppStrings {
       'settings.logout.confirm': '确认退出',
       'settings.logout.success': '已退出登录',
       'settings.logout.failed': '退出登录失败: {error}',
+      'settings.themeMode.title': '主题模式',
+      'settings.themeMode.subtitle': '当前：{current}',
+      'settings.themeMode.sheetTitle': '选择主题模式',
+      'settings.themeMode.lightLabel': '浅色模式',
+      'settings.themeMode.darkLabel': '深色模式',
       'settings.mode.title': '切换模式',
       'settings.mode.subtitle': '当前: {current}，切换到 {target} 并清除当前本地数据',
       'settings.mode.cnLabel': '中文版',
       'settings.mode.intlLabel': '国际版',
       'settings.mode.switchDialogTitle': '切换模式',
-      'settings.mode.switchDialogContent': '切换到 {target} 后，当前账号会退出登录，本地缓存数据会被清除，并返回欢迎页。该操作不会自动来回跟随系统语言切换。',
+      'settings.mode.switchDialogContent':
+          '切换到 {target} 后，当前账号会退出登录，本地缓存数据会被清除，并返回欢迎页。该操作不会自动来回跟随系统语言切换。',
       'settings.mode.switchConfirm': '切换并继续',
       'settings.mode.switchSuccess': '已切换到 {target}',
       'settings.deleteAccount.title': '注销账号',
@@ -360,13 +373,16 @@ class AppStrings {
       'settings.openTermsFailed': '无法打开用户协议链接',
       'settings.openLinkFailed': '打开失败: {error}',
       'settings.withdraw.dialogTitle': '撤回 AI 功能授权',
-      'settings.withdraw.dialogContent': '确定要撤回 AI 功能授权吗？撤回后再次使用 OCR 拍照记账或语音记账时，会重新弹出授权提示。',
+      'settings.withdraw.dialogContent':
+          '确定要撤回 AI 功能授权吗？撤回后再次使用 OCR 拍照记账或语音记账时，会重新弹出授权提示。',
       'settings.withdraw.confirm': '确定撤回',
       'settings.withdraw.success': '已撤回 AI 功能授权',
-      'settings.delete.dialogContent': '确定要注销账号吗？\n\n• 注销后30天内可恢复，逾期数据永久删除\n• 此操作不可逆',
+      'settings.delete.dialogContent':
+          '确定要注销账号吗？\n\n• 注销后30天内可恢复，逾期数据永久删除\n• 此操作不可逆',
       'settings.delete.confirmAction': '确认注销',
       'settings.delete.onlyLoggedIn': '仅支持已登录用户注销',
-      'settings.delete.authNotSupported': '当前邮箱 / Google / Apple 账号暂不支持 App 内直接注销，请联系支持处理。',
+      'settings.delete.authNotSupported':
+          '当前邮箱 / Google / Apple 账号暂不支持 App 内直接注销，请联系支持处理。',
       'settings.delete.sendCodeFailed': '发送验证码失败: {error}',
       'settings.delete.progress': '正在注销...',
       'settings.delete.codeWrong': '验证码错误',
@@ -452,7 +468,8 @@ class AppStrings {
       'nav.analysis': 'AI',
       'nav.settings': 'Settings',
       'welcome.title': 'AI Wealth Tracker',
-      'welcome.subtitle': 'Voice input and OCR photo scanning\nautomatically extract amounts and categories\nno more tedious manual entry',
+      'welcome.subtitle':
+          'Voice input and OCR photo scanning\nautomatically extract amounts and categories\nno more tedious manual entry',
       'welcome.guestLogin': 'Continue as guest',
       'welcome.phoneLogin': 'Sign in with phone',
       'welcome.agreementPrefix': 'By signing in, you agree to the',
@@ -460,7 +477,8 @@ class AppStrings {
       'welcome.openPrivacyFailed': 'Unable to open the Privacy Policy',
       'welcome.openTermsFailed': 'Unable to open the Terms of Service',
       'phoneLogin.title': 'Phone sign in',
-      'phoneLogin.autoCreateNotice': 'A new account will be created automatically for unregistered numbers',
+      'phoneLogin.autoCreateNotice':
+          'A new account will be created automatically for unregistered numbers',
       'phoneLogin.phoneLabel': 'Phone number',
       'phoneLogin.phoneHint': 'Enter your phone number',
       'phoneLogin.codeLabel': 'Verification code',
@@ -474,21 +492,24 @@ class AppStrings {
       'phoneLogin.openTermsFailed': 'Unable to open the Terms of Service',
       'phoneLogin.invalidPhone': 'Please enter a valid 11-digit phone number',
       'phoneLogin.invalidCodeLength': 'The code must be 4 to 8 digits',
-      'phoneLogin.invalidCodeInput': 'Please enter a 4 to 8 digit verification code',
+      'phoneLogin.invalidCodeInput':
+          'Please enter a 4 to 8 digit verification code',
       'phoneLogin.sendFailed': 'Failed to send: {error}',
       'phoneLogin.demoEnabled': 'Demo mode enabled',
       'phoneLogin.demoFailed': 'Failed to enable Demo mode: {error}',
       'phoneLogin.codeWrong': 'Incorrect verification code',
       'phoneLogin.loginFailed': 'Sign in failed: {error}',
       'intlAuth.title': 'Sign in',
-      'intlAuth.subtitle': 'The international version currently supports Google and Apple sign in only',
+      'intlAuth.subtitle':
+          'The international version currently supports Google and Apple sign in only',
       'intlAuth.email': 'Continue with email',
       'intlAuth.google': 'Continue with Google',
       'intlAuth.apple': 'Continue with Apple',
       'intlAuth.provider.email': 'Email sign in',
       'intlAuth.provider.google': 'Google sign in',
       'intlAuth.provider.apple': 'Apple sign in',
-      'intlAuth.comingSoon': '{provider} is currently unavailable. Please try again later.',
+      'intlAuth.comingSoon':
+          '{provider} is currently unavailable. Please try again later.',
       'intlAuth.loginFailed': 'Sign in failed: {error}',
       'intlEmail.title': 'Email sign in',
       'intlEmail.subtitle': 'Email sign in has been turned off for now.',
@@ -498,34 +519,45 @@ class AppStrings {
       'intlEmail.invalid': 'Please enter a valid email address',
       'intlEmail.loggingIn': 'Signing in...',
       'intlEmail.loginFailed': 'Email sign in failed: {error}',
-      'intlEmail.notReady': 'Email sign in is currently unavailable. Please try again later.',
+      'intlEmail.notReady':
+          'Email sign in is currently unavailable. Please try again later.',
       'provider.ai.qwen': 'Qwen',
       'provider.ai.gemini': 'Gemini',
       'provider.ocr.baidu': 'Baidu OCR',
       'provider.ocr.googleVision': 'Google Vision',
       'home.vipUpgrade.title': 'Upgrade to premium',
-      'home.vipUpgrade.content': 'You have already recorded 50 entries and reached the free plan limit. Upgrade to unlock unlimited entries, AI insights, and unlimited custom categories.',
+      'home.vipUpgrade.content':
+          'You have already recorded 50 entries and reached the free plan limit. Upgrade to unlock unlimited entries, AI insights, and unlimited custom categories.',
       'home.vipUpgrade.later': 'Maybe later',
       'home.vipUpgrade.now': 'Upgrade now',
       'home.loginPrompt.title': 'Sign in to keep adding entries',
-      'home.loginPrompt.content': 'You are currently using the app as a guest and have already recorded 20 entries. Sign in to keep using the app for free, save more entries, and sync your data to the cloud.',
+      'home.loginPrompt.content':
+          'You are currently using the app as a guest and have already recorded 20 entries. Sign in to keep using the app for free, save more entries, and sync your data to the cloud.',
       'home.loginPrompt.later': 'Maybe later',
       'home.loginPrompt.now': 'Sign in now',
-      'home.voiceUnavailable': 'Voice input is currently unavailable, please check microphone permissions',
+      'home.voiceUnavailable':
+          'Voice input is currently unavailable, please check microphone permissions',
       'home.ocrConsent.title': 'OCR permission',
-      'home.ocrConsent.content': 'Your receipt image will be sent to {ocrProvider} for text extraction, then analyzed by {aiProvider}. Please see the Privacy Policy for details.',
-      'home.ocrCancelled': 'Recognition cancelled. You can withdraw permission later in Settings.',
+      'home.ocrConsent.content':
+          'Your receipt image will be sent to {ocrProvider} for text extraction, then analyzed by {aiProvider}. Please see the Privacy Policy for details.',
+      'home.ocrCancelled':
+          'Recognition cancelled. You can withdraw permission later in Settings.',
       'home.takePhoto': 'Take Photo',
       'home.chooseFromLibrary': 'Photo Library',
       'home.noImage': 'No image was selected, please try again',
       'home.recognizingReceipt': 'Recognizing receipt...',
-      'home.ocrUnavailable': 'Receipt recognition is currently unavailable. Please try again later, or enter the amount manually.',
-      'home.ocrSetupRequired': '{ocrProvider} and {aiProvider} are not configured in this build yet, so receipt scan is currently unavailable.',
+      'home.ocrUnavailable':
+          'Receipt recognition is currently unavailable. Please try again later, or enter the amount manually.',
+      'home.ocrSetupRequired':
+          '{ocrProvider} and {aiProvider} are not configured in this build yet, so receipt scan is currently unavailable.',
       'home.ocrFailed': 'OCR failed: {error}',
       'home.textConsent.title': 'Text input permission',
-      'home.textConsent.content': 'Your text will be sent to {aiProvider} for analysis. Please see the Privacy Policy for details.',
-      'home.textCancelled': 'Cancelled. You can withdraw permission later in Settings.',
-      'home.aiSetupRequired': '{aiProvider} is not configured in this build yet, so AI parsing is currently unavailable.',
+      'home.textConsent.content':
+          'Your text will be sent to {aiProvider} for analysis. Please see the Privacy Policy for details.',
+      'home.textCancelled':
+          'Cancelled. You can withdraw permission later in Settings.',
+      'home.aiSetupRequired':
+          '{aiProvider} is not configured in this build yet, so AI parsing is currently unavailable.',
       'home.saveFailed': 'Save failed: {error}',
       'home.addedEntries': '{count} entries added',
       'home.saveMissing': 'Save failed: saved entries were not found',
@@ -539,7 +571,8 @@ class AppStrings {
       'home.stocksSummaryHidden': '{count} stocks · Return ••••••',
       'home.stocksSummaryVisible': '{count} stocks · Return {percent}',
       'home.aiLedgerTitle': 'AI Ledger',
-      'home.aiLedgerSubtitle': 'Smart recognition with automatic item splitting',
+      'home.aiLedgerSubtitle':
+          'Smart recognition with automatic item splitting',
       'home.aiInputPlaceholder': 'Type here or use the buttons below...',
       'home.voiceActionLabel': 'Voice',
       'home.voiceListeningLabel': 'Listening...',
@@ -547,9 +580,11 @@ class AppStrings {
       'home.inputHint': 'Describe the expense, for example: hotpot lunch 120',
       'home.aiRecognize': 'AI Parse',
       'home.editCategoriesTitle': 'Edit categories',
-      'home.editCategoriesSubtitle': 'Choose which categories appear in quick add. Both income and expense categories can be included.',
+      'home.editCategoriesSubtitle':
+          'Choose which categories appear in quick add. Both income and expense categories can be included.',
       'home.quickAddTitle': 'Quick add',
-      'home.quickAddSubtitle': '{count} common categories are shown by default. Tap Edit to customize them.',
+      'home.quickAddSubtitle':
+          '{count} common categories are shown by default. Tap Edit to customize them.',
       'home.amountHint': 'Enter amount',
       'home.savedAmount': 'Saved {amount}',
       'home.quickAccountingTitle': 'Quick accounting',
@@ -564,7 +599,8 @@ class AppStrings {
       'home.recentEntries.title': 'Recent entries',
       'home.recentEntries.seeAll': 'See all',
       'home.recentEntries.emptyTitle': 'No entries yet',
-      'home.recentEntries.emptySubtitle': 'Try adding your first expense with voice or photo input',
+      'home.recentEntries.emptySubtitle':
+          'Try adding your first expense with voice or photo input',
       'home.privacyAgree': 'Agree',
       'reports.title': '📊 Reports',
       'reports.monthBill': '{month} entries',
@@ -602,19 +638,26 @@ class AppStrings {
       'transactions.invalidAmount': 'Please enter a valid amount',
       'transactions.updated': 'Entry updated',
       'transactions.empty.title': 'No entries yet',
-      'transactions.empty.subtitle': 'Try adding your first expense with voice or photo input',
+      'transactions.empty.subtitle':
+          'Try adding your first expense with voice or photo input',
       'prediction.title': '🤖 AI Insights',
-      'prediction.insufficientHistory': 'Not enough history yet, please add entries for at least one month',
+      'prediction.insufficientHistory':
+          'Not enough history yet, please add entries for at least one month',
       'prediction.failed': 'Prediction failed',
-      'prediction.setupRequired': '{aiProvider} is not configured in this build yet, so AI prediction is currently unavailable.',
+      'prediction.setupRequired':
+          '{aiProvider} is not configured in this build yet, so AI prediction is currently unavailable.',
       'prediction.insightTitle': 'AI insight',
       'prediction.insightFallback': 'Not enough data to generate insight',
-      'prediction.narrativeFallback': 'AI generated a spending note. Review the details below.',
-      'prediction.narrativeWarningFallback': 'AI generated a spending alert. Review the budget details below.',
-      'prediction.narrativeTrendFallback': 'AI detected a spending trend change. Review the details below.',
+      'prediction.narrativeFallback':
+          'AI generated a spending note. Review the details below.',
+      'prediction.narrativeWarningFallback':
+          'AI generated a spending alert. Review the budget details below.',
+      'prediction.narrativeTrendFallback':
+          'AI detected a spending trend change. Review the details below.',
       'prediction.predictedTotalExpense': 'Predicted monthly expense',
       'prediction.predictedDailyAverage': 'Predicted daily average',
-      'prediction.thisMonthTip': '{daysLeft} days left this month. Keeping a daily average of {amount} should stay within the prediction',
+      'prediction.thisMonthTip':
+          '{daysLeft} days left this month. Keeping a daily average of {amount} should stay within the prediction',
       'prediction.warningsTitle': 'Overspending alerts',
       'prediction.budgetSuggestions': 'Budget suggestions for next month',
       'prediction.approxPerDay': '≈ {amount}/day',
@@ -624,7 +667,8 @@ class AppStrings {
       'assets.title': 'Asset Management',
       'assets.quotesUpdated': 'Quotes updated',
       'assets.vipExpired.title': 'Premium expired',
-      'assets.vipExpired.content': 'Your premium has expired. Renew to keep adding and editing assets.',
+      'assets.vipExpired.content':
+          'Your premium has expired. Renew to keep adding and editing assets.',
       'assets.vipExpired.later': 'Maybe later',
       'assets.vipExpired.renew': 'Renew now',
       'assets.deleteAsset.title': 'Delete asset',
@@ -636,7 +680,8 @@ class AppStrings {
       'assets.refreshQuotes': 'Refresh quotes',
       'assets.addStock': 'Add stock',
       'assets.emptyStocks.title': 'No stock positions yet',
-      'assets.emptyStocks.subtitle': 'Add a stock and market value plus profit will be calculated automatically',
+      'assets.emptyStocks.subtitle':
+          'Add a stock and market value plus profit will be calculated automatically',
       'assets.otherSection': 'Other assets',
       'assets.addAsset': 'Add asset',
       'assets.emptyOther.title': 'No other assets yet',
@@ -666,54 +711,73 @@ class AppStrings {
       'assets.config.cacheMissing': 'No cache yet',
       'assets.config.searchCache': 'Stock search cache',
       'assets.config.autoRefresh': 'Auto refresh',
-      'assets.config.autoRefreshValue': 'Weekdays 11:35 / 15:05 (foreground triggered)',
-      'assets.config.autoRefreshValueUs': 'US trading days 09:35 / 12:00 / 16:05 ET (foreground triggered)',
+      'assets.config.autoRefreshValue':
+          'Weekdays 11:35 / 15:05 (foreground triggered)',
+      'assets.config.autoRefreshValueUs':
+          'US trading days 09:35 / 12:00 / 16:05 ET (foreground triggered)',
       'assets.config.manualThrottle': 'Manual refresh throttle',
       'assets.config.manualThrottleValue': 'Minimum 3 seconds per user',
       'assets.config.support': 'Currently supported',
       'assets.config.supportValue': 'Mainland China A-shares only',
-      'assets.config.supportValueUsPending': 'US stocks (quotes and search unavailable in this build)',
-      'assets.config.supportValueUsFinnhub': 'US stocks via Finnhub search and quotes',
+      'assets.config.supportValueUsPending':
+          'US stocks (quotes and search unavailable in this build)',
+      'assets.config.supportValueUsFinnhub':
+          'US stocks via Finnhub search and quotes',
       'assets.config.fallback': 'Quote failure fallback',
-      'assets.config.fallbackValue': 'Falls back to cached prices and marks status as updating',
-      'assets.config.fallbackValueUsPending': 'No legacy A-share requests are sent in intl mode. Local cached data is kept as-is',
-      'assets.config.searchCacheOnDemand': 'On-demand search (no preloaded cache)',
+      'assets.config.fallbackValue':
+          'Falls back to cached prices and marks status as updating',
+      'assets.config.fallbackValueUsPending':
+          'No legacy A-share requests are sent in intl mode. Local cached data is kept as-is',
+      'assets.config.searchCacheOnDemand':
+          'On-demand search (no preloaded cache)',
       'assets.config.loadHint': 'Asset load note: {error}',
       'assets.stockProviderPending.title': 'US stock feature unavailable',
-      'assets.stockProviderPending.content': 'This build does not have US stock quote and search services configured, so adding or refreshing stock positions is temporarily unavailable.',
+      'assets.stockProviderPending.content':
+          'This build does not have US stock quote and search services configured, so adding or refreshing stock positions is temporarily unavailable.',
       'assets.searchNoResults': 'No matching stocks found',
       'assets.searchFailed': 'Stock search failed. Please try again later',
       'assets.selectStockFirst': 'Please select a stock first',
       'assets.invalidQuantity': 'Please enter a valid quantity',
       'assets.quantityPositive': 'Quantity must be greater than 0',
-      'assets.quantityMultiple': 'Quantity must be greater than 0 and a multiple of 100 shares',
+      'assets.quantityMultiple':
+          'Quantity must be greater than 0 and a multiple of 100 shares',
       'assets.deltaQuantityNonZero': 'Quantity change must not be 0',
-      'assets.deltaQuantityMultiple': 'Quantity change must be a non-zero multiple of 100 shares',
-      'assets.resultingQuantityPositive': 'Resulting quantity must be greater than 0',
-      'assets.resultingQuantityMultiple': 'Resulting quantity must be greater than 0 and a multiple of 100 shares',
+      'assets.deltaQuantityMultiple':
+          'Quantity change must be a non-zero multiple of 100 shares',
+      'assets.resultingQuantityPositive':
+          'Resulting quantity must be greater than 0',
+      'assets.resultingQuantityMultiple':
+          'Resulting quantity must be greater than 0 and a multiple of 100 shares',
       'assets.invalidCostPrice': 'Please enter a valid cost price',
       'assets.addStockPosition': 'Add stock position',
       'assets.editStockPosition': 'Edit stock position',
       'assets.stockNameCode': 'Stock name / code',
       'assets.stockNameCodeHint': 'Enter a stock name or 6-digit code',
-      'assets.stockNameCodeHintUs': 'Enter a ticker or company name, for example AAPL or Apple',
+      'assets.stockNameCodeHintUs':
+          'Enter a ticker or company name, for example AAPL or Apple',
       'assets.selectedStock': 'Selected: {name}  {code} · {exchange}',
       'assets.overwrite': 'Overwrite',
       'assets.delta': 'Adjust',
       'assets.deltaQuantityLabel': 'Quantity change',
       'assets.holdingQuantityLabel': 'Quantity',
-      'assets.deltaQuantityHint': 'Use a positive number to buy, negative to sell, in lots of 100 shares',
-      'assets.deltaQuantityHintUs': 'Use a positive number to buy and a negative number to sell, in whole shares',
+      'assets.deltaQuantityHint':
+          'Use a positive number to buy, negative to sell, in lots of 100 shares',
+      'assets.deltaQuantityHintUs':
+          'Use a positive number to buy and a negative number to sell, in whole shares',
       'assets.holdingQuantityHint': 'Enter a multiple of 100 shares',
-      'assets.holdingQuantityHintUs': 'Enter a whole-share quantity greater than 0',
+      'assets.holdingQuantityHintUs':
+          'Enter a whole-share quantity greater than 0',
       'assets.costPriceOptional': 'Cost price (optional)',
       'assets.costPriceHint': 'Used to calculate unrealized P/L',
-      'assets.stockFormHint': 'Note: only mainland China A-shares are currently supported, and quantity must be a multiple of 100 shares.',
-      'assets.stockFormHintUs': 'Note: US stock search and quotes currently use Finnhub, and quantity is entered in whole shares.',
+      'assets.stockFormHint':
+          'Note: only mainland China A-shares are currently supported, and quantity must be a multiple of 100 shares.',
+      'assets.stockFormHintUs':
+          'Note: US stock search and quotes currently use Finnhub, and quantity is entered in whole shares.',
       'assets.addAssetTitle': 'Add asset',
       'assets.editAssetTitle': 'Edit asset',
       'assets.assetName': 'Asset name',
-      'assets.assetNameHint': 'For example: Wallet cash / Bank account / Emergency fund',
+      'assets.assetNameHint':
+          'For example: Wallet cash / Bank account / Emergency fund',
       'assets.assetType': 'Asset type',
       'assets.currentAmount': 'Current amount',
       'assets.noteOptional': 'Note (optional)',
@@ -722,30 +786,43 @@ class AppStrings {
       'settings.guestUser': 'Guest (tap to sign in)',
       'settings.title': '⚙️ Settings',
       'settings.account': 'Account',
+      'settings.appearance': 'Appearance',
       'settings.data': 'Data',
       'settings.providers': 'Provider status',
       'settings.about': 'About',
       'settings.customCategories.title': 'Custom categories',
-      'settings.customCategories.subtitle': 'Manage income and expense categories',
+      'settings.customCategories.subtitle':
+          'Manage income and expense categories',
       'settings.aiConsentWithdraw.title': 'Withdraw AI authorization',
-      'settings.aiConsentWithdraw.subtitle': 'Clear OCR and voice privacy consent records',
+      'settings.aiConsentWithdraw.subtitle':
+          'Clear OCR and voice privacy consent records',
       'settings.logout.title': 'Sign out',
-      'settings.logout.subtitle': 'Clear the current session and return to the welcome screen',
+      'settings.logout.subtitle':
+          'Clear the current session and return to the welcome screen',
       'settings.logout.dialogTitle': 'Sign out',
-      'settings.logout.dialogContent': 'Are you sure you want to sign out of the current account? Your local session will be cleared and you will need to sign in again.',
+      'settings.logout.dialogContent':
+          'Are you sure you want to sign out of the current account? Your local session will be cleared and you will need to sign in again.',
       'settings.logout.confirm': 'Sign out',
       'settings.logout.success': 'Signed out',
       'settings.logout.failed': 'Sign out failed: {error}',
+      'settings.themeMode.title': 'Theme mode',
+      'settings.themeMode.subtitle': 'Current: {current}',
+      'settings.themeMode.sheetTitle': 'Choose theme mode',
+      'settings.themeMode.lightLabel': 'Light mode',
+      'settings.themeMode.darkLabel': 'Dark mode',
       'settings.mode.title': 'Switch mode',
-      'settings.mode.subtitle': 'Current: {current}. Switch to {target} and clear current local data',
+      'settings.mode.subtitle':
+          'Current: {current}. Switch to {target} and clear current local data',
       'settings.mode.cnLabel': 'Chinese mode',
       'settings.mode.intlLabel': 'International mode',
       'settings.mode.switchDialogTitle': 'Switch mode',
-      'settings.mode.switchDialogContent': 'Switching to {target} will sign out the current account, clear local cached data, and return you to the welcome screen. The app will not keep auto-switching back and forth with system language changes.',
+      'settings.mode.switchDialogContent':
+          'Switching to {target} will sign out the current account, clear local cached data, and return you to the welcome screen. The app will not keep auto-switching back and forth with system language changes.',
       'settings.mode.switchConfirm': 'Switch and continue',
       'settings.mode.switchSuccess': 'Switched to {target}',
       'settings.deleteAccount.title': 'Delete account',
-      'settings.deleteAccount.subtitle': 'Recoverable within 30 days, then data is permanently deleted',
+      'settings.deleteAccount.subtitle':
+          'Recoverable within 30 days, then data is permanently deleted',
       'settings.backup.title': 'Back up data',
       'settings.backup.subtitle': 'Sync to cloud',
       'settings.export.title': 'Export entries',
@@ -756,16 +833,20 @@ class AppStrings {
       'settings.aboutApp.title': 'About AI Wealth Tracker',
       'settings.backup.progress': 'Backing up...',
       'settings.backup.noLocalData': 'No local data available to back up',
-      'settings.backup.success': 'Backup complete, {count} entries synced to the cloud',
-      'settings.backup.partial': 'Backup complete: {success} synced, {failed} failed',
+      'settings.backup.success':
+          'Backup complete, {count} entries synced to the cloud',
+      'settings.backup.partial':
+          'Backup complete: {success} synced, {failed} failed',
       'settings.backup.failed': 'Backup failed: {error}',
       'settings.export.progress': 'Generating CSV...',
       'settings.export.noData': 'No entries available',
-      'settings.export.noDataInRange': 'No entries found in the selected date range',
+      'settings.export.noDataInRange':
+          'No entries found in the selected date range',
       'settings.export.subject': 'AI Wealth Tracker export',
       'settings.export.message': 'AI Wealth Tracker export ({start} ~ {end})',
       'settings.export.failed': 'Export failed: {error}',
-      'settings.export.csvHeaders': 'Index,Date,Time,Type,Category,Amount,Note,Linked Account,Sync Status',
+      'settings.export.csvHeaders':
+          'Index,Date,Time,Type,Category,Amount,Note,Linked Account,Sync Status',
       'settings.export.csvTypeIncome': 'Income',
       'settings.export.csvTypeExpense': 'Expense',
       'settings.export.filePrefix': 'AI_Asset_Bookkeeper',
@@ -780,17 +861,23 @@ class AppStrings {
       'settings.openTermsFailed': 'Unable to open the Terms of Service link',
       'settings.openLinkFailed': 'Open failed: {error}',
       'settings.withdraw.dialogTitle': 'Withdraw AI authorization',
-      'settings.withdraw.dialogContent': 'Are you sure you want to withdraw AI authorization? The next time you use OCR or voice input, the consent prompt will appear again.',
+      'settings.withdraw.dialogContent':
+          'Are you sure you want to withdraw AI authorization? The next time you use OCR or voice input, the consent prompt will appear again.',
       'settings.withdraw.confirm': 'Withdraw authorization',
       'settings.withdraw.success': 'AI authorization withdrawn',
-      'settings.delete.dialogContent': 'Are you sure you want to delete your account?\n\n• Recoverable within 30 days, then data is permanently deleted\n• This action cannot be undone',
+      'settings.delete.dialogContent':
+          'Are you sure you want to delete your account?\n\n• Recoverable within 30 days, then data is permanently deleted\n• This action cannot be undone',
       'settings.delete.confirmAction': 'Delete account',
-      'settings.delete.onlyLoggedIn': 'Only signed-in users can delete an account',
-      'settings.delete.authNotSupported': 'Account deletion for email, Google, or Apple sign-in is not available directly in the app yet. Please contact support.',
-      'settings.delete.sendCodeFailed': 'Failed to send verification code: {error}',
+      'settings.delete.onlyLoggedIn':
+          'Only signed-in users can delete an account',
+      'settings.delete.authNotSupported':
+          'Account deletion for email, Google, or Apple sign-in is not available directly in the app yet. Please contact support.',
+      'settings.delete.sendCodeFailed':
+          'Failed to send verification code: {error}',
       'settings.delete.progress': 'Deleting account...',
       'settings.delete.codeWrong': 'Incorrect verification code',
-      'settings.delete.requestFailed': 'Delete request failed, please try again later',
+      'settings.delete.requestFailed':
+          'Delete request failed, please try again later',
       'settings.delete.success': 'Account deleted',
       'settings.delete.failed': 'Delete failed: {error}',
       'settings.rate.openFailed': 'Unable to open the App Store',
@@ -818,7 +905,8 @@ class AppStrings {
       'category.preview': 'Preview:',
       'category.name.placeholder': 'Category name',
       'category.name.required': 'Please enter a category name',
-      'category.systemExpense.title': 'Expense categories (built in, read only)',
+      'category.systemExpense.title':
+          'Expense categories (built in, read only)',
       'category.customExpense.title': 'Expense categories (custom)',
       'category.systemIncome.title': 'Income categories (built in, read only)',
       'category.customIncome.title': 'Income categories (custom)',
@@ -843,9 +931,11 @@ class AppStrings {
       'vip.periodMonthly': 'monthly',
       'vip.periodYearly': 'yearly',
       'vip.restorePurchase': 'Restore purchases',
-      'vip.paymentHint': 'Effective immediately after payment. Manage cancellations in App Store subscriptions.',
+      'vip.paymentHint':
+          'Effective immediately after payment. Manage cancellations in App Store subscriptions.',
       'vip.openFailed': 'Purchase failed: {error}',
-      'vip.productUnavailable': 'Purchases are temporarily unavailable. Please try again later.',
+      'vip.productUnavailable':
+          'Purchases are temporarily unavailable. Please try again later.',
       'vip.loadingPrice': 'Loading price...',
       'smsCodeDialog.title': 'Enter verification code',
       'smsCodeDialog.sentTo': 'A verification code was sent to {phone}',
