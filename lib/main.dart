@@ -10,6 +10,8 @@ import 'services/demo_data_seeder.dart';
 import 'services/injection.dart';
 import 'services/vip_service.dart';
 
+AppLifecycleListener? _vipLifecycleListener;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -54,6 +56,12 @@ void main() async {
   try {
     await configureDependencies();
     debugPrint('[main] Dependencies configured');
+
+    _vipLifecycleListener ??= AppLifecycleListener(
+      onResume: () {
+        unawaited(_syncVipOnResume());
+      },
+    );
   } catch (e, st) {
     debugPrint('[main] Dependency config error: $e\n$st');
   }
@@ -93,5 +101,14 @@ Future<void> _bootstrapVipAfterLaunch() async {
     debugPrint('[main] VipService syncFromCloud done');
   } catch (e) {
     debugPrint('[main] VipService init/restore error: $e');
+  }
+}
+
+Future<void> _syncVipOnResume() async {
+  try {
+    await getIt<VipService>().syncFromCloud();
+    debugPrint('[main] VipService syncFromCloud on resume done');
+  } catch (e) {
+    debugPrint('[main] VipService syncFromCloud on resume error: $e');
   }
 }

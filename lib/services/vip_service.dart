@@ -425,7 +425,7 @@ class VipService extends ChangeNotifier {
       type == VipType.monthly ? 'monthly' : 'yearly',
     );
     await _setScopedInt(_keyVipExpireMs, expireMs);
-    _refreshSnapshot();
+    _refreshSnapshot(notify: true);
 
     // 购买/恢复成功后尝试同步到云端（失败不阻塞）
     try {
