@@ -217,10 +217,18 @@ class AppProfileService extends ChangeNotifier {
   ) {
     if (flavor == AppFlavor.cn) return const Locale('zh', 'CN');
     if (deviceLocale == null) return fallback;
+
+    final languageCode = deviceLocale.languageCode.toLowerCase();
     final country = (deviceLocale.countryCode ?? '').toUpperCase();
-    if (deviceLocale.languageCode.toLowerCase() != 'en') {
+
+    if (languageCode.startsWith('zh')) {
+      return const Locale('zh', 'CN');
+    }
+
+    if (languageCode != 'en') {
       return fallback;
     }
+
     switch (country) {
       case 'GB':
         return const Locale('en', 'GB');
