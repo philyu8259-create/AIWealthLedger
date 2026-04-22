@@ -86,10 +86,9 @@ Future<void> _bootstrapVipAfterLaunch() async {
   try {
     await getIt<VipService>().init();
     debugPrint('[main] VipService init done');
-    // 自动恢复历史购买（确保重新安装 app 后会员状态恢复）
-    await getIt<VipService>().restorePurchases();
-    debugPrint('[main] VipService restorePurchases done');
-    // 启动后尝试从云端同步 VIP 档案（云端为权威）
+    // 冷启动不再自动调 restorePurchases。
+    // 原因：真机上曾出现 iOS 原生层 EXC_BAD_ACCESS，崩溃点紧贴 restorePurchases 调用。
+    // 会员状态优先由云端档案恢复，手动“恢复购买”入口仍保留给用户主动触发。
     await getIt<VipService>().syncFromCloud();
     debugPrint('[main] VipService syncFromCloud done');
   } catch (e) {

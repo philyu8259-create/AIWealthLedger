@@ -303,13 +303,6 @@ class IntlAuthService {
     }
 
     try {
-      await getIt<VipService>().restorePurchases();
-      debugPrint('[IntlAuthService] restorePurchases done');
-    } catch (e) {
-      debugPrint('[IntlAuthService] restorePurchases error: $e');
-    }
-
-    try {
       await getIt<VipService>().syncFromCloud();
       debugPrint('[IntlAuthService] syncFromCloud done');
     } catch (e) {
