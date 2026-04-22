@@ -58,6 +58,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   build_runner: ^2.4.13
   injectable_generator: ^2.6.2
+  in_app_purchase_platform_interface: ^1.4.0
 
 dependency_overrides:
   # Work around Flutter/path_provider_foundation 2.6.0 packaging `objective_c.framework`
