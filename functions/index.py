@@ -646,6 +646,8 @@ def _ots_put_vip_profile(user_phone, profile):
             ['vip_type', profile.get('vip_type', '')],
             ['vip_expire_ms', int(profile.get('vip_expire_ms', 0) or 0)],
             ['vip_environment', profile.get('vip_environment', 'unknown')],
+            ['vip_verify_status', str(profile.get('vip_verify_status', ''))],
+            ['vip_verify_error', str(profile.get('vip_verify_error', ''))],
             ['updated_at', profile.get('updated_at', datetime.now().isoformat())],
         ]
         row = tablestore.Row(primary_key, attribute_columns)
@@ -698,7 +700,12 @@ def _verify_receipt_with_apple(receipt_data):
         return None
     if not APP_STORE_SHARED_SECRET:
         print('[VIP] APP_STORE_SHARED_SECRET not configured, skip Apple verify')
-        return None
+        return {
+            'environment': 'unknown',
+            'receipt_info': None,
+            'verify_status': 'missing_secret',
+            'verify_error': 'APP_STORE_SHARED_SECRET not configured',
+        }
 
     print(f'[VIP] Apple verify start, receipt_len={len(receipt_data)}')
 
@@ -726,7 +733,9 @@ def _verify_receipt_with_apple(receipt_data):
         if status == 0:
             return {
                 'environment': 'production',
-                'receipt_info': data.get('latest_receipt_info') or data.get('receipt')
+                'receipt_info': data.get('latest_receipt_info') or data.get('receipt'),
+                'verify_status': status,
+                'verify_error': '',
             }
         if status == 21007:
             data = _post(SANDBOX_VERIFY_URL)
@@ -735,12 +744,25 @@ def _verify_receipt_with_apple(receipt_data):
             if status == 0:
                 return {
                     'environment': 'sandbox',
-                    'receipt_info': data.get('latest_receipt_info') or data.get('receipt')
+                    'receipt_info': data.get('latest_receipt_info') or data.get('receipt'),
+                    'verify_status': status,
+                    'verify_error': '',
                 }
         print(f'[VIP] Apple verify unresolved status={status}')
+        return {
+            'environment': 'unknown',
+            'receipt_info': None,
+            'verify_status': status,
+            'verify_error': '',
+        }
     except Exception as e:
         print(f'[VIP] Apple verify error: {e}')
-    return None
+        return {
+            'environment': 'unknown',
+            'receipt_info': None,
+            'verify_status': 'exception',
+            'verify_error': str(e),
+        }
 
 
 def _apple_subscription_expire_ms(receipt_info):
@@ -812,6 +834,7 @@ class Handler(BaseHTTPRequestHandler):
                     'OTS_TABLE': OTS_TABLE,
                     'ASSET_TABLE': ASSET_TABLE,
                     'VIP_TABLE': VIP_TABLE,
+                    'APP_STORE_SHARED_SECRET_LEN': len(APP_STORE_SHARED_SECRET),
                     'OTS_ACCESS_KEY_ID_LEN': len(OTS_ACCESS_KEY_ID),
                     'OTS_ACCESS_KEY_SECRET_LEN': len(OTS_ACCESS_KEY_SECRET),
                 }
@@ -1043,8 +1066,12 @@ class Handler(BaseHTTPRequestHandler):
 
             if receipt_data:
                 receipt_result = _verify_receipt_with_apple(receipt_data)
+                verify_status = ''
+                verify_error = ''
                 if receipt_result is not None:
                     incoming_environment = receipt_result.get('environment', 'unknown')
+                    verify_status = receipt_result.get('verify_status', '')
+                    verify_error = receipt_result.get('verify_error', '')
                     receipt_info = receipt_result.get('receipt_info')
                     latest_receipt_info = _pick_latest_receipt_info(receipt_info)
                     apple_expire_ms = _apple_subscription_expire_ms(latest_receipt_info)
@@ -1059,6 +1086,11 @@ class Handler(BaseHTTPRequestHandler):
                             vip_type = 'monthly'
                 else:
                     print('[VIP] receipt verify returned None, keeping incoming environment')
+                    verify_status = 'none'
+                    verify_error = 'verify returned None'
+            else:
+                verify_status = 'no_receipt'
+                verify_error = ''
 
             # 保护规则 1：sandbox / unknown 不允许覆盖更高优先级记录
             if existing_profile and _vip_environment_priority(existing_environment) > _vip_environment_priority(incoming_environment):
@@ -1090,6 +1122,8 @@ class Handler(BaseHTTPRequestHandler):
                 'vip_type': vip_type,
                 'vip_expire_ms': vip_expire_ms,
                 'vip_environment': incoming_environment,
+                'vip_verify_status': verify_status,
+                'vip_verify_error': verify_error,
                 'updated_at': datetime.now().isoformat(),
             }
 
