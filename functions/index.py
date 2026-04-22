@@ -1033,6 +1033,7 @@ class Handler(BaseHTTPRequestHandler):
             incoming_environment = data.get('vip_environment', 'unknown') or 'unknown'
             existing_profile = _ots_get_vip_profile(user_phone)
             existing_environment = existing_profile.get('vip_environment', 'unknown')
+            existing_expire_ms = int(existing_profile.get('vip_expire_ms', 0) or 0)
 
             print(
                 f'[VIP] /vip/sync user={user_phone} vip_type={vip_type} expire_ms={vip_expire_ms} '
@@ -1068,9 +1069,15 @@ class Handler(BaseHTTPRequestHandler):
             # 保护规则 2：只要现有档案已存在，未经 Apple 验证出的 unknown 一律不允许覆盖。
             # 这样可以挡住 TestFlight/restore 本地错误日期在 receipt 未校验成功时再次把云端改坏。
             if existing_profile and incoming_environment == 'unknown' and existing_environment in ('unknown', 'production'):
-                print(f'[VIP] ignore unknown overwrite: incoming={incoming_environment} existing={existing_environment}')
-                self._respond(200, {'profile': existing_profile})
-                return
+                if receipt_data and vip_expire_ms > existing_expire_ms:
+                    print(
+                        f'[VIP] allow unknown overwrite with receipt because expire_ms extends: '
+                        f'incoming={vip_expire_ms} existing={existing_expire_ms}'
+                    )
+                else:
+                    print(f'[VIP] ignore unknown overwrite: incoming={incoming_environment} existing={existing_environment}')
+                    self._respond(200, {'profile': existing_profile})
+                    return
 
             if vip_expire_ms > 0 and _is_vip_expired(vip_expire_ms):
                 self._respond(403, {
