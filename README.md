@@ -1,8 +1,9 @@
-# AI财富账本
+# AI Wealth Tracker
 
 > 技术栈：Flutter + flutter_bloc + go_router + Clean Architecture
 > 云端：阿里云函数计算接口（`ALIYUN_FC_API`）
 > AI / OCR：按区服与 `.env` 配置启用
+> 产品形态：单包双模式（CN / Intl）
 > 状态：当前仓库为本地最新代码，运行能力取决于 `.env` 凭据与后端配置
 
 ## 技术栈
@@ -73,6 +74,13 @@ flutter pub get
 flutter analyze
 cp .env.example .env
 flutter run
+```
+
+如果你使用 FVM，可以直接固定到当前仓库推荐版本：
+
+```bash
+fvm use
+fvm flutter pub get
 ```
 
 ## 功能状态
@@ -163,6 +171,38 @@ APP_STORE_SHARED_SECRET=
 - 如果 intl 的 `GEMINI_API_KEY` 或 `GOOGLE_VISION_API_KEY` 未配置，对应 AI / OCR 能力会表现为不可用，而不会伪装回退到中国区 provider。
 - 如果中国区 `QWEN_API_KEY`、OCR 或阿里云凭据未配置，对应能力会按当前代码路径降级或不可用。
 - 本仓库已经移除 `.env`、`ios/Runner/.env`、`tmp/` 等本地敏感或临时内容，不会上传这些文件。
+
+## 模式解析规则
+
+这是一个单包双模式 app，首次启动会结合系统语言和本地 `app_mode` 记录决定落在哪条链路。
+
+- 前提：全新安装，且本地没有旧 `app_mode` 记录
+- 中文系统首次启动：进入中国侧模式，登录走手机号，OCR 默认走百度 OCR，AI 默认走通义链路，市场与资产走中国侧
+- 英文系统首次启动：进入国际侧模式，登录走 Google / Apple，OCR 默认走 Google Vision，AI 默认走 Gemini，市场与资产走国际侧
+- 首次解析出的模式会写入本地 `app_mode`
+- 登录后当前模式会锁定，不会随着系统语言切换自动来回跳转
+- 如需手动切换模式，应显式退出当前链路并清理本地状态后再切换
+
+## 推荐协作方式
+
+为了避免你本地正在调试的目录和 Codex 的改动互相干扰，推荐使用独立 worktree：
+
+```bash
+git switch main
+git pull origin main
+git worktree add "../AI Wealth Tracker-codex-<task>" -b codex/<task> origin/main
+```
+
+这样你可以继续在主目录里手动调试，Codex 则在独立 worktree 中实现、验证和提交任务。
+
+## 工程护栏
+
+仓库现在包含一组最小但稳定的维护入口：
+
+- `.fvmrc`：锁定推荐 Flutter 版本 `3.41.6`
+- `Makefile`：统一 `bootstrap`、`analyze`、`test`、`ci`、`ios-build-check`
+- `.github/workflows/flutter-ci.yml`：在 GitHub 上自动运行 `flutter pub get`、`flutter analyze`、`flutter test`
+- `build_check.sh`：改为基于仓库相对路径执行，不再依赖某台机器上的旧绝对路径
 
 ## 相关文档
 

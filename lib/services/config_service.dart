@@ -82,11 +82,6 @@ class ConfigService {
 
     // 3. 工作目录
     candidates.add('.env');
-    // 常见项目路径
-    candidates.add(
-      '/Users/phil/.openclaw/workspace-feishu/agent-forge/ai_accountant/.env',
-    );
-    candidates.add('/Users/phil/ai_accounting_app/.env');
     // iOS App Bundle 内（.env 通过 Xcode 添加到 Runner 组）
     try {
       final bundleDir = File(Platform.resolvedExecutable).parent.path;

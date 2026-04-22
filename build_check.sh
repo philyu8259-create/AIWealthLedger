@@ -1,4 +1,14 @@
 
 #!/bin/zsh
-cd /Users/phil/.openclaw/workspace-feishu/agent-forge/ai_accountant/ios
-xcodebuild -workspace Runner.xcworkspace -scheme Runner -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17' clean build
+
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "$0")" && pwd)"
+cd "$repo_root/ios"
+
+xcodebuild \
+  -workspace Runner.xcworkspace \
+  -scheme Runner \
+  -sdk iphonesimulator \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
+  clean build

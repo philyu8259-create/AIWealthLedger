@@ -53,6 +53,21 @@ void main() {
       expect(service.isModeLocked, true);
     });
 
+    test('existing cn session without stored mode is inferred and locked', () async {
+      final service = await createService({
+        'has_logged_in': true,
+        'logged_in_auth_provider': 'phone',
+        'logged_in_phone': '13800138000',
+      });
+
+      await service.ensureInitialized(deviceLocale: const Locale('en', 'US'));
+
+      expect(service.flavor, AppFlavor.cn);
+      expect(service.currentLocale, const Locale('zh', 'CN'));
+      expect(service.currentBaseCurrency, 'CNY');
+      expect(service.isModeLocked, true);
+    });
+
     test('explicit switch mode updates locale, currency, and lock state', () async {
       final service = await createService();
 

@@ -57,8 +57,12 @@ class AppProfileService extends ChangeNotifier {
       fallback,
       resolvedMode,
     );
-    final initialLocale =
-        resolvedMode == AppFlavor.cn ? fallback : resolvedDeviceLocale;
+    final shouldSeedFlavorLocale = previousStoredMode == null &&
+        sessionExists &&
+        resolvedMode != inferredMode;
+    final initialLocale = shouldSeedFlavorLocale
+        ? fallback
+        : (resolvedMode == AppFlavor.cn ? fallback : resolvedDeviceLocale);
     final initialCountry =
         resolvedMode == AppFlavor.cn ? 'CN' : (initialLocale.countryCode ?? 'US');
     final initialCurrency = _defaultCurrencyForCountry(initialCountry);
