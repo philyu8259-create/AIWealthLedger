@@ -1880,7 +1880,7 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
       backgroundColor: Colors.transparent,
       builder: (sheetCtx) {
         final mediaQuery = MediaQuery.of(sheetCtx);
-        final extraBottomOffset = mediaQuery.size.width >= 768 ? 96.0 : 108.0;
+        final extraBottomOffset = mediaQuery.size.width >= 768 ? 96.0 : 72.0;
 
         return StatefulBuilder(
           builder: (sheetCtx, setSheetState) {
@@ -1900,7 +1900,7 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                   child: SizedBox(
                     height: mediaQuery.size.height * 0.82,
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
