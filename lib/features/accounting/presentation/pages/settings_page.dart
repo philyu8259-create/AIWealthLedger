@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:convert';
+import '../../../../app/app_flavor.dart';
 import '../../../../app/profile/capability_profile.dart';
 import '../../../../core/formatters/app_formatter.dart';
 import '../../../../core/formatters/category_formatter.dart';
@@ -82,6 +83,12 @@ String _settingsOcrProviderLabel(AppStrings t) {
     case OcrProviderType.legacyCnOcr:
       return t.text(AppStringKeys.providerOcrBaidu);
   }
+}
+
+String _settingsModeLabel(AppStrings t, AppFlavor flavor) {
+  return flavor == AppFlavor.cn
+      ? t.text(AppStringKeys.settingsModeCnLabel)
+      : t.text(AppStringKeys.settingsModeIntlLabel);
 }
 
 class SettingsPage extends StatefulWidget {
@@ -217,6 +224,18 @@ class _SettingsPageState extends State<SettingsPage> {
                       AppStringKeys.settingsAiConsentWithdrawSubtitle,
                     ),
                     onTap: () => _showWithdrawAIConsentDialog(context),
+                  ),
+                  _SettingTile(
+                    icon: Icons.swap_horiz_rounded,
+                    title: t.text(AppStringKeys.settingsModeTitle),
+                    subtitle: t.text(
+                      AppStringKeys.settingsModeSubtitle,
+                      params: {
+                        'current': _currentModeLabel(t),
+                        'target': _targetModeLabel(t),
+                      },
+                    ),
+                    onTap: () => _showSwitchModeDialog(context),
                   ),
                   if (_isLoggedIn)
                     _SettingTile(
@@ -721,6 +740,81 @@ class _SettingsPageState extends State<SettingsPage> {
     );
     for (final key in extraKeys) {
       await prefs.remove(key);
+    }
+  }
+
+  String _currentModeLabel(AppStrings t) {
+    return _settingsModeLabel(t, getIt<AppProfileService>().flavor);
+  }
+
+  AppFlavor get _targetMode {
+    return getIt<AppProfileService>().flavor == AppFlavor.cn
+        ? AppFlavor.intl
+        : AppFlavor.cn;
+  }
+
+  String _targetModeLabel(AppStrings t) {
+    return _settingsModeLabel(t, _targetMode);
+  }
+
+  Future<void> _showSwitchModeDialog(BuildContext context) async {
+    final t = AppStrings.of(context);
+    final targetMode = _targetMode;
+    final targetLabel = _settingsModeLabel(t, targetMode);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(t.text(AppStringKeys.settingsModeSwitchDialogTitle)),
+        content: Text(
+          t.text(
+            AppStringKeys.settingsModeSwitchDialogContent,
+            params: {'target': targetLabel},
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(t.text(AppStringKeys.commonCancel)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(t.text(AppStringKeys.settingsModeSwitchConfirm)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await _clearLocalSignedInData(prefs);
+      await getIt<AppProfileService>().switchMode(
+        targetMode,
+        deviceLocale: WidgetsBinding.instance.platformDispatcher.locale,
+      );
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            t.text(
+              AppStringKeys.settingsModeSwitchSuccess,
+              params: {'target': targetLabel},
+            ),
+          ),
+        ),
+      );
+      context.go('/welcome');
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            t.text(AppStringKeys.settingsLogoutFailed, params: {'error': '$e'}),
+          ),
+        ),
+      );
     }
   }
 
