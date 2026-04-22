@@ -413,6 +413,7 @@ class AppStringKeys {
   static const vipRestorePurchase = 'vip.restorePurchase';
   static const vipPaymentHint = 'vip.paymentHint';
   static const vipOpenFailed = 'vip.openFailed';
+  static const vipProductUnavailable = 'vip.productUnavailable';
   static const smsCodeDialogTitle = 'smsCodeDialog.title';
   static const smsCodeDialogSentTo = 'smsCodeDialog.sentTo';
   static const smsCodeDialogHint = 'smsCodeDialog.hint';

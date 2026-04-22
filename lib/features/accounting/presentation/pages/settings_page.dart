@@ -2256,10 +2256,17 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                     : () async {
                         setState(() => _isLoading = true);
                         try {
-                          if (_selectedType == VipType.monthly) {
-                            await vipService.purchaseMonthly();
-                          } else {
-                            await vipService.purchaseYearly();
+                          final started = _selectedType == VipType.monthly
+                              ? await vipService.purchaseMonthly()
+                              : await vipService.purchaseYearly();
+                          if (!started && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  t.text(AppStringKeys.vipProductUnavailable),
+                                ),
+                              ),
+                            );
                           }
                         } catch (e) {
                           if (context.mounted) {
