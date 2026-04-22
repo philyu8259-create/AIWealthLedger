@@ -117,7 +117,7 @@ class AppProfileService extends ChangeNotifier {
     capabilityProfile: _buildCapabilityProfile(),
   );
 
-  String get appTitle => flavor == AppFlavor.cn ? 'AI财富账本' : 'AI Wealth Ledger';
+  String get appTitle => flavor == AppFlavor.cn ? 'AI财富记账本' : 'AI Expense Tracker';
 
   String get privacyPolicyUrl => flavor == AppFlavor.intl
       ? 'https://philyu8259-create.github.io/ai-accounting-privacy/privacy_policy_en.html'

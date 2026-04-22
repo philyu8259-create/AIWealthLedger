@@ -842,8 +842,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                   overflow:
                                                       TextOverflow.ellipsis,
                                                   style: TextStyle(
-                                                    fontSize: compact ? 17 : 19,
-                                                    fontWeight: FontWeight.w400,
+                                                    fontSize: compact ? 16 : 18,
+                                                    fontWeight: FontWeight.w300,
                                                     letterSpacing: -0.2,
                                                     color: const Color(0xFF1A1A2E),
                                                   ),
@@ -1548,6 +1548,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   title: AppStrings.of(context).text(
                                     AppStringKeys.homeRecentEntriesTitle,
                                   ),
+                                  showLeadingDot: false,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w300,
                                   trailing: PremiumCapsuleButton(
                                     text: AppStrings.of(context).text(
                                       AppStringKeys.homeRecentEntriesSeeAll,
@@ -1988,8 +1991,12 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
         _selectedCategoryId ??
         (visibleCategories.isNotEmpty ? visibleCategories.first.id : 'food');
 
+    final extraBottomOffset = mediaQuery.size.width >= 768 ? 96.0 : 0.0;
+
     return Padding(
-      padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: mediaQuery.viewInsets.bottom + extraBottomOffset,
+      ),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -2460,6 +2467,9 @@ class _QuickChipsGridState extends State<_QuickChipsGrid> {
             title: AppStrings.of(
               context,
             ).text(AppStringKeys.homeQuickAccountingTitle),
+            showLeadingDot: false,
+            fontSize: 17,
+            fontWeight: FontWeight.w300,
             trailing: PremiumCapsuleButton(
               text: AppStrings.of(context).text(AppStringKeys.homeManage),
               icon: Icons.tune_rounded,

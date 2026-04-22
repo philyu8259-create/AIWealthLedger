@@ -26,9 +26,12 @@ void showAiBottomSheet({
     builder: (ctx) {
       return StatefulBuilder(
         builder: (ctx, setModalState) {
+          final mediaQuery = MediaQuery.of(ctx);
+          final extraBottomOffset = mediaQuery.size.width >= 768 ? 96.0 : 0.0;
+
           return Padding(
             padding: EdgeInsets.only(
-              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              bottom: mediaQuery.viewInsets.bottom + extraBottomOffset,
             ),
             child: Container(
               decoration: BoxDecoration(

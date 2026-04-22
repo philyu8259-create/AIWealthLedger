@@ -25,17 +25,17 @@ EOF
 }
 
 prepare_localizations() {
-  ZH_NAME="AI财富账本"
-  ZH_SPEECH="AI财富账本需要使用语音识别权限，将您的语音转换为文字用于智能记账分析。"
-  ZH_MIC="AI财富账本需要使用麦克风录制语音，用于语音转文字记账。"
-  ZH_CAMERA="AI财富账本需要使用相机拍摄票据进行 OCR 识别。"
-  ZH_PHOTO="AI财富账本需要访问相册，选择票据图片进行 OCR 识别。"
+  ZH_NAME="AI财富记账本"
+  ZH_SPEECH="AI财富记账本需要使用语音识别权限，将您的语音转换为文字用于智能记账分析。"
+  ZH_MIC="AI财富记账本需要使用麦克风录制语音，用于语音转文字记账。"
+  ZH_CAMERA="AI财富记账本需要使用相机拍摄票据进行 OCR 识别。"
+  ZH_PHOTO="AI财富记账本需要访问相册，选择票据图片进行 OCR 识别。"
 
-  EN_NAME="AI Wealth Ledger"
-  EN_SPEECH="AI Wealth Ledger uses speech recognition to convert your voice into text for expense analysis and bookkeeping."
-  EN_MIC="AI Wealth Ledger uses the microphone to capture your voice for speech-to-text bookkeeping."
-  EN_CAMERA="AI Wealth Ledger uses the camera to scan receipts for OCR recognition."
-  EN_PHOTO="AI Wealth Ledger accesses your photo library so you can choose receipt images for OCR recognition."
+  EN_NAME="AI Expense Tracker"
+  EN_SPEECH="AI Expense Tracker uses speech recognition to convert your voice into text for expense analysis and bookkeeping."
+  EN_MIC="AI Expense Tracker uses the microphone to capture your voice for speech-to-text bookkeeping."
+  EN_CAMERA="AI Expense Tracker uses the camera to scan receipts for OCR recognition."
+  EN_PHOTO="AI Expense Tracker accesses your photo library so you can choose receipt images for OCR recognition."
 
   write_strings "$RUNNER_DIR/Base.lproj/InfoPlist.strings" "$EN_NAME" "$EN_SPEECH" "$EN_MIC" "$EN_CAMERA" "$EN_PHOTO"
   write_strings "$RUNNER_DIR/zh-Hans.lproj/InfoPlist.strings" "$ZH_NAME" "$ZH_SPEECH" "$ZH_MIC" "$ZH_CAMERA" "$ZH_PHOTO"

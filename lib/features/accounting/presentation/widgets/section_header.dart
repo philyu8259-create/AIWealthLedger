@@ -5,11 +5,17 @@ import '../../../../core/theme/app_colors.dart';
 class SectionHeader extends StatelessWidget {
   final String title;
   final Widget? trailing;
+  final bool showLeadingDot;
+  final double fontSize;
+  final FontWeight fontWeight;
 
   const SectionHeader({
     super.key,
     required this.title,
     this.trailing,
+    this.showLeadingDot = true,
+    this.fontSize = 18,
+    this.fontWeight = FontWeight.w400,
   });
 
   @override
@@ -20,28 +26,30 @@ class SectionHeader extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.4),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+            if (showLeadingDot) ...[
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.4),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
+              const SizedBox(width: 8),
+            ],
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w400,
-                color: Color(0xFF1A1A2E),
+              style: TextStyle(
+                fontSize: fontSize,
+                fontWeight: fontWeight,
+                color: const Color(0xFF1A1A2E),
                 letterSpacing: 0.5,
               ),
             ),

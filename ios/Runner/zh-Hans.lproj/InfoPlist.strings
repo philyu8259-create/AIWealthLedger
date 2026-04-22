@@ -1,6 +1,6 @@
-CFBundleDisplayName = "AI财富账本";
-CFBundleName = "AI财富账本";
-NSSpeechRecognitionUsageDescription = "AI财富账本需要使用语音识别权限，将您的语音转换为文字用于智能记账分析。";
-NSMicrophoneUsageDescription = "AI财富账本需要使用麦克风录制语音，用于语音转文字记账。";
-NSCameraUsageDescription = "AI财富账本需要使用相机拍摄票据进行 OCR 识别。";
-NSPhotoLibraryUsageDescription = "AI财富账本需要访问相册，选择票据图片进行 OCR 识别。";
+CFBundleDisplayName = "AI财富记账本";
+CFBundleName = "AI财富记账本";
+NSSpeechRecognitionUsageDescription = "AI财富记账本需要使用语音识别权限，将您的语音转换为文字用于智能记账分析。";
+NSMicrophoneUsageDescription = "AI财富记账本需要使用麦克风录制语音，用于语音转文字记账。";
+NSCameraUsageDescription = "AI财富记账本需要使用相机拍摄票据进行 OCR 识别。";
+NSPhotoLibraryUsageDescription = "AI财富记账本需要访问相册，选择票据图片进行 OCR 识别。";
