@@ -26,6 +26,7 @@ class VipService extends ChangeNotifier {
       'last_processed_transaction_date';
   static const _keyLastProcessedPurchaseSignature =
       'last_processed_purchase_signature';
+  static const _keyLastReceiptData = 'last_receipt_data';
 
   final SharedPreferences _prefs;
   final InAppPurchase _iap = InAppPurchase.instance;
@@ -221,6 +222,10 @@ class VipService extends ChangeNotifier {
       _keyLastProcessedPurchaseSignature,
     );
     final receiptData = p.verificationData.serverVerificationData;
+    if (receiptData.isNotEmpty) {
+      await _setScopedString(_keyLastReceiptData, receiptData);
+      debugPrint('[VipService] ✅ 缓存 receiptData，len=${receiptData.length}');
+    }
     final purchaseSignature = [
       id,
       p.status.name,
@@ -513,6 +518,17 @@ class VipService extends ChangeNotifier {
       );
       _refreshSnapshot();
       await _iap.restorePurchases();
+
+      final cachedReceiptData = _getScopedString(_keyLastReceiptData);
+      if (cachedReceiptData != null &&
+          cachedReceiptData.isNotEmpty &&
+          _getScopedInt(_keyVipExpireMs) >
+              DateTime.now().millisecondsSinceEpoch) {
+        debugPrint(
+          '[VipService] restorePurchases fallback: push cached receipt to cloud, len=${cachedReceiptData.length}',
+        );
+        await pushToCloud(receiptData: cachedReceiptData);
+      }
     } catch (e) {
       debugPrint('Restore error: $e');
     }
@@ -623,6 +639,8 @@ class VipService extends ChangeNotifier {
     try {
       final localType = _getScopedString(_keyVipType);
       final localExpireMs = _getScopedInt(_keyVipExpireMs);
+      final effectiveReceiptData =
+          receiptData ?? _getScopedString(_keyLastReceiptData);
 
       if (localType == null || localType.isEmpty || localExpireMs <= 0) {
         debugPrint('[VipService] pushToCloud: no valid local VIP to push');
@@ -642,7 +660,7 @@ class VipService extends ChangeNotifier {
       final result = await CloudService().syncVipProfile(
         vipType: localType,
         expireMs: localExpireMs,
-        receiptData: receiptData,
+        receiptData: effectiveReceiptData,
       );
 
       if (result != null) {
