@@ -2132,18 +2132,25 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
     final vipService = getIt<VipService>();
     final isVip = vipService.isVip;
     final t = AppStrings.of(context);
-    final baseCurrency = getIt<AppProfileService>().currentBaseCurrency;
+    final hasMonthlyProduct = _monthlyProduct != null;
+    final hasYearlyProduct = _yearlyProduct != null;
+    final selectedProductLoaded = _selectedType == VipType.monthly
+        ? hasMonthlyProduct
+        : hasYearlyProduct;
     final monthlyPrice =
-        _monthlyProduct?.price ?? _settingsMoney(8, currencyCode: baseCurrency);
+        _monthlyProduct?.price ?? t.text(AppStringKeys.vipLoadingPrice);
     final yearlyPrice =
-        _yearlyProduct?.price ?? _settingsMoney(28, currencyCode: baseCurrency);
-    final yearlyCurrency = _yearlyProduct?.currencyCode ?? baseCurrency;
+        _yearlyProduct?.price ?? t.text(AppStringKeys.vipLoadingPrice);
+    final yearlyCurrency = _yearlyProduct?.currencyCode;
     final yearlyRawPrice = _yearlyProduct?.rawPrice;
-    final yearlyMonthlyPrice = _settingsMoney(
-      yearlyRawPrice == null ? 2.3 : yearlyRawPrice / 12,
-      currencyCode: yearlyCurrency,
-      decimalDigits: yearlyRawPrice == null ? 1 : 2,
-    );
+    final yearlyMonthlyPrice =
+        yearlyRawPrice == null || yearlyCurrency == null
+        ? t.text(AppStringKeys.vipLoadingPrice)
+        : _settingsMoney(
+            yearlyRawPrice / 12,
+            currencyCode: yearlyCurrency,
+            decimalDigits: 2,
+          );
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -2251,7 +2258,7 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                onPressed: _isLoading
+                onPressed: _isLoading || !selectedProductLoaded
                     ? null
                     : () async {
                         setState(() => _isLoading = true);
@@ -2295,7 +2302,9 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                         ),
                       )
                     : Text(
-                        isVip
+                        !selectedProductLoaded
+                            ? t.text(AppStringKeys.vipLoadingPrice)
+                            : isVip
                             ? t.text(
                                 AppStringKeys.vipRenewConfirm,
                                 params: {
