@@ -544,12 +544,21 @@ class VipService extends ChangeNotifier {
 
       final cloudType = cloudProfile['vip_type'] as String?;
       final cloudExpireMs = cloudProfile['vip_expire_ms'] as int?;
+      final localType = _getScopedString(_keyVipType);
+      final localExpireMs = _getScopedInt(_keyVipExpireMs);
       debugPrint(
-        '[VipService] syncFromCloud: cloud profile = type=$cloudType, expire_ms=$cloudExpireMs',
+        '[VipService] syncFromCloud: cloud profile = type=$cloudType, expire_ms=$cloudExpireMs, localType=$localType, localExpireMs=$localExpireMs',
       );
 
       // 云端无 VIP 档案（从未订阅过）→ 清理本地，避免普通用户误带旧缓存
       if (cloudProfile.isEmpty || cloudType == null || cloudType.isEmpty) {
+        if (localExpireMs > DateTime.now().millisecondsSinceEpoch) {
+          debugPrint(
+            '[VipService] syncFromCloud: cloud empty but local VIP still valid, keeping local state',
+          );
+          _refreshSnapshot(notify: true);
+          return true;
+        }
         debugPrint(
           '[VipService] syncFromCloud: cloud has no VIP record, clearing local VIP',
         );
@@ -563,10 +572,27 @@ class VipService extends ChangeNotifier {
           cloudExpireMs,
         );
         if (cloudExpireTime.isBefore(DateTime.now())) {
+          if (localExpireMs > DateTime.now().millisecondsSinceEpoch) {
+            debugPrint(
+              '[VipService] syncFromCloud: cloud VIP expired but local VIP still valid, keeping local state',
+            );
+            _refreshSnapshot(notify: true);
+            return true;
+          }
           debugPrint(
             '[VipService] syncFromCloud: cloud VIP is expired, clearing local VIP',
           );
           await clearCurrentUserVipCache();
+          return true;
+        }
+      }
+
+      if (cloudExpireMs != null && cloudExpireMs > 0 && localExpireMs > 0) {
+        if (cloudExpireMs < localExpireMs) {
+          debugPrint(
+            '[VipService] syncFromCloud: ignore older cloud VIP, keep local newer expire_ms=$localExpireMs',
+          );
+          _refreshSnapshot(notify: true);
           return true;
         }
       }
