@@ -1101,9 +1101,9 @@ class Handler(BaseHTTPRequestHandler):
             # 保护规则 2：只要现有档案已存在，未经 Apple 验证出的 unknown 一律不允许覆盖。
             # 这样可以挡住 TestFlight/restore 本地错误日期在 receipt 未校验成功时再次把云端改坏。
             if existing_profile and incoming_environment == 'unknown' and existing_environment in ('unknown', 'production'):
-                if receipt_data and vip_expire_ms > existing_expire_ms:
+                if receipt_data and vip_expire_ms >= existing_expire_ms:
                     print(
-                        f'[VIP] allow unknown overwrite with receipt because expire_ms extends: '
+                        f'[VIP] allow unknown overwrite with receipt because expire_ms is not older: '
                         f'incoming={vip_expire_ms} existing={existing_expire_ms}'
                     )
                 else:
