@@ -1,6 +1,6 @@
-CFBundleDisplayName = "AI Expense Tracker";
-CFBundleName = "AI Expense Tracker";
-NSSpeechRecognitionUsageDescription = "AI Expense Tracker uses speech recognition to convert your voice into text for expense analysis and bookkeeping.";
-NSMicrophoneUsageDescription = "AI Expense Tracker uses the microphone to capture your voice for speech-to-text bookkeeping.";
-NSCameraUsageDescription = "AI Expense Tracker uses the camera to scan receipts for OCR recognition.";
-NSPhotoLibraryUsageDescription = "AI Expense Tracker accesses your photo library so you can choose receipt images for OCR recognition.";
+CFBundleDisplayName = "AI Wealth Tracker";
+CFBundleName = "AI Wealth Tracker";
+NSSpeechRecognitionUsageDescription = "AI Wealth Tracker uses speech recognition to convert your voice into text for expense analysis and bookkeeping.";
+NSMicrophoneUsageDescription = "AI Wealth Tracker uses the microphone to capture your voice for speech-to-text bookkeeping.";
+NSCameraUsageDescription = "AI Wealth Tracker uses the camera to scan receipts for OCR recognition.";
+NSPhotoLibraryUsageDescription = "AI Wealth Tracker accesses your photo library so you can choose receipt images for OCR recognition.";
