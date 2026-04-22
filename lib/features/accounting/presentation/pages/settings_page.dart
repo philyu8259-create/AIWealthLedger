@@ -2075,6 +2075,7 @@ class _VipBanner extends StatelessWidget {
   void _showVipPurchaseSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -2150,6 +2151,8 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
         _yearlyProduct?.price ?? t.text(AppStringKeys.vipLoadingPrice);
     final yearlyCurrency = _yearlyProduct?.currencyCode;
     final yearlyRawPrice = _yearlyProduct?.rawPrice;
+    final bottomSafeArea = MediaQuery.of(context).padding.bottom;
+    const floatingBarClearance = 112.0;
     final yearlyMonthlyPrice = yearlyRawPrice == null || yearlyCurrency == null
         ? t.text(AppStringKeys.vipLoadingPrice)
         : _settingsMoney(
@@ -2158,226 +2161,238 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
             decimalDigits: 2,
           );
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              t.text(AppStringKeys.vipOpenTitle),
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            if (isVip) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF4A47D8).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.check_circle,
-                      color: Color(0xFF4A47D8),
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      t.text(
-                        AppStringKeys.vipExpireUntil,
-                        params: {
-                          'date': vipService.expireDate != null
-                              ? _settingsShortDate(vipService.expireDate!)
-                              : '—',
-                        },
-                      ),
-                      style: const TextStyle(
-                        color: Color(0xFF4A47D8),
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-            Text(
-              t.text(AppStringKeys.vipSelectPlan),
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 12),
-
-            // 月度会员
-            _VipOptionTile(
-              title: t.text(AppStringKeys.vipMonthlyTitle),
-              price: monthlyPrice,
-              period: t.text(AppStringKeys.vipMonthlyPeriod),
-              icon: '📅',
-              isSelected: _selectedType == VipType.monthly,
-              onTap: () => setState(() => _selectedType = VipType.monthly),
-            ),
-            const SizedBox(height: 8),
-
-            // 年度会员
-            _VipOptionTile(
-              title: t.text(AppStringKeys.vipYearlyTitle),
-              price: yearlyPrice,
-              period: t.text(
-                AppStringKeys.vipYearlyPeriod,
-                params: {'price': yearlyMonthlyPrice},
-              ),
-              icon: '🎁',
-              isSelected: _selectedType == VipType.yearly,
-              onTap: () => setState(() => _selectedType = VipType.yearly),
-              badge: t.text(AppStringKeys.vipRecommended),
-            ),
-            const SizedBox(height: 20),
-
-            // EULA consent — Apple 审核要求在购买流程中明确展示
-            Center(
-              child: Text(
-                t.text(AppStringKeys.vipConsent),
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5C6BC0),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                onPressed: _isLoading || !selectedProductLoaded
-                    ? null
-                    : () async {
-                        setState(() => _isLoading = true);
-                        try {
-                          final started = _selectedType == VipType.monthly
-                              ? await vipService.purchaseMonthly()
-                              : await vipService.purchaseYearly();
-                          if (!started && context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  t.text(AppStringKeys.vipProductUnavailable),
-                                ),
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  t.text(
-                                    AppStringKeys.vipOpenFailed,
-                                    params: {'error': '$e'},
-                                  ),
-                                ),
-                              ),
-                            );
-                          }
-                        } finally {
-                          if (mounted) setState(() => _isLoading = false);
-                        }
-                      },
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(
-                        !selectedProductLoaded
-                            ? t.text(AppStringKeys.vipLoadingPrice)
-                            : isVip
-                            ? t.text(
-                                AppStringKeys.vipRenewConfirm,
-                                params: {
-                                  'period': _selectedType == VipType.monthly
-                                      ? t.text(AppStringKeys.vipPeriodMonthly)
-                                      : t.text(AppStringKeys.vipPeriodYearly),
-                                },
-                              )
-                            : t.text(
-                                AppStringKeys.vipSubscribeNow,
-                                params: {
-                                  'price': _selectedType == VipType.monthly
-                                      ? t.text(
-                                          AppStringKeys.vipPriceMonthly,
-                                          params: {'price': monthlyPrice},
-                                        )
-                                      : t.text(
-                                          AppStringKeys.vipPriceYearly,
-                                          params: {'price': yearlyPrice},
-                                        ),
-                                },
-                              ),
-                      ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Center(
-              child: Text(
-                t.text(AppStringKeys.vipPaymentHint),
-                style: const TextStyle(color: Colors.grey, fontSize: 11),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Center(
-              child: PressFeedback(
-                onTap: () async {
-                  final url = Uri.parse(
-                    getIt<AppProfileService>().termsOfServiceUrl,
-                  );
-                  if (await canLaunchUrl(url)) {
-                    await launchUrl(url, mode: LaunchMode.inAppBrowserView);
-                  }
-                },
-                child: Text(
-                  t.text(AppStringKeys.vipConsent),
-                  style: const TextStyle(
-                    color: Color(0xFF5C6BC0),
-                    fontSize: 11,
-                    decoration: TextDecoration.underline,
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          16 + bottomSafeArea + floatingBarClearance,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Center(
-              child: TextButton(
-                onPressed: () async {
-                  Navigator.pop(context);
-                  await vipService.restorePurchases();
-                },
-                child: Text(
-                  t.text(AppStringKeys.vipRestorePurchase),
-                  style: const TextStyle(fontSize: 13),
+              const SizedBox(height: 16),
+              Text(
+                t.text(AppStringKeys.vipOpenTitle),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              if (isVip) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4A47D8).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.check_circle,
+                        color: Color(0xFF4A47D8),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        t.text(
+                          AppStringKeys.vipExpireUntil,
+                          params: {
+                            'date': vipService.expireDate != null
+                                ? _settingsShortDate(vipService.expireDate!)
+                                : '—',
+                          },
+                        ),
+                        style: const TextStyle(
+                          color: Color(0xFF4A47D8),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              Text(
+                t.text(AppStringKeys.vipSelectPlan),
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+
+              // 月度会员
+              _VipOptionTile(
+                title: t.text(AppStringKeys.vipMonthlyTitle),
+                price: monthlyPrice,
+                period: t.text(AppStringKeys.vipMonthlyPeriod),
+                icon: '📅',
+                isSelected: _selectedType == VipType.monthly,
+                onTap: () => setState(() => _selectedType = VipType.monthly),
+              ),
+              const SizedBox(height: 8),
+
+              // 年度会员
+              _VipOptionTile(
+                title: t.text(AppStringKeys.vipYearlyTitle),
+                price: yearlyPrice,
+                period: t.text(
+                  AppStringKeys.vipYearlyPeriod,
+                  params: {'price': yearlyMonthlyPrice},
+                ),
+                icon: '🎁',
+                isSelected: _selectedType == VipType.yearly,
+                onTap: () => setState(() => _selectedType = VipType.yearly),
+                badge: t.text(AppStringKeys.vipRecommended),
+              ),
+              const SizedBox(height: 20),
+
+              // EULA consent — Apple 审核要求在购买流程中明确展示
+              Center(
+                child: Text(
+                  t.text(AppStringKeys.vipConsent),
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF5C6BC0),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: _isLoading || !selectedProductLoaded
+                      ? null
+                      : () async {
+                          setState(() => _isLoading = true);
+                          try {
+                            final started = _selectedType == VipType.monthly
+                                ? await vipService.purchaseMonthly()
+                                : await vipService.purchaseYearly();
+                            if (!started && context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    t.text(AppStringKeys.vipProductUnavailable),
+                                  ),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    t.text(
+                                      AppStringKeys.vipOpenFailed,
+                                      params: {'error': '$e'},
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+                          } finally {
+                            if (mounted) setState(() => _isLoading = false);
+                          }
+                        },
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          !selectedProductLoaded
+                              ? t.text(AppStringKeys.vipLoadingPrice)
+                              : isVip
+                              ? t.text(
+                                  AppStringKeys.vipRenewConfirm,
+                                  params: {
+                                    'period': _selectedType == VipType.monthly
+                                        ? t.text(AppStringKeys.vipPeriodMonthly)
+                                        : t.text(AppStringKeys.vipPeriodYearly),
+                                  },
+                                )
+                              : t.text(
+                                  AppStringKeys.vipSubscribeNow,
+                                  params: {
+                                    'price': _selectedType == VipType.monthly
+                                        ? t.text(
+                                            AppStringKeys.vipPriceMonthly,
+                                            params: {'price': monthlyPrice},
+                                          )
+                                        : t.text(
+                                            AppStringKeys.vipPriceYearly,
+                                            params: {'price': yearlyPrice},
+                                          ),
+                                  },
+                                ),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: Text(
+                  t.text(AppStringKeys.vipPaymentHint),
+                  style: const TextStyle(color: Colors.grey, fontSize: 11),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: PressFeedback(
+                  onTap: () async {
+                    final url = Uri.parse(
+                      getIt<AppProfileService>().termsOfServiceUrl,
+                    );
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url, mode: LaunchMode.inAppBrowserView);
+                    }
+                  },
+                  child: Text(
+                    t.text(AppStringKeys.vipConsent),
+                    style: const TextStyle(
+                      color: Color(0xFF5C6BC0),
+                      fontSize: 11,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await vipService.restorePurchases();
+                  },
+                  child: Text(
+                    t.text(AppStringKeys.vipRestorePurchase),
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );
