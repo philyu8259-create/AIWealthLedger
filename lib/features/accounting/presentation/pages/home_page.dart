@@ -1807,6 +1807,10 @@ class _AddEntrySheet extends StatefulWidget {
 
 class _AddEntrySheetState extends State<_AddEntrySheet> {
   static const _primaryColor = AppColors.primary;
+  static const _autoOpenCategoryEditorForScreenshot = bool.fromEnvironment(
+    'SCREENSHOT_QUICKADD_EDIT',
+    defaultValue: false,
+  );
   static const _defaultCategoryIds = [
     'food',
     'transport',
@@ -1849,6 +1853,14 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
   void initState() {
     super.initState();
     _enabledIds = List.from(getIt<QuickChipService>().getIds());
+    if (_autoOpenCategoryEditorForScreenshot) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future<void>.delayed(const Duration(milliseconds: 350), () {
+          if (!mounted) return;
+          _showCategoryEditSheet(context);
+        });
+      });
+    }
   }
 
   @override
@@ -1865,120 +1877,139 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
     await showModalBottomSheet(
       context: ctx,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (sheetCtx) => StatefulBuilder(
-        builder: (sheetCtx, setSheetState) {
-          return Padding(
-            padding: EdgeInsets.only(
-              left: 20,
-              right: 20,
-              top: 16,
-              bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(999),
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) {
+        final mediaQuery = MediaQuery.of(sheetCtx);
+        final extraBottomOffset = mediaQuery.size.width >= 768 ? 96.0 : 108.0;
+
+        return StatefulBuilder(
+          builder: (sheetCtx, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                12,
+                0,
+                12,
+                mediaQuery.viewInsets.bottom + extraBottomOffset,
+              ),
+              child: Material(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                clipBehavior: Clip.antiAlias,
+                child: SafeArea(
+                  top: false,
+                  child: SizedBox(
+                    height: mediaQuery.size.height * 0.82,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Center(
+                            child: Container(
+                              width: 40,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade300,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            AppStrings.of(
+                              sheetCtx,
+                            ).text(AppStringKeys.homeEditCategoriesTitle),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            AppStrings.of(
+                              sheetCtx,
+                            ).text(AppStringKeys.homeEditCategoriesSubtitle),
+                            style: TextStyle(fontSize: 13, color: Colors.grey),
+                          ),
+                          const SizedBox(height: 16),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _CategorySection(
+                                    title: AppStrings.of(
+                                      sheetCtx,
+                                    ).text(AppStringKeys.reportsExpense),
+                                    categories: allExpense,
+                                    selected: selected,
+                                    onToggle: (id) => setSheetState(() {
+                                      if (selected.contains(id)) {
+                                        selected.remove(id);
+                                      } else {
+                                        selected.add(id);
+                                      }
+                                    }),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _CategorySection(
+                                    title: AppStrings.of(
+                                      sheetCtx,
+                                    ).text(AppStringKeys.reportsIncome),
+                                    categories: allIncome,
+                                    selected: selected,
+                                    onToggle: (id) => setSheetState(() {
+                                      if (selected.contains(id)) {
+                                        selected.remove(id);
+                                      } else {
+                                        selected.add(id);
+                                      }
+                                    }),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () async {
+                              final orderedIds = _allCategories
+                                  .where((c) => selected.contains(c.id))
+                                  .map((c) => c.id)
+                                  .toList();
+                              await getIt<QuickChipService>().saveIds(orderedIds);
+                              setState(() {
+                                _enabledIds = orderedIds;
+                                if (_selectedCategoryId != null &&
+                                    !orderedIds.contains(_selectedCategoryId)) {
+                                  _selectedCategoryId = null;
+                                  _selectedName = null;
+                                }
+                              });
+                              if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _primaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: Text(
+                              AppStrings.of(sheetCtx).text(AppStringKeys.commonSave),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  AppStrings.of(
-                    sheetCtx,
-                  ).text(AppStringKeys.homeEditCategoriesTitle),
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  AppStrings.of(
-                    sheetCtx,
-                  ).text(AppStringKeys.homeEditCategoriesSubtitle),
-                  style: TextStyle(fontSize: 13, color: Colors.grey),
-                ),
-                const SizedBox(height: 16),
-                Flexible(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _CategorySection(
-                          title: AppStrings.of(
-                            sheetCtx,
-                          ).text(AppStringKeys.reportsExpense),
-                          categories: allExpense,
-                          selected: selected,
-                          onToggle: (id) => setSheetState(() {
-                            if (selected.contains(id)) {
-                              selected.remove(id);
-                            } else {
-                              selected.add(id);
-                            }
-                          }),
-                        ),
-                        const SizedBox(height: 16),
-                        _CategorySection(
-                          title: AppStrings.of(
-                            sheetCtx,
-                          ).text(AppStringKeys.reportsIncome),
-                          categories: allIncome,
-                          selected: selected,
-                          onToggle: (id) => setSheetState(() {
-                            if (selected.contains(id)) {
-                              selected.remove(id);
-                            } else {
-                              selected.add(id);
-                            }
-                          }),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () async {
-                    final orderedIds = _allCategories
-                        .where((c) => selected.contains(c.id))
-                        .map((c) => c.id)
-                        .toList();
-                    await getIt<QuickChipService>().saveIds(orderedIds);
-                    setState(() {
-                      _enabledIds = orderedIds;
-                      if (_selectedCategoryId != null &&
-                          !orderedIds.contains(_selectedCategoryId)) {
-                        _selectedCategoryId = null;
-                        _selectedName = null;
-                      }
-                    });
-                    if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: Text(
-                    AppStrings.of(sheetCtx).text(AppStringKeys.commonSave),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
