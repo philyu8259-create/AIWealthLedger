@@ -15,7 +15,6 @@ class QuickChipService {
     'coffee',
     'fruit',
     'grocery',
-    'takeout',
     'daily',
   ];
 

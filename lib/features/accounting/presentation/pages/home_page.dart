@@ -1816,7 +1816,6 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
     'coffee',
     'fruit',
     'grocery',
-    'takeout',
     'daily',
   ];
 
@@ -2404,7 +2403,7 @@ class _QuickChipsGrid extends StatefulWidget {
 }
 
 class _QuickChipsGridState extends State<_QuickChipsGrid> {
-  // 首页默认启用的 6 个常用类目（与编辑器保持一致）
+  // 首页默认启用的 9 个常用类目（与编辑器保持一致）
   static const _defaultEnabledIds = {
     'food',
     'transport',
@@ -2412,6 +2411,9 @@ class _QuickChipsGridState extends State<_QuickChipsGrid> {
     'entertainment',
     'housing',
     'coffee',
+    'fruit',
+    'grocery',
+    'daily',
   };
 
   @override
@@ -2445,7 +2447,7 @@ class _QuickChipsGridState extends State<_QuickChipsGrid> {
       allMap[c.id] = c;
     }
 
-    // quickChipIds 有效则使用，否则用默认 6 个
+    // quickChipIds 有效则使用，否则用默认 9 个
     final List<({String id, String name, String icon})> chips;
     if (widget.catState.quickChipIds.isNotEmpty) {
       chips = widget.catState.quickChipIds
@@ -2581,7 +2583,7 @@ class _QuickChipEditorPageState extends State<_QuickChipEditorPage> {
   CustomCategoryBloc get _bloc => widget.bloc;
   late final StreamSubscription<CustomCategoryState> _sub;
 
-  // 默认启用的 6 个常用类目
+  // 默认启用的 9 个常用类目
   static const _defaultEnabledIds = {
     'food', // 餐饮
     'transport', // 交通
@@ -2589,6 +2591,9 @@ class _QuickChipEditorPageState extends State<_QuickChipEditorPage> {
     'entertainment', // 娱乐
     'housing', // 居住
     'coffee', // 咖啡
+    'fruit', // 水果
+    'grocery', // 买菜
+    'daily', // 日用
   };
 
   @override
@@ -2706,6 +2711,9 @@ class _QuickChipEditorPageState extends State<_QuickChipEditorPage> {
           (sum, s) => sum + 1 + sections[s]!.length,
         ); // header + items
 
+        final mediaQuery = MediaQuery.of(context);
+        final extraBottomOffset = mediaQuery.size.width >= 768 ? 96.0 : 108.0;
+
         return Scaffold(
           appBar: AppBar(
             title: Text(
@@ -2736,6 +2744,7 @@ class _QuickChipEditorPageState extends State<_QuickChipEditorPage> {
                       horizontal: horizontalPadding,
                     ),
                     child: ListView.builder(
+                      padding: EdgeInsets.only(bottom: extraBottomOffset + 20),
                       itemCount: totalItems,
                       itemBuilder: (ctx, index) {
                         int pos = 0;
@@ -2786,8 +2795,9 @@ class _QuickChipEditorPageState extends State<_QuickChipEditorPage> {
             },
           ),
           bottomNavigationBar: SafeArea(
+            top: false,
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(16, 16, 16, extraBottomOffset),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
