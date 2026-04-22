@@ -744,10 +744,9 @@ def _verify_receipt_with_apple(receipt_data):
 
 
 def _apple_subscription_expire_ms(receipt_info):
+    receipt_info = _pick_latest_receipt_info(receipt_info)
     if not receipt_info:
         return 0
-    if isinstance(receipt_info, list):
-        receipt_info = receipt_info[-1] if receipt_info else {}
 
     expires_date_ms = receipt_info.get('expires_date_ms') or receipt_info.get('subscription-expire-date-ms')
     if expires_date_ms:
@@ -756,6 +755,42 @@ def _apple_subscription_expire_ms(receipt_info):
         except Exception:
             pass
     return 0
+
+
+def _pick_latest_receipt_info(receipt_info):
+    if not receipt_info:
+        return {}
+    if isinstance(receipt_info, dict):
+        return receipt_info
+    if not isinstance(receipt_info, list):
+        return {}
+
+    best_item = {}
+    best_expire_ms = -1
+    best_purchase_ms = -1
+
+    for item in receipt_info:
+        if not isinstance(item, dict):
+            continue
+        expire_raw = item.get('expires_date_ms') or item.get('subscription-expire-date-ms') or 0
+        purchase_raw = item.get('purchase_date_ms') or item.get('original_purchase_date_ms') or 0
+
+        try:
+            expire_ms = int(expire_raw)
+        except Exception:
+            expire_ms = 0
+
+        try:
+            purchase_ms = int(purchase_raw)
+        except Exception:
+            purchase_ms = 0
+
+        if expire_ms > best_expire_ms or (expire_ms == best_expire_ms and purchase_ms > best_purchase_ms):
+            best_item = item
+            best_expire_ms = expire_ms
+            best_purchase_ms = purchase_ms
+
+    return best_item
 
 
 # ─── HTTP Handler ────────────────────────────────────
@@ -1010,12 +1045,13 @@ class Handler(BaseHTTPRequestHandler):
                 if receipt_result is not None:
                     incoming_environment = receipt_result.get('environment', 'unknown')
                     receipt_info = receipt_result.get('receipt_info')
-                    apple_expire_ms = _apple_subscription_expire_ms(receipt_info)
+                    latest_receipt_info = _pick_latest_receipt_info(receipt_info)
+                    apple_expire_ms = _apple_subscription_expire_ms(latest_receipt_info)
                     if apple_expire_ms > 0:
                         vip_expire_ms = apple_expire_ms
                         product_id = ''
-                        if isinstance(receipt_info, dict):
-                            product_id = receipt_info.get('product_id', '')
+                        if isinstance(latest_receipt_info, dict):
+                            product_id = latest_receipt_info.get('product_id', '')
                         if 'year' in product_id:
                             vip_type = 'yearly'
                         elif 'mon' in product_id:

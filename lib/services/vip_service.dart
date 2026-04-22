@@ -167,7 +167,9 @@ class VipService extends ChangeNotifier {
         '[VipService] purchaseStream received ${purchases.length} purchases',
       );
       for (final p in purchases) {
-        debugPrint('[VipService] - productID=${p.productID}, status=${p.status}');
+        debugPrint(
+          '[VipService] - productID=${p.productID}, status=${p.status}',
+        );
         if (p.status == PurchaseStatus.purchased) {
           debugPrint('[VipService] stream received purchased: ${p.productID}');
           await _processPurchase(p);
@@ -194,7 +196,9 @@ class VipService extends ChangeNotifier {
     debugPrint('[VipService] transactionDate=${p.transactionDate}');
     debugPrint('[VipService] verificationData=${p.verificationData}');
     debugPrint('[VipService] error=${p.error}');
-    debugPrint('[VipService] pendingCompletePurchase=${p.pendingCompletePurchase}');
+    debugPrint(
+      '[VipService] pendingCompletePurchase=${p.pendingCompletePurchase}',
+    );
 
     if (!_hasVipContext) {
       debugPrint('[VipService] ⚠️  当前没有可绑定会员的手机号，跳过处理');
@@ -258,9 +262,13 @@ class VipService extends ChangeNotifier {
       if (isRestorePurchase) {
         try {
           await syncFromCloud();
-          debugPrint('[VipService] restore flow: forced syncFromCloud after _activateVip');
+          debugPrint(
+            '[VipService] restore flow: forced syncFromCloud after _activateVip',
+          );
         } catch (e) {
-          debugPrint('[VipService] restore flow: syncFromCloud after _activateVip error: $e');
+          debugPrint(
+            '[VipService] restore flow: syncFromCloud after _activateVip error: $e',
+          );
         }
       }
     } else {
@@ -330,7 +338,9 @@ class VipService extends ChangeNotifier {
         '[VipService] queryProductDetails: ${products.productDetails.length} found',
       );
       if (products.notFoundIDs.isNotEmpty) {
-        debugPrint('[VipService] notFoundIDs=${products.notFoundIDs.join(',')}');
+        debugPrint(
+          '[VipService] notFoundIDs=${products.notFoundIDs.join(',')}',
+        );
       }
       if (products.productDetails.isEmpty) {
         debugPrint('[VipService] ❌ 未找到商品 $productId');
@@ -402,7 +412,9 @@ class VipService extends ChangeNotifier {
         debugPrint('[VipService] 新开通：从交易时间/当前时间 $baseDate 开始算');
       }
       expireDate = _calculateExpireDate(type, baseDate);
-      debugPrint('[VipService] 新购/续费：baseDate=$baseDate → expireDate=$expireDate');
+      debugPrint(
+        '[VipService] 新购/续费：baseDate=$baseDate → expireDate=$expireDate',
+      );
     }
 
     final expireMs = expireDate.millisecondsSinceEpoch;
@@ -419,7 +431,9 @@ class VipService extends ChangeNotifier {
     try {
       await pushToCloud(receiptData: receiptData);
     } catch (e) {
-      debugPrint('[VipService] _activateVip: pushToCloud error (non-fatal): $e');
+      debugPrint(
+        '[VipService] _activateVip: pushToCloud error (non-fatal): $e',
+      );
     }
 
     debugPrint('[VipService] _activateVip END');
@@ -451,11 +465,15 @@ class VipService extends ChangeNotifier {
   Future<void> restorePurchases() async {
     try {
       if (!_hasVipContext) {
-        debugPrint('[VipService] restorePurchases skipped: no real logged-in phone');
+        debugPrint(
+          '[VipService] restorePurchases skipped: no real logged-in phone',
+        );
         _refreshSnapshot(notify: true);
         return;
       }
-      debugPrint('[VipService] restorePurchases() called for phone=$_currentPhone');
+      debugPrint(
+        '[VipService] restorePurchases() called for phone=$_currentPhone',
+      );
       _refreshSnapshot();
       await _iap.restorePurchases();
     } catch (e) {
@@ -478,7 +496,9 @@ class VipService extends ChangeNotifier {
     }
 
     try {
-      debugPrint('[VipService] syncFromCloud: fetching from cloud for $_currentPhone...');
+      debugPrint(
+        '[VipService] syncFromCloud: fetching from cloud for $_currentPhone...',
+      );
       final cloudProfile = await CloudService().getVipProfile();
       if (cloudProfile == null) {
         debugPrint('[VipService] syncFromCloud: no profile on cloud');
@@ -487,20 +507,28 @@ class VipService extends ChangeNotifier {
 
       final cloudType = cloudProfile['vip_type'] as String?;
       final cloudExpireMs = cloudProfile['vip_expire_ms'] as int?;
-      debugPrint('[VipService] syncFromCloud: cloud profile = type=$cloudType, expire_ms=$cloudExpireMs');
+      debugPrint(
+        '[VipService] syncFromCloud: cloud profile = type=$cloudType, expire_ms=$cloudExpireMs',
+      );
 
       // 云端无 VIP 档案（从未订阅过）→ 清理本地，避免普通用户误带旧缓存
       if (cloudProfile.isEmpty || cloudType == null || cloudType.isEmpty) {
-        debugPrint('[VipService] syncFromCloud: cloud has no VIP record, clearing local VIP');
+        debugPrint(
+          '[VipService] syncFromCloud: cloud has no VIP record, clearing local VIP',
+        );
         await clearCurrentUserVipCache();
         return true;
       }
 
       // 云端已过期 → 拒绝写入本地（防客户端伪造过期时间）
       if (cloudExpireMs != null && cloudExpireMs > 0) {
-        final cloudExpireTime = DateTime.fromMillisecondsSinceEpoch(cloudExpireMs);
+        final cloudExpireTime = DateTime.fromMillisecondsSinceEpoch(
+          cloudExpireMs,
+        );
         if (cloudExpireTime.isBefore(DateTime.now())) {
-          debugPrint('[VipService] syncFromCloud: cloud VIP is expired, clearing local VIP');
+          debugPrint(
+            '[VipService] syncFromCloud: cloud VIP is expired, clearing local VIP',
+          );
           await clearCurrentUserVipCache();
           return true;
         }
@@ -512,7 +540,9 @@ class VipService extends ChangeNotifier {
         await _setScopedInt(_keyVipExpireMs, cloudExpireMs);
       }
       _refreshSnapshot(notify: true);
-      debugPrint('[VipService] syncFromCloud: local updated from cloud. isVip=$isVip');
+      debugPrint(
+        '[VipService] syncFromCloud: local updated from cloud. isVip=$isVip',
+      );
       return true;
     } catch (e) {
       debugPrint('[VipService] syncFromCloud error: $e');
@@ -539,7 +569,9 @@ class VipService extends ChangeNotifier {
       // 检查本地是否已过期（防止推广过期状态到云端）
       if (localExpireMs > 0 &&
           DateTime.now().millisecondsSinceEpoch > localExpireMs) {
-        debugPrint('[VipService] pushToCloud: local VIP already expired, clearing');
+        debugPrint(
+          '[VipService] pushToCloud: local VIP already expired, clearing',
+        );
         await clearCurrentUserVipCache();
         return false;
       }
@@ -556,13 +588,24 @@ class VipService extends ChangeNotifier {
         final cloudType = result['vip_type'] as String?;
         final cloudExpireMs = result['vip_expire_ms'] as int?;
         if (cloudType != null && cloudExpireMs != null && cloudExpireMs > 0) {
-          await _setScopedString(_keyVipType, cloudType);
-          await _setScopedInt(_keyVipExpireMs, cloudExpireMs);
+          if (cloudExpireMs >= localExpireMs) {
+            await _setScopedString(_keyVipType, cloudType);
+            await _setScopedInt(_keyVipExpireMs, cloudExpireMs);
+            debugPrint(
+              '[VipService] pushToCloud: local updated from cloud, cloudExpireMs=$cloudExpireMs',
+            );
+          } else {
+            debugPrint(
+              '[VipService] pushToCloud: ignored older cloud expire_ms=$cloudExpireMs, keep localExpireMs=$localExpireMs',
+            );
+          }
           _refreshSnapshot(notify: true);
         }
         return true;
       } else {
-        debugPrint('[VipService] pushToCloud: server returned null (network error?)');
+        debugPrint(
+          '[VipService] pushToCloud: server returned null (network error?)',
+        );
         return false;
       }
     } catch (e) {
