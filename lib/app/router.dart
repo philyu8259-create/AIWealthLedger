@@ -230,10 +230,12 @@ class MainScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
     final compactNav = MediaQuery.of(context).size.width < 410;
-    final outerHorizontalPadding = compactNav ? 18.0 : 22.0;
-    final innerHorizontalPadding = compactNav ? 10.0 : 14.0;
-    final navGap = compactNav ? 4.0 : 6.0;
-    final centerGap = compactNav ? 14.0 : 14.0;
+    final outerHorizontalPadding = compactNav ? 14.0 : 18.0;
+    final innerHorizontalPadding = compactNav ? 8.0 : 12.0;
+    final navGap = compactNav ? 6.0 : 8.0;
+    final centerGap = compactNav ? 10.0 : 12.0;
+    final centerButtonSize = compactNav ? 48.0 : 54.0;
+    final centerIconSize = compactNav ? 26.0 : 28.0;
 
     return Scaffold(
       extendBody: true,
@@ -283,31 +285,36 @@ class MainScaffold extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            _PremiumNavBarItem(
-                              icon: Icons.home_outlined,
-                              selectedIcon: Icons.home_rounded,
-                              label: t.text(AppStringKeys.navHome),
-                              isSelected: _getCurrentIndex(context) == 0,
-                              compact: compactNav,
-                              onTap: () {
-                                clearPendingHomeOverlayRequests();
-                                context.go('/home');
-                              },
+                            Expanded(
+                              child: _PremiumNavBarItem(
+                                icon: Icons.home_outlined,
+                                selectedIcon: Icons.home_rounded,
+                                label: t.text(AppStringKeys.navHome),
+                                isSelected: _getCurrentIndex(context) == 0,
+                                compact: compactNav,
+                                onTap: () {
+                                  clearPendingHomeOverlayRequests();
+                                  context.go('/home');
+                                },
+                              ),
                             ),
                             SizedBox(width: navGap),
-                            _PremiumNavBarItem(
-                              icon: Icons.receipt_long_outlined,
-                              selectedIcon: Icons.receipt_long_rounded,
-                              label: t.text(AppStringKeys.navTransactions),
-                              isSelected: _getCurrentIndex(context) == 1,
-                              compact: compactNav,
-                              onTap: () {
-                                clearPendingHomeOverlayRequests();
-                                context.go('/transactions');
-                              },
+                            Expanded(
+                              child: Transform.translate(
+                                offset: const Offset(-5, 0),
+                                child: _PremiumNavBarItem(
+                                  icon: Icons.receipt_long_outlined,
+                                  selectedIcon: Icons.receipt_long_rounded,
+                                  label: t.text(AppStringKeys.navTransactions),
+                                  isSelected: _getCurrentIndex(context) == 1,
+                                  compact: compactNav,
+                                  onTap: () {
+                                    clearPendingHomeOverlayRequests();
+                                    context.go('/transactions');
+                                  },
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -328,8 +335,8 @@ class MainScaffold extends StatelessWidget {
                               context.go('/home');
                             },
                             child: Container(
-                              width: 50,
-                              height: 50,
+                              width: centerButtonSize,
+                              height: centerButtonSize,
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
                                   begin: Alignment.topLeft,
@@ -353,11 +360,11 @@ class MainScaffold extends StatelessWidget {
                                   width: 1,
                                 ),
                               ),
-                              child: const Center(
+                              child: Center(
                                 child: AiSparklesIcon(
-                                  size: 30,
+                                  size: centerIconSize,
                                   color: Colors.white,
-                                  accentColor: Color(0xFFF6E27A),
+                                  accentColor: const Color(0xFFF6E27A),
                                   strokeWidthFactor: 0.1,
                                 ),
                               ),
@@ -377,8 +384,8 @@ class MainScaffold extends StatelessWidget {
                               context.go('/home');
                             },
                             child: Container(
-                              width: 50,
-                              height: 50,
+                              width: centerButtonSize,
+                              height: centerButtonSize,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: const LinearGradient(
@@ -402,10 +409,12 @@ class MainScaffold extends StatelessWidget {
                                   width: 1.2,
                                 ),
                               ),
-                              child: const Icon(
-                                Icons.add_rounded,
-                                color: Colors.white,
-                                size: 34,
+                              child: Center(
+                                child: Icon(
+                                  Icons.add_rounded,
+                                  color: Colors.white,
+                                  size: centerIconSize,
+                                ),
                               ),
                             ),
                           ),
@@ -413,31 +422,36 @@ class MainScaffold extends StatelessWidget {
                       ),
                       Expanded(
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            _PremiumNavBarItem(
-                              icon: Icons.bar_chart_outlined,
-                              selectedIcon: Icons.bar_chart_rounded,
-                              label: t.text(AppStringKeys.navReports),
-                              isSelected: _getCurrentIndex(context) == 2,
-                              compact: compactNav,
-                              onTap: () {
-                                clearPendingHomeOverlayRequests();
-                                context.go('/reports');
-                              },
+                            Expanded(
+                              child: Transform.translate(
+                                offset: const Offset(5, 0),
+                                child: _PremiumNavBarItem(
+                                  icon: Icons.bar_chart_outlined,
+                                  selectedIcon: Icons.bar_chart_rounded,
+                                  label: t.text(AppStringKeys.navReports),
+                                  isSelected: _getCurrentIndex(context) == 2,
+                                  compact: compactNav,
+                                  onTap: () {
+                                    clearPendingHomeOverlayRequests();
+                                    context.go('/reports');
+                                  },
+                                ),
+                              ),
                             ),
                             SizedBox(width: navGap),
-                            _PremiumNavBarItem(
-                              icon: Icons.auto_awesome_outlined,
-                              selectedIcon: Icons.auto_awesome_rounded,
-                              label: t.text(AppStringKeys.navAnalysis),
-                              isSelected: _getCurrentIndex(context) == 3,
-                              compact: compactNav,
-                              onTap: () {
-                                clearPendingHomeOverlayRequests();
-                                context.go('/analysis');
-                              },
+                            Expanded(
+                              child: _PremiumNavBarItem(
+                                icon: Icons.auto_awesome_outlined,
+                                selectedIcon: Icons.auto_awesome_rounded,
+                                label: t.text(AppStringKeys.navAnalysis),
+                                isSelected: _getCurrentIndex(context) == 3,
+                                compact: compactNav,
+                                onTap: () {
+                                  clearPendingHomeOverlayRequests();
+                                  context.go('/analysis');
+                                },
+                              ),
                             ),
                           ],
                         ),
@@ -482,11 +496,10 @@ class _PremiumNavBarItem extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutCubic,
+        width: double.infinity,
         padding: EdgeInsets.symmetric(
-          horizontal: compact
-              ? (isSelected ? 8 : 6)
-              : (isSelected ? 12 : 10),
-          vertical: 6,
+          horizontal: compact ? 4 : 6,
+          vertical: compact ? 6 : 7,
         ),
         decoration: BoxDecoration(
           color: isSelected
@@ -505,10 +518,11 @@ class _PremiumNavBarItem extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               label,
+              textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: compact ? 10.0 : 10.5,
+                fontSize: compact ? 9.5 : 10.0,
                 fontWeight: FontWeight.w400,
                 height: 1.0,
                 letterSpacing: 0.1,
