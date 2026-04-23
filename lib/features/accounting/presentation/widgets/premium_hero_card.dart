@@ -26,7 +26,7 @@ class PremiumHeroCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 4),
-      height: 220,
+      height: 198,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
@@ -88,7 +88,7 @@ class PremiumHeroCard extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -111,7 +111,7 @@ class PremiumHeroCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
@@ -120,7 +120,7 @@ class PremiumHeroCard extends StatelessWidget {
                       symbol,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.62),
-                        fontSize: 24,
+                        fontSize: 20,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -132,9 +132,9 @@ class PremiumHeroCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 40,
+                          fontSize: 36,
                           fontWeight: FontWeight.w800,
-                          letterSpacing: -1.0,
+                          letterSpacing: -0.8,
                           height: 1,
                         ),
                       ),
@@ -143,13 +143,13 @@ class PremiumHeroCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(18),
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 14,
+                        horizontal: 18,
+                        vertical: 11,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.10),
@@ -157,7 +157,7 @@ class PremiumHeroCard extends StatelessWidget {
                           color: Colors.white.withValues(alpha: 0.08),
                           width: 1,
                         ),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(18),
                       ),
                       child: Row(
                         children: [
@@ -169,7 +169,7 @@ class PremiumHeroCard extends StatelessWidget {
                           ),
                           Container(
                             width: 1,
-                            height: 24,
+                            height: 22,
                             color: Colors.white.withValues(alpha: 0.15),
                           ),
                           Expanded(

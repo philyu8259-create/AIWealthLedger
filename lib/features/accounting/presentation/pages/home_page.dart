@@ -914,6 +914,35 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     return '${d.month}/${d.day}';
   }
 
+  String _formatRecentGroupLabel(DateTime d) {
+    final t = AppStrings.of(context);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final date = DateTime(d.year, d.month, d.day);
+    if (date == today) return t.text(AppStringKeys.transactionsToday);
+    if (date == today.subtract(const Duration(days: 1))) {
+      return t.text(AppStringKeys.transactionsYesterday);
+    }
+    final locale = Localizations.localeOf(context);
+    if (locale.languageCode == 'zh') {
+      return DateFormat('M月d日', 'zh_CN').format(d);
+    }
+    return DateFormat('MMM d', locale.toLanguageTag()).format(d);
+  }
+
+  List<_RecentEntryGroupData> _buildRecentEntryGroups(List<AccountEntry> entries) {
+    final groups = <_RecentEntryGroupData>[];
+    for (final entry in entries) {
+      final date = DateTime(entry.date.year, entry.date.month, entry.date.day);
+      if (groups.isNotEmpty && groups.last.date == date) {
+        groups.last.entries.add(entry);
+      } else {
+        groups.add(_RecentEntryGroupData(date: date, entries: [entry]));
+      }
+    }
+    return groups;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColorsExtension>()!;
@@ -1110,7 +1139,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               ),
 
                               const SliverToBoxAdapter(
-                                child: SizedBox(height: 16),
+                                child: SizedBox(height: 10),
                               ),
 
                               // ── 3. 本月收支汇总卡片 ────────────────────────────────
@@ -1159,7 +1188,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                 child: Padding(
                                   padding: const EdgeInsets.fromLTRB(
                                     20,
-                                    16,
+                                    12,
                                     20,
                                     0,
                                   ),
@@ -1176,7 +1205,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                 _loadAssetSummary();
                                           });
                                         },
-                                        child: TintedSurfaceCard(
+                                        child: MatteAssetContainer(
                                           padding: const EdgeInsets.all(16),
                                           radius: 20,
                                           child: Row(
@@ -1242,19 +1271,26 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                         Container(
                                                           constraints:
                                                               const BoxConstraints(
-                                                                maxWidth: 112,
+                                                                maxWidth: 104,
                                                               ),
                                                           padding:
                                                               const EdgeInsets.symmetric(
-                                                                horizontal: 7,
-                                                                vertical: 3,
+                                                                horizontal: 8,
+                                                                vertical: 4,
                                                               ),
                                                           decoration: BoxDecoration(
                                                             color: AppColors
                                                                 .primary
                                                                 .withValues(
-                                                                  alpha: 0.08,
+                                                                  alpha: 0.05,
                                                                 ),
+                                                            border: Border.all(
+                                                              color: AppColors
+                                                                  .primary
+                                                                  .withValues(
+                                                                    alpha: 0.08,
+                                                                  ),
+                                                            ),
                                                             borderRadius:
                                                                 BorderRadius.circular(
                                                                   7,
@@ -1270,10 +1306,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                               ),
                                                               maxLines: 1,
                                                               style: const TextStyle(
-                                                                fontSize: 11,
+                                                                fontSize: 10,
                                                                 fontWeight:
                                                                     FontWeight
-                                                                        .w500,
+                                                                        .w600,
                                                                 color: AppColors
                                                                     .primary,
                                                               ),
@@ -1289,16 +1325,23 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                                 !_assetPrivacyHidden,
                                                               ),
                                                           child: Container(
-                                                            width: 32,
-                                                            height: 32,
+                                                            width: 30,
+                                                            height: 30,
                                                             alignment: Alignment
                                                                 .center,
                                                             decoration: BoxDecoration(
-                                                              color: Colors
-                                                                  .white
+                                                              color: AppColors
+                                                                  .primary
                                                                   .withValues(
-                                                                    alpha: 0.52,
+                                                                    alpha: 0.04,
                                                                   ),
+                                                              border: Border.all(
+                                                                color: AppColors
+                                                                    .primary
+                                                                    .withValues(
+                                                                      alpha: 0.08,
+                                                                    ),
+                                                              ),
                                                               borderRadius:
                                                                   BorderRadius.circular(
                                                                     9,
@@ -1312,7 +1355,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                                         .visibility_outlined,
                                                               color: colors
                                                                   .textSecondary,
-                                                              size: 19,
+                                                              size: 18,
                                                             ),
                                                           ),
                                                         ),
@@ -1604,94 +1647,48 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       ),
                                     )
                                   : SliverToBoxAdapter(
-                                      child: PremiumSurfaceCard(
-                                        margin: const EdgeInsets.symmetric(
-                                          horizontal: 20,
-                                        ),
-                                        padding: EdgeInsets.zero,
-                                        radius: 20,
-                                        child: ListView.builder(
-                                          shrinkWrap: true,
-                                          physics:
-                                              const NeverScrollableScrollPhysics(),
-                                          padding: EdgeInsets.zero,
-                                          itemCount: state.entries
+                                      child: Builder(
+                                        builder: (context) {
+                                          final recentEntries = state.entries
                                               .take(20)
-                                              .length,
-                                          itemBuilder: (context, index) {
-                                            final entry = state.entries[index];
-                                            final catDef =
-                                                CategoryDef.findById(
-                                                  entry.category,
-                                                ) ??
-                                                CategoryDef(
-                                                  id: 'other',
-                                                  name: AppStrings.of(context).text(
-                                                    AppStringKeys
-                                                        .transactionsOtherCategory,
+                                              .toList();
+                                          final recentGroups =
+                                              _buildRecentEntryGroups(
+                                                recentEntries,
+                                              );
+                                          return PremiumSurfaceCard(
+                                            margin: const EdgeInsets.symmetric(
+                                              horizontal: 20,
+                                            ),
+                                            padding: const EdgeInsets.fromLTRB(
+                                              10,
+                                              10,
+                                              10,
+                                              12,
+                                            ),
+                                            radius: 22,
+                                            child: Column(
+                                              children: [
+                                                for (
+                                                  var index = 0;
+                                                  index < recentGroups.length;
+                                                  index++
+                                                ) ...[
+                                                  if (index != 0)
+                                                    const SizedBox(height: 10),
+                                                  _RecentEntryGroupSection(
+                                                    group: recentGroups[index],
+                                                    groupLabel:
+                                                        _formatRecentGroupLabel,
+                                                    categoryNameResolver:
+                                                        _homeCategoryName,
+                                                    formatTime: _formatTime,
                                                   ),
-                                                  icon: '📦',
-                                                );
-                                            final categoryName =
-                                                _homeCategoryName(
-                                                  catDef.id,
-                                                  catDef.name,
-                                                );
-                                            final catColor =
-                                                AppColors.getCategoryColor(
-                                                  catDef.id,
-                                                );
-                                            return ListTile(
-                                              leading: Container(
-                                                width: 44,
-                                                height: 44,
-                                                alignment: Alignment.center,
-                                                decoration: BoxDecoration(
-                                                  color: catColor.withValues(
-                                                    alpha: 0.15,
-                                                  ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(14),
-                                                ),
-                                                child: Text(
-                                                  catDef.icon,
-                                                  style: const TextStyle(
-                                                    fontSize: 22,
-                                                  ),
-                                                ),
-                                              ),
-                                              title: Text(
-                                                entry.description.isEmpty
-                                                    ? categoryName
-                                                    : entry.description,
-                                                style: TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: colors.textPrimary,
-                                                ),
-                                              ),
-                                              subtitle: Text(
-                                                _formatTime(entry.date),
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: colors.textSecondary,
-                                                ),
-                                              ),
-                                              trailing: Text(
-                                                '${entry.type == EntryType.income ? '+' : '-'}${_homeMoney(entry.amount)}',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 16,
-                                                  color:
-                                                      entry.type ==
-                                                          EntryType.income
-                                                      ? AppColors.primary
-                                                      : colors.textPrimary,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
+                                                ],
+                                              ],
+                                            ),
+                                          );
+                                        },
                                       ),
                                     ),
 
@@ -2462,6 +2459,38 @@ class TintedSurfaceCard extends StatelessWidget {
   }
 }
 
+class MatteAssetContainer extends StatelessWidget {
+  const MatteAssetContainer({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(16),
+    this.margin,
+    this.radius = 20,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final EdgeInsetsGeometry? margin;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: margin,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.08),
+          width: 1,
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
 class _QuickChipsGrid extends StatefulWidget {
   final CustomCategoryBloc bloc;
   final CustomCategoryState catState;
@@ -2566,9 +2595,9 @@ class _QuickChipsGridState extends State<_QuickChipsGrid> {
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              childAspectRatio: 2.35,
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 2.55,
             ),
             itemCount: chips.length,
             itemBuilder: (context, index) {
@@ -2576,6 +2605,7 @@ class _QuickChipsGridState extends State<_QuickChipsGrid> {
               return _QuickChipItem(
                 icon: c.icon,
                 name: c.name,
+                accentColor: AppColors.getCategoryColor(c.id),
                 onTap: () => widget.onTap(c.id, c.name, c.icon),
               );
             },
@@ -2590,11 +2620,13 @@ class _QuickChipsGridState extends State<_QuickChipsGrid> {
 class _QuickChipItem extends StatefulWidget {
   final String icon;
   final String name;
+  final Color accentColor;
   final VoidCallback onTap;
 
   const _QuickChipItem({
     required this.icon,
     required this.name,
+    required this.accentColor,
     required this.onTap,
   });
 
@@ -2605,24 +2637,46 @@ class _QuickChipItem extends StatefulWidget {
 class _QuickChipItemState extends State<_QuickChipItem> {
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return PressFeedback(
       onTap: widget.onTap,
-      child: TintedSurfaceCard(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        radius: 16,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Color.lerp(
+            const Color(0xFFF1F3F8),
+            widget.accentColor.withValues(alpha: 0.08),
+            0.55,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: widget.accentColor.withValues(alpha: 0.12),
+          ),
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Text(widget.icon, style: const TextStyle(fontSize: 24, height: 1)),
-            const SizedBox(width: 8),
+            Container(
+              width: 30,
+              height: 30,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: widget.accentColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                widget.icon,
+                style: const TextStyle(fontSize: 19, height: 1),
+              ),
+            ),
+            const SizedBox(width: 9),
             Expanded(
               child: Text(
                 widget.name,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Theme.of(
-                    context,
-                  ).extension<AppColorsExtension>()!.textPrimary,
+                  fontWeight: FontWeight.w500,
+                  color: colors.textPrimary,
                   height: 1.1,
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -2633,6 +2687,231 @@ class _QuickChipItemState extends State<_QuickChipItem> {
       ),
     );
   }
+}
+
+class _RecentEntryRow extends StatelessWidget {
+  const _RecentEntryRow({
+    required this.entry,
+    required this.categoryNameResolver,
+    required this.formatTime,
+  });
+
+  final AccountEntry entry;
+  final String Function(String id, String fallback) categoryNameResolver;
+  final String Function(DateTime date) formatTime;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    final catDef =
+        CategoryDef.findById(entry.category) ??
+        CategoryDef(
+          id: 'other',
+          name: AppStrings.of(
+            context,
+          ).text(AppStringKeys.transactionsOtherCategory),
+          icon: '📦',
+        );
+    final categoryName = categoryNameResolver(catDef.id, catDef.name);
+    final catColor = AppColors.getCategoryColor(catDef.id);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  catColor.withValues(alpha: 0.18),
+                  catColor.withValues(alpha: 0.08),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Text(catDef.icon, style: const TextStyle(fontSize: 21)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entry.description.isEmpty ? categoryName : entry.description,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: catColor.withValues(alpha: 0.09),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        categoryName,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: catColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      formatTime(entry.date),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${entry.type == EntryType.income ? '+' : '-'}${_homeMoney(entry.amount)}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: entry.type == EntryType.income
+                      ? AppColors.primary
+                      : colors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                AppStrings.of(context).text(
+                  entry.type == EntryType.income
+                      ? AppStringKeys.reportsIncome
+                      : AppStringKeys.reportsExpense,
+                ),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: colors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecentEntryGroupSection extends StatelessWidget {
+  const _RecentEntryGroupSection({
+    required this.group,
+    required this.groupLabel,
+    required this.categoryNameResolver,
+    required this.formatTime,
+  });
+
+  final _RecentEntryGroupData group;
+  final String Function(DateTime date) groupLabel;
+  final String Function(String id, String fallback) categoryNameResolver;
+  final String Function(DateTime date) formatTime;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    final dayNet = group.entries.fold<double>(
+      0,
+      (sum, entry) =>
+          sum + (entry.type == EntryType.income ? entry.amount : -entry.amount),
+    );
+    final isPositive = dayNet >= 0;
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.52),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.05),
+        ),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    groupLabel(group.date),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${isPositive ? '+' : '-'}${_homeMoney(dayNet.abs())}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: isPositive
+                          ? AppColors.primary
+                          : colors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          for (var index = 0; index < group.entries.length; index++) ...[
+            _RecentEntryRow(
+              entry: group.entries[index],
+              categoryNameResolver: categoryNameResolver,
+              formatTime: formatTime,
+            ),
+            if (index != group.entries.length - 1)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: Container(
+                  height: 0.5,
+                  color: AppColors.listDivider.withValues(alpha: 0.9),
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RecentEntryGroupData {
+  _RecentEntryGroupData({
+    required this.date,
+    required this.entries,
+  });
+
+  final DateTime date;
+  final List<AccountEntry> entries;
 }
 
 // ── 快捷类目管理 ───────────────────────────────────────────────
