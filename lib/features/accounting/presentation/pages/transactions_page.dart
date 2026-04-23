@@ -246,7 +246,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
     final sortedDates = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
     return ListView.builder(
-      padding: EdgeInsets.fromLTRB(16, 16, 16, bottomInset),
+      padding: EdgeInsets.fromLTRB(0, 16, 0, bottomInset),
       itemCount: sortedDates.length,
       itemBuilder: (context, index) {
         final date = sortedDates[index];
@@ -335,19 +335,53 @@ class _DateGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
+
+    return Container(
+      margin: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: colors.cardBackground,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: colors.subtleBorder),
+        boxShadow: colors.softShadow,
+      ),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _DateHeader(
-          dateText: _formatDate(date),
-          dayExpense: dayExpense,
-          dayIncome: dayIncome,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+          child: _DateHeader(
+            dateText: _formatDate(date),
+            dayExpense: dayExpense,
+            dayIncome: dayIncome,
+          ),
         ),
-        ...entries.map(
-          (e) => _EntryTile(entry: e, onDelete: () => onDelete(e)),
+        Divider(
+          height: 1,
+          color: colors.subtleBorder.withValues(alpha: 0.5),
+          indent: 20,
+          endIndent: 20,
         ),
-        const SizedBox(height: 12),
+        ...List.generate(entries.length, (index) {
+          final entry = entries[index];
+          final isLast = index == entries.length - 1;
+
+          return Column(
+            children: [
+              _EntryTile(entry: entry, onDelete: () => onDelete(entry)),
+              if (!isLast)
+                Divider(
+                  height: 1,
+                  color: colors.subtleBorder.withValues(alpha: 0.5),
+                  indent: 78,
+                  endIndent: 20,
+                ),
+            ],
+          );
+        }),
       ],
+      ),
     );
   }
 }
@@ -377,7 +411,7 @@ class _DateHeader extends StatelessWidget {
       fontWeight: FontWeight.w600,
     );
     return Padding(
-      padding: const EdgeInsets.only(top: 12, bottom: 10),
+      padding: EdgeInsets.zero,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -511,108 +545,95 @@ class _EntryTileState extends State<_EntryTile> {
         return false;
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        child: PremiumSurfaceCard(
-          radius: 20,
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      catColor.withValues(alpha: 0.28),
-                      catColor.withValues(alpha: 0.12),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: catColor.withValues(alpha: 0.14)),
-                ),
-                child: Text(
-                  cat?.icon ?? '📦',
-                  style: const TextStyle(fontSize: 24),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.entry.description.isEmpty
-                          ? categoryName
-                          : widget.entry.description,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: colors.textPrimary,
-                      ),
-                    ),
-                    if (widget.entry.description.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: catColor.withValues(alpha: 0.10),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          categoryName,
-                          style: TextStyle(
-                            color: Color.lerp(
-                              catColor,
-                              colors.textPrimary,
-                              0.28,
-                            ),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
+        color: Colors.transparent,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    catColor.withValues(alpha: 0.28),
+                    catColor.withValues(alpha: 0.12),
                   ],
                 ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: catColor.withValues(alpha: 0.14)),
               ),
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
+              child: Text(cat?.icon ?? '📦', style: const TextStyle(fontSize: 24)),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.entry.description.isEmpty
+                        ? categoryName
+                        : widget.entry.description,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  if (widget.entry.description.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: catColor.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        categoryName,
+                        style: TextStyle(
+                          color: Color.lerp(catColor, colors.textPrimary, 0.28),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: widget.entry.type == EntryType.income
+                    ? AppColors.marketDownSoft.withValues(alpha: 0.92)
+                    : AppColors.marketUpSoft.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
                   color: widget.entry.type == EntryType.income
-                      ? AppColors.marketDownSoft.withValues(alpha: 0.92)
-                      : AppColors.marketUpSoft.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: widget.entry.type == EntryType.income
-                        ? AppColors.marketDown.withValues(alpha: 0.12)
-                        : AppColors.marketUp.withValues(alpha: 0.12),
-                  ),
-                ),
-                child: Text(
-                  '${widget.entry.type == EntryType.income ? '+' : '-'}${AppFormatter.formatCurrency(widget.entry.amount, currencyCode: currency, locale: locale)}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: widget.entry.type == EntryType.income
-                        ? AppColors.marketDown
-                        : AppColors.marketUp,
-                  ),
+                      ? AppColors.marketDown.withValues(alpha: 0.12)
+                      : AppColors.marketUp.withValues(alpha: 0.12),
                 ),
               ),
-            ],
-          ),
+              child: Text(
+                '${widget.entry.type == EntryType.income ? '+' : '-'}${AppFormatter.formatCurrency(widget.entry.amount, currencyCode: currency, locale: locale)}',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                  color: widget.entry.type == EntryType.income
+                      ? AppColors.marketDown
+                      : AppColors.marketUp,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -624,14 +645,12 @@ class _EntryTileState extends State<_EntryTile> {
         ? const Color(0xFF6CCB98)
         : const Color(0xFF6D9BFF);
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [baseColor, Color.lerp(baseColor, Colors.black, 0.08)!],
         ),
-        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: baseColor.withValues(alpha: 0.20),

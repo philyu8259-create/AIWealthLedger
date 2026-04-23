@@ -1098,38 +1098,55 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                               begin: Alignment.topLeft,
                                               end: Alignment.bottomRight,
                                               colors: [
-                                                Colors.white.withValues(
-                                                  alpha: 0.92,
-                                                ),
                                                 Color.lerp(
-                                                  Colors.white,
                                                   colors.background,
-                                                  0.18,
+                                                  Colors.white,
+                                                  0.34,
+                                                )!,
+                                                Color.lerp(
+                                                  colors.background,
+                                                  AppColors.cardHighlight,
+                                                  0.46,
+                                                )!,
+                                                Color.lerp(
+                                                  colors.background,
+                                                  AppColors.secondaryBackground,
+                                                  0.62,
                                                 )!,
                                               ],
+                                              stops: const [0.0, 0.52, 1.0],
                                             ),
                                             borderRadius: BorderRadius.circular(
-                                              14,
+                                              15,
                                             ),
                                             border: Border.all(
                                               color: AppColors.primary
-                                                  .withValues(alpha: 0.08),
+                                                  .withValues(alpha: 0.09),
                                             ),
                                             boxShadow: [
-                                              ...colors.softShadow,
+                                              BoxShadow(
+                                                color: AppColors.primary
+                                                    .withValues(alpha: 0.045),
+                                                blurRadius: 16,
+                                                offset: const Offset(0, 6),
+                                              ),
                                               BoxShadow(
                                                 color: Colors.white.withValues(
-                                                  alpha: 0.68,
+                                                  alpha: 0.18,
                                                 ),
-                                                blurRadius: 10,
+                                                blurRadius: 8,
                                                 offset: const Offset(0, -2),
                                               ),
                                             ],
                                           ),
                                           child: Icon(
-                                            Icons.settings_outlined,
-                                            color: colors.textPrimary,
-                                            size: 22,
+                                            Icons.settings_rounded,
+                                            color: Color.lerp(
+                                              colors.textPrimary,
+                                              AppColors.primary,
+                                              0.20,
+                                            ),
+                                            size: compact ? 18 : 19,
                                           ),
                                         ),
                                       ),
@@ -2605,7 +2622,6 @@ class _QuickChipsGridState extends State<_QuickChipsGrid> {
               return _QuickChipItem(
                 icon: c.icon,
                 name: c.name,
-                accentColor: AppColors.getCategoryColor(c.id),
                 onTap: () => widget.onTap(c.id, c.name, c.icon),
               );
             },
@@ -2620,13 +2636,11 @@ class _QuickChipsGridState extends State<_QuickChipsGrid> {
 class _QuickChipItem extends StatefulWidget {
   final String icon;
   final String name;
-  final Color accentColor;
   final VoidCallback onTap;
 
   const _QuickChipItem({
     required this.icon,
     required this.name,
-    required this.accentColor,
     required this.onTap,
   });
 
@@ -2635,48 +2649,62 @@ class _QuickChipItem extends StatefulWidget {
 }
 
 class _QuickChipItemState extends State<_QuickChipItem> {
+  Color _getCategoryColor(String name) {
+    final colors = [
+      const Color(0xFFFF9800),
+      const Color(0xFF03A9F4),
+      const Color(0xFF4CAF50),
+      const Color(0xFFE91E63),
+      const Color(0xFF9C27B0),
+      const Color(0xFF00BCD4),
+    ];
+    final index = name.hashCode.abs() % colors.length;
+    return colors[index];
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    final baseColor = _getCategoryColor(widget.name);
+
     return PressFeedback(
       onTap: widget.onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: Color.lerp(
-            const Color(0xFFF1F3F8),
-            widget.accentColor.withValues(alpha: 0.08),
-            0.55,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              baseColor.withValues(alpha: 0.12),
+              baseColor.withValues(alpha: 0.02),
+            ],
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: widget.accentColor.withValues(alpha: 0.12),
+            color: Colors.white.withValues(alpha: 0.6),
+            width: 1,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: baseColor.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 30,
-              height: 30,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: widget.accentColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                widget.icon,
-                style: const TextStyle(fontSize: 19, height: 1),
-              ),
-            ),
-            const SizedBox(width: 9),
+            Text(widget.icon, style: const TextStyle(fontSize: 20, height: 1)),
+            const SizedBox(width: 6),
             Expanded(
               child: Text(
                 widget.name,
                 style: TextStyle(
+                  color: colors.textPrimary.withValues(alpha: 0.85),
                   fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: colors.textPrimary,
+                  fontWeight: FontWeight.w600,
                   height: 1.1,
                 ),
                 overflow: TextOverflow.ellipsis,
