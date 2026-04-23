@@ -5,6 +5,25 @@ import 'i_custom_category_datasource.dart';
 
 class MockCustomCategoryDataSource implements ICustomCategoryDataSource {
   static const _storageKey = 'custom_categories';
+  static const _defaultQuickChipIds = [
+    'food',
+    'transport',
+    'shopping',
+    'housing',
+    'grocery',
+    'daily',
+  ];
+  static const _legacyQuickChipIds = [
+    'food',
+    'transport',
+    'shopping',
+    'entertainment',
+    'housing',
+    'coffee',
+    'fruit',
+    'grocery',
+    'daily',
+  ];
   final SharedPreferences _prefs;
   List<CustomCategory>? _cache;
 
@@ -69,11 +88,24 @@ class MockCustomCategoryDataSource implements ICustomCategoryDataSource {
 
   @override
   Future<List<String>> getQuickChipIds() async {
-    return _prefs.getStringList(_quickChipIdsKey) ?? [];
+    final ids = _prefs.getStringList(_quickChipIdsKey) ?? [];
+    if (_matchesLegacyQuickChipIds(ids)) {
+      await _prefs.setStringList(_quickChipIdsKey, _defaultQuickChipIds);
+      return List.from(_defaultQuickChipIds);
+    }
+    return ids;
   }
 
   @override
   Future<void> saveQuickChipIds(List<String> ids) async {
     await _prefs.setStringList(_quickChipIdsKey, ids);
+  }
+
+  bool _matchesLegacyQuickChipIds(List<String> ids) {
+    if (ids.length != _legacyQuickChipIds.length) return false;
+    for (var i = 0; i < ids.length; i++) {
+      if (ids[i] != _legacyQuickChipIds[i]) return false;
+    }
+    return true;
   }
 }

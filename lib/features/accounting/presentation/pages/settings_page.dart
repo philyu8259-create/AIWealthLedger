@@ -34,7 +34,10 @@ import '../bloc/custom_category/custom_category_state.dart';
 import '../../../../services/vip_service.dart';
 import '../../../../services/stock_service.dart';
 import '../widgets/avatar_widgets.dart';
+import '../widgets/premium_page_chrome.dart';
+import '../widgets/premium_vip_card.dart';
 import '../widgets/press_feedback.dart';
+import '../widgets/textured_scaffold_background.dart';
 
 Locale _settingsLocale() => getIt<AppProfileService>().currentLocale;
 
@@ -160,167 +163,154 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
-    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Scaffold(
-      backgroundColor: colors.background,
-      appBar: AppBar(
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF4A47D8), Color(0xFF6D5DF6)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        title: Text(
-          t.text(AppStringKeys.settingsTitle),
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isTablet = constraints.maxWidth >= 768;
-          final horizontalPadding = isTablet
-              ? 24.0
-              : (constraints.maxWidth > 520 ? 16.0 : 0.0);
-          final maxContentWidth = isTablet
-              ? (constraints.maxWidth >= 1024 ? 860.0 : 720.0)
-              : (constraints.maxWidth > 560 ? 520.0 : constraints.maxWidth);
+      backgroundColor: Colors.transparent,
+      appBar: PremiumPageAppBar(title: t.text(AppStringKeys.settingsTitle)),
+      body: TexturedScaffoldBackground(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isTablet = constraints.maxWidth >= 768;
+            final horizontalPadding = isTablet
+                ? 24.0
+                : (constraints.maxWidth > 520 ? 16.0 : 0.0);
+            final maxContentWidth = isTablet
+                ? (constraints.maxWidth >= 1024 ? 860.0 : 720.0)
+                : (constraints.maxWidth > 560 ? 520.0 : constraints.maxWidth);
 
-          return Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxContentWidth),
-              child: ListView(
-                padding: EdgeInsets.fromLTRB(
-                  horizontalPadding,
-                  0,
-                  horizontalPadding,
-                  MediaQuery.of(context).padding.bottom + 120,
-                ),
-                children: [
-                  // 会员专属卡片（页面最顶部）
-                  _VipBanner(),
-                  const SizedBox(height: 16),
-
-                  // 用户信息（带自定义头像）
-                  AvatarTile(
-                    displayName: _userDisplayName,
-                    appVersion: 'v$_appVersion',
-                    isLoggedIn: _isLoggedIn,
-                    onTap: _isLoggedIn ? null : _goToPhoneLogin,
+            return Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxContentWidth),
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    0,
+                    horizontalPadding,
+                    MediaQuery.of(context).padding.bottom + 120,
                   ),
+                  children: [
+                    // 会员专属卡片（页面最顶部）
+                    _VipBanner(),
+                    const SizedBox(height: 16),
 
-                  _SectionDivider(),
-                  _SectionHeader(t.text(AppStringKeys.settingsAccount)),
-
-                  _SettingTile(
-                    icon: Icons.category_outlined,
-                    title: t.text(AppStringKeys.settingsCustomCategoriesTitle),
-                    subtitle: t.text(
-                      AppStringKeys.settingsCustomCategoriesSubtitle,
+                    // 用户信息（带自定义头像）
+                    AvatarTile(
+                      displayName: _userDisplayName,
+                      appVersion: 'v$_appVersion',
+                      isLoggedIn: _isLoggedIn,
+                      onTap: _isLoggedIn ? null : _goToPhoneLogin,
                     ),
-                    onTap: () => _openCategoryManager(context),
-                  ),
-                  _SettingTile(
-                    icon: Icons.smart_toy_outlined,
-                    title: t.text(AppStringKeys.settingsAiConsentWithdrawTitle),
-                    subtitle: t.text(
-                      AppStringKeys.settingsAiConsentWithdrawSubtitle,
-                    ),
-                    onTap: () => _showWithdrawAIConsentDialog(context),
-                  ),
-                  if (_isLoggedIn)
+
+                    _SectionDivider(),
+                    _SectionHeader(t.text(AppStringKeys.settingsAccount)),
+
                     _SettingTile(
-                      icon: Icons.logout_rounded,
-                      title: t.text(AppStringKeys.settingsLogoutTitle),
-                      subtitle: t.text(AppStringKeys.settingsLogoutSubtitle),
-                      onTap: () => _showLogoutDialog(context),
-                    ),
-                  if (_canDeleteAccount)
-                    _SettingTile(
-                      icon: Icons.dangerous_outlined,
-                      title: t.text(AppStringKeys.settingsDeleteAccountTitle),
-                      titleColor: const Color(0xFFF56C6C),
-                      subtitle: t.text(
-                        AppStringKeys.settingsDeleteAccountSubtitle,
+                      icon: Icons.category_outlined,
+                      title: t.text(
+                        AppStringKeys.settingsCustomCategoriesTitle,
                       ),
-                      onTap: () => _showDeleteAccountDialog(context),
+                      subtitle: t.text(
+                        AppStringKeys.settingsCustomCategoriesSubtitle,
+                      ),
+                      onTap: () => _openCategoryManager(context),
+                    ),
+                    _SettingTile(
+                      icon: Icons.smart_toy_outlined,
+                      title: t.text(
+                        AppStringKeys.settingsAiConsentWithdrawTitle,
+                      ),
+                      subtitle: t.text(
+                        AppStringKeys.settingsAiConsentWithdrawSubtitle,
+                      ),
+                      onTap: () => _showWithdrawAIConsentDialog(context),
+                    ),
+                    if (_isLoggedIn)
+                      _SettingTile(
+                        icon: Icons.logout_rounded,
+                        title: t.text(AppStringKeys.settingsLogoutTitle),
+                        subtitle: t.text(AppStringKeys.settingsLogoutSubtitle),
+                        onTap: () => _showLogoutDialog(context),
+                      ),
+                    if (_canDeleteAccount)
+                      _SettingTile(
+                        icon: Icons.dangerous_outlined,
+                        title: t.text(AppStringKeys.settingsDeleteAccountTitle),
+                        titleColor: const Color(0xFFF56C6C),
+                        subtitle: t.text(
+                          AppStringKeys.settingsDeleteAccountSubtitle,
+                        ),
+                        onTap: () => _showDeleteAccountDialog(context),
+                      ),
+
+                    _SectionDivider(),
+                    _SectionHeader(t.text(AppStringKeys.settingsAppearance)),
+
+                    ListenableBuilder(
+                      listenable: getIt<ThemeModeService>(),
+                      builder: (context, _) {
+                        final themeModeService = getIt<ThemeModeService>();
+                        return _SettingTile(
+                          icon: Icons.contrast_outlined,
+                          title: t.text(AppStringKeys.settingsThemeModeTitle),
+                          subtitle: t.text(
+                            AppStringKeys.settingsThemeModeSubtitle,
+                            params: {
+                              'current': _settingsThemeModeLabel(
+                                context,
+                                themeModeService.preference,
+                              ),
+                            },
+                          ),
+                          onTap: () => _showThemeModeSheet(context),
+                        );
+                      },
                     ),
 
-                  _SectionDivider(),
-                  _SectionHeader(t.text(AppStringKeys.settingsAppearance)),
+                    _SectionDivider(),
+                    _SectionHeader(t.text(AppStringKeys.settingsData)),
 
-                  ListenableBuilder(
-                    listenable: getIt<ThemeModeService>(),
-                    builder: (context, _) {
-                      final themeModeService = getIt<ThemeModeService>();
-                      return _SettingTile(
-                        icon: Icons.contrast_outlined,
-                        title: t.text(AppStringKeys.settingsThemeModeTitle),
-                        subtitle: t.text(
-                          AppStringKeys.settingsThemeModeSubtitle,
-                          params: {
-                            'current': _settingsThemeModeLabel(
-                              context,
-                              themeModeService.preference,
-                            ),
-                          },
-                        ),
-                        onTap: () => _showThemeModeSheet(context),
-                      );
-                    },
-                  ),
+                    _SettingTile(
+                      icon: Icons.cloud_upload_outlined,
+                      title: t.text(AppStringKeys.settingsBackupTitle),
+                      subtitle: t.text(AppStringKeys.settingsBackupSubtitle),
+                      onTap: () => _doBackup(context),
+                    ),
+                    _SettingTile(
+                      key: _exportListTileKey,
+                      icon: Icons.download_outlined,
+                      title: t.text(AppStringKeys.settingsExportTitle),
+                      subtitle: t.text(AppStringKeys.settingsExportSubtitle),
+                      onTap: () => _exportData(context),
+                    ),
 
-                  _SectionDivider(),
-                  _SectionHeader(t.text(AppStringKeys.settingsData)),
+                    _SectionDivider(),
+                    _SectionHeader(t.text(AppStringKeys.settingsAbout)),
 
-                  _SettingTile(
-                    icon: Icons.cloud_upload_outlined,
-                    title: t.text(AppStringKeys.settingsBackupTitle),
-                    subtitle: t.text(AppStringKeys.settingsBackupSubtitle),
-                    onTap: () => _doBackup(context),
-                  ),
-                  _SettingTile(
-                    key: _exportListTileKey,
-                    icon: Icons.download_outlined,
-                    title: t.text(AppStringKeys.settingsExportTitle),
-                    subtitle: t.text(AppStringKeys.settingsExportSubtitle),
-                    onTap: () => _exportData(context),
-                  ),
-
-                  _SectionDivider(),
-                  _SectionHeader(t.text(AppStringKeys.settingsAbout)),
-
-                  _SettingTile(
-                    icon: Icons.privacy_tip_outlined,
-                    title: t.text(AppStringKeys.settingsPrivacyTitle),
-                    onTap: () => _openPrivacyPolicy(context),
-                  ),
-                  _SettingTile(
-                    icon: Icons.description_outlined,
-                    title: t.text(AppStringKeys.settingsTermsTitle),
-                    onTap: () => _openTermsOfService(context),
-                  ),
-                  _SettingTile(
-                    icon: Icons.star_outlined,
-                    title: t.text(AppStringKeys.settingsRateTitle),
-                    onTap: () => _rateApp(context),
-                  ),
-                  _SettingTile(
-                    icon: Icons.info_outline,
-                    title: t.text(AppStringKeys.settingsAboutAppTitle),
-                    onTap: () => _showAboutDialog(context),
-                  ),
-                ],
+                    _SettingTile(
+                      icon: Icons.privacy_tip_outlined,
+                      title: t.text(AppStringKeys.settingsPrivacyTitle),
+                      onTap: () => _openPrivacyPolicy(context),
+                    ),
+                    _SettingTile(
+                      icon: Icons.description_outlined,
+                      title: t.text(AppStringKeys.settingsTermsTitle),
+                      onTap: () => _openTermsOfService(context),
+                    ),
+                    _SettingTile(
+                      icon: Icons.star_outlined,
+                      title: t.text(AppStringKeys.settingsRateTitle),
+                      onTap: () => _rateApp(context),
+                    ),
+                    _SettingTile(
+                      icon: Icons.info_outline,
+                      title: t.text(AppStringKeys.settingsAboutAppTitle),
+                      onTap: () => _showAboutDialog(context),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -2272,97 +2262,32 @@ class _VipBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final vipService = getIt<VipService>();
     final t = AppStrings.of(context);
-    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return ListenableBuilder(
       listenable: vipService,
       builder: (context, _) {
         final isVip = vipService.isVip;
         final expireDate = vipService.expireDate;
 
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF5C6BC0), Color(0xFF3F51B5)],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: colors.softShadow,
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Text('👑', style: TextStyle(fontSize: 28)),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isVip
-                          ? t.text(AppStringKeys.vipActiveTitle)
-                          : t.text(AppStringKeys.vipOpenTitle),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      isVip
-                          ? t.text(
-                              AppStringKeys.vipExpireAt,
-                              params: {
-                                'date': expireDate != null
-                                    ? _settingsShortDate(expireDate)
-                                    : '—',
-                              },
-                            )
-                          : t.text(AppStringKeys.vipUnlockFeatures),
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PressFeedback(
-                onTap: () => _showVipPurchaseSheet(context),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white, width: 1.5),
-                  ),
-                  child: Text(
-                    isVip
-                        ? t.text(AppStringKeys.vipManage)
-                        : t.text(AppStringKeys.vipOpen),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+        return PremiumVipCard(
+          badgeLabel: t.text(AppStringKeys.vipBadgeLabel),
+          statusLabel: isVip ? t.text(AppStringKeys.vipStatusActive) : null,
+          title: isVip
+              ? t.text(AppStringKeys.vipActiveTitle)
+              : t.text(AppStringKeys.vipOpenTitle),
+          subtitle: isVip
+              ? t.text(
+                  AppStringKeys.vipExpireAt,
+                  params: {
+                    'date': expireDate != null
+                        ? _settingsShortDate(expireDate)
+                        : '—',
+                  },
+                )
+              : t.text(AppStringKeys.vipUnlockFeatures),
+          actionLabel: isVip
+              ? t.text(AppStringKeys.vipManage)
+              : t.text(AppStringKeys.vipOpen),
+          onTap: () => _showVipPurchaseSheet(context),
         );
       },
     );

@@ -16,6 +16,9 @@ import '../bloc/account_bloc.dart';
 import '../../domain/usecases/get_historical_entries.dart';
 import '../../domain/usecases/predict_spending.dart';
 import '../widgets/ai_typewriter_markdown.dart';
+import '../widgets/premium_page_chrome.dart';
+import '../widgets/premium_surface_card.dart';
+import '../widgets/textured_scaffold_background.dart';
 
 const bool _screenshotPredictionMock =
     String.fromEnvironment('SCREENSHOT_PREDICTION_MOCK', defaultValue: '') ==
@@ -329,27 +332,10 @@ class _PredictionPageState extends State<PredictionPage> {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
-    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Scaffold(
-      backgroundColor: colors.background,
-      appBar: AppBar(
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF4A47D8), Color(0xFF6D5DF6)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        title: Text(
-          t.text(AppStringKeys.predictionTitle),
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
+      backgroundColor: Colors.transparent,
+      appBar: PremiumPageAppBar(
+        title: t.text(AppStringKeys.predictionTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
@@ -357,41 +343,43 @@ class _PredictionPageState extends State<PredictionPage> {
           ),
         ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isTablet = constraints.maxWidth >= 768;
-          final horizontalPadding = isTablet
-              ? 24.0
-              : (constraints.maxWidth > 520 ? 16.0 : 0.0);
-          final maxContentWidth = isTablet
-              ? (constraints.maxWidth >= 1024 ? 860.0 : 720.0)
-              : (constraints.maxWidth > 560 ? 520.0 : constraints.maxWidth);
+      body: TexturedScaffoldBackground(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isTablet = constraints.maxWidth >= 768;
+            final horizontalPadding = isTablet
+                ? 24.0
+                : (constraints.maxWidth > 520 ? 16.0 : 0.0);
+            final maxContentWidth = isTablet
+                ? (constraints.maxWidth >= 1024 ? 860.0 : 720.0)
+                : (constraints.maxWidth > 560 ? 520.0 : constraints.maxWidth);
 
-          Widget child;
-          if (_isLoading) {
-            child = const Center(child: CircularProgressIndicator());
-          } else if (_errorMsg != null) {
-            child = Center(
-              child: _ErrorWidget(msg: _errorMsg!, onRetry: _load),
-            );
-          } else if (_prediction == null) {
-            child = Center(
-              child: Text(t.text(AppStringKeys.reportsEmptyTitle)),
-            );
-          } else {
-            child = _Body(prediction: _prediction!, history: _history);
-          }
+            Widget child;
+            if (_isLoading) {
+              child = const Center(child: CircularProgressIndicator());
+            } else if (_errorMsg != null) {
+              child = Center(
+                child: _ErrorWidget(msg: _errorMsg!, onRetry: _load),
+              );
+            } else if (_prediction == null) {
+              child = Center(
+                child: Text(t.text(AppStringKeys.reportsEmptyTitle)),
+              );
+            } else {
+              child = _Body(prediction: _prediction!, history: _history);
+            }
 
-          return Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxContentWidth),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                child: child,
+            return Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxContentWidth),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  child: child,
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -467,23 +455,27 @@ class _ErrorWidget extends StatelessWidget {
     final t = AppStrings.of(context);
     return Padding(
       padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, size: 56, color: Colors.orange.shade400),
-          const SizedBox(height: 16),
-          Text(
-            msg,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh),
-            label: Text(t.text(AppStringKeys.commonRetry)),
-          ),
-        ],
+      child: PremiumSurfaceCard(
+        radius: 28,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 56, color: Colors.orange.shade400),
+            const SizedBox(height: 16),
+            Text(
+              msg,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade600, height: 1.5),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: Text(t.text(AppStringKeys.commonRetry)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -527,14 +519,8 @@ class _InsightCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
-    final colors = Theme.of(context).extension<AppColorsExtension>()!;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: colors.softShadow,
-      ),
+    return PremiumSurfaceCard(
+      radius: 24,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -579,13 +565,8 @@ class _OverviewCard extends StatelessWidget {
     final t = AppStrings.of(context);
     final colors = Theme.of(context).extension<AppColorsExtension>()!;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: colors.softShadow,
-      ),
+    return PremiumSurfaceCard(
+      radius: 24,
       child: Column(
         children: [
           Row(
@@ -678,13 +659,8 @@ class _WarningsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
     final colors = Theme.of(context).extension<AppColorsExtension>()!;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: colors.softShadow,
-      ),
+    return PremiumSurfaceCard(
+      radius: 24,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -745,13 +721,8 @@ class _BudgetCard extends StatelessWidget {
     final sorted = recs.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: colors.softShadow,
-      ),
+    return PremiumSurfaceCard(
+      radius: 24,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -871,13 +842,8 @@ class _TrendCardState extends State<_TrendCard> {
       }
     }
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: colors.softShadow,
-      ),
+    return PremiumSurfaceCard(
+      radius: 24,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

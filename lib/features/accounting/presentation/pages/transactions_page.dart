@@ -15,6 +15,9 @@ import '../bloc/account_event.dart';
 import '../bloc/account_state.dart';
 import '../widgets/breathing_float.dart';
 import '../widgets/press_feedback.dart';
+import '../widgets/premium_page_chrome.dart';
+import '../widgets/premium_surface_card.dart';
+import '../widgets/textured_scaffold_background.dart';
 
 class TransactionsPage extends StatefulWidget {
   const TransactionsPage({super.key});
@@ -85,113 +88,33 @@ class _TransactionsPageState extends State<TransactionsPage> {
 
   /// 月份选择器：← [月份 ▼] →
   Widget _buildMonthSelector(AccountState state) {
-    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     final monthText = _monthText(state);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 360;
-        final arrowSize = compact ? 36.0 : 40.0;
-        final gap = compact ? 8.0 : 12.0;
-
-        Widget arrowButton(IconData icon, VoidCallback onTap) {
-          return PressFeedback(
-            onTap: onTap,
-            child: Container(
-              width: arrowSize,
-              height: arrowSize,
-              decoration: BoxDecoration(
-                color: const Color(0xFF4A47D8),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Icon(icon, color: Colors.white, size: compact ? 20 : 24),
-            ),
-          );
+    return PremiumMonthSwitcher(
+      label: monthText,
+      showDropdownIndicator: true,
+      onLabelTap: () => _showMonthPicker(context, state),
+      onPrevious: () {
+        final bloc = context.read<AccountBloc>();
+        int y = state.selectedYear;
+        int m = state.selectedMonth - 1;
+        if (m < 1) {
+          m = 12;
+          y--;
         }
-
-        return Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: compact ? 8 : 12,
-            vertical: compact ? 16 : 20,
-          ),
-          child: Row(
-            children: [
-              arrowButton(Icons.chevron_left, () {
-                final bloc = context.read<AccountBloc>();
-                int y = state.selectedYear;
-                int m = state.selectedMonth - 1;
-                if (m < 1) {
-                  m = 12;
-                  y--;
-                }
-                bloc.add(const FilterByDay(null));
-                bloc.add(LoadEntriesByMonth(year: y, month: m));
-              }),
-              SizedBox(width: gap),
-              Expanded(
-                child: PressFeedback(
-                  onTap: () => _showMonthPicker(context, state),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: compact ? 12 : 16,
-                      vertical: compact ? 8 : 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: AppColors.primary.withValues(alpha: 0.35),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            monthText,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: compact ? 15 : 16,
-                              fontWeight: FontWeight.bold,
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? colors.textPrimary
-                                  : const Color(0xFF4A47D8),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        Icon(
-                          Icons.arrow_drop_down,
-                          size: 20,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? colors.textPrimary
-                              : const Color(0xFF4A47D8),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: gap),
-              arrowButton(Icons.chevron_right, () {
-                final bloc = context.read<AccountBloc>();
-                int y = state.selectedYear;
-                int m = state.selectedMonth + 1;
-                if (m > 12) {
-                  m = 1;
-                  y++;
-                }
-                bloc.add(const FilterByDay(null));
-                bloc.add(LoadEntriesByMonth(year: y, month: m));
-              }),
-            ],
-          ),
-        );
+        bloc.add(const FilterByDay(null));
+        bloc.add(LoadEntriesByMonth(year: y, month: m));
+      },
+      onNext: () {
+        final bloc = context.read<AccountBloc>();
+        int y = state.selectedYear;
+        int m = state.selectedMonth + 1;
+        if (m > 12) {
+          m = 1;
+          y++;
+        }
+        bloc.add(const FilterByDay(null));
+        bloc.add(LoadEntriesByMonth(year: y, month: m));
       },
     );
   }
@@ -217,32 +140,10 @@ class _TransactionsPageState extends State<TransactionsPage> {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
-    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Scaffold(
-      backgroundColor: colors.background,
-      appBar: AppBar(
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF4A47D8), Color(0xFF6D5DF6)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              t.text(AppStringKeys.transactionsTitle),
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
+      backgroundColor: Colors.transparent,
+      appBar: PremiumPageAppBar(
+        title: t.text(AppStringKeys.transactionsTitle),
         actions: [
           PopupMenuButton<String>(
             onSelected: (v) => setState(() => _filter = v),
@@ -289,35 +190,37 @@ class _TransactionsPageState extends State<TransactionsPage> {
           const SizedBox(width: 8),
         ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isTablet = constraints.maxWidth >= 768;
-          final horizontalPadding = isTablet
-              ? 24.0
-              : (constraints.maxWidth > 520 ? 16.0 : 0.0);
-          final maxContentWidth = isTablet
-              ? (constraints.maxWidth >= 1024 ? 860.0 : 720.0)
-              : (constraints.maxWidth > 560 ? 520.0 : constraints.maxWidth);
+      body: TexturedScaffoldBackground(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isTablet = constraints.maxWidth >= 768;
+            final horizontalPadding = isTablet
+                ? 24.0
+                : (constraints.maxWidth > 520 ? 16.0 : 0.0);
+            final maxContentWidth = isTablet
+                ? (constraints.maxWidth >= 1024 ? 860.0 : 720.0)
+                : (constraints.maxWidth > 560 ? 520.0 : constraints.maxWidth);
 
-          return Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxContentWidth),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                child: BlocBuilder<AccountBloc, AccountState>(
-                  builder: (context, state) {
-                    return Column(
-                      children: [
-                        _buildMonthSelector(state),
-                        Expanded(child: _buildBody(state)),
-                      ],
-                    );
-                  },
+            return Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxContentWidth),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  child: BlocBuilder<AccountBloc, AccountState>(
+                    builder: (context, state) {
+                      return Column(
+                        children: [
+                          _buildMonthSelector(state),
+                          Expanded(child: _buildBody(state)),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -466,46 +369,78 @@ class _DateHeader extends StatelessWidget {
     final locale = getIt<AppProfileService>().currentLocale;
     final currency = getIt<AppProfileService>().currentBaseCurrency;
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final summaryTextStyle = TextStyle(
+      color: colors.textSecondary,
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+    );
     return Padding(
-      padding: const EdgeInsets.only(top: 16, bottom: 8),
+      padding: const EdgeInsets.only(top: 12, bottom: 10),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            dateText,
-            style: const TextStyle(color: Color(0xFF909399), fontSize: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? colors.secondaryBackground.withValues(alpha: 0.92)
+                  : Colors.white.withValues(alpha: 0.74),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: isDark
+                    ? colors.subtleBorder
+                    : AppColors.primary.withValues(alpha: 0.10),
+              ),
+            ),
+            child: Text(dateText, style: summaryTextStyle),
           ),
-          Row(
-            children: [
-              if (dayExpense > 0)
-                Text(
-                  '${t.text(
-                    AppStringKeys.transactionsDayExpense,
-                    params: {'amount': AppFormatter.formatCurrency(dayExpense, currencyCode: currency, locale: locale)},
-                  )}  ',
-                  style: const TextStyle(
-                    color: Color(0xFF606266),
-                    fontSize: 12,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (dayExpense > 0)
+                  _DaySummaryPill(
+                    text: t.text(
+                      AppStringKeys.transactionsDayExpense,
+                      params: {
+                        'amount': AppFormatter.formatCurrency(
+                          dayExpense,
+                          currencyCode: currency,
+                          locale: locale,
+                        ),
+                      },
+                    ),
+                    backgroundColor: AppColors.marketUpSoft.withValues(
+                      alpha: 0.86,
+                    ),
+                    borderColor: AppColors.marketUp.withValues(alpha: 0.12),
+                    foregroundColor: AppColors.marketUp,
                   ),
-                ),
-              if (dayIncome > 0)
-                Text(
-                  t.text(
-                    AppStringKeys.transactionsDayIncome,
-                    params: {
-                      'amount': AppFormatter.formatCurrency(
-                        dayIncome,
-                        currencyCode: currency,
-                        locale: locale,
-                      ),
-                    },
+                if (dayIncome > 0)
+                  _DaySummaryPill(
+                    text: t.text(
+                      AppStringKeys.transactionsDayIncome,
+                      params: {
+                        'amount': AppFormatter.formatCurrency(
+                          dayIncome,
+                          currencyCode: currency,
+                          locale: locale,
+                        ),
+                      },
+                    ),
+                    backgroundColor: AppColors.marketDownSoft.withValues(
+                      alpha: 0.86,
+                    ),
+                    borderColor: AppColors.marketDown.withValues(alpha: 0.12),
+                    foregroundColor: AppColors.marketDown,
                   ),
-                  style: const TextStyle(
-                    color: Color(0xFF606266),
-                    fontSize: 12,
-                  ),
-                ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -576,67 +511,108 @@ class _EntryTileState extends State<_EntryTile> {
         return false;
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: colors.cardBackground,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: colors.softShadow,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: catColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Text(
-                cat?.icon ?? '📦',
-                style: const TextStyle(fontSize: 24),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.entry.description.isEmpty
-                        ? categoryName
-                        : widget.entry.description,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: colors.textPrimary,
-                    ),
+        margin: const EdgeInsets.only(bottom: 10),
+        child: PremiumSurfaceCard(
+          radius: 20,
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      catColor.withValues(alpha: 0.28),
+                      catColor.withValues(alpha: 0.12),
+                    ],
                   ),
-                  if (widget.entry.description.isNotEmpty) ...[
-                    const SizedBox(height: 2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: catColor.withValues(alpha: 0.14)),
+                ),
+                child: Text(
+                  cat?.icon ?? '📦',
+                  style: const TextStyle(fontSize: 24),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      categoryName,
+                      widget.entry.description.isEmpty
+                          ? categoryName
+                          : widget.entry.description,
                       style: TextStyle(
-                        color: colors.textSecondary,
-                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: colors.textPrimary,
                       ),
                     ),
+                    if (widget.entry.description.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: catColor.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          categoryName,
+                          style: TextStyle(
+                            color: Color.lerp(
+                              catColor,
+                              colors.textPrimary,
+                              0.28,
+                            ),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            Text(
-              '${widget.entry.type == EntryType.income ? '+' : '-'}${AppFormatter.formatCurrency(widget.entry.amount, currencyCode: currency, locale: locale)}',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: widget.entry.type == EntryType.income
-                    ? const Color(0xFF67C23A)
-                    : const Color(0xFFF56C6C),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: widget.entry.type == EntryType.income
+                      ? AppColors.marketDownSoft.withValues(alpha: 0.92)
+                      : AppColors.marketUpSoft.withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: widget.entry.type == EntryType.income
+                        ? AppColors.marketDown.withValues(alpha: 0.12)
+                        : AppColors.marketUp.withValues(alpha: 0.12),
+                  ),
+                ),
+                child: Text(
+                  '${widget.entry.type == EntryType.income ? '+' : '-'}${AppFormatter.formatCurrency(widget.entry.amount, currencyCode: currency, locale: locale)}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: widget.entry.type == EntryType.income
+                        ? AppColors.marketDown
+                        : AppColors.marketUp,
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -644,14 +620,28 @@ class _EntryTileState extends State<_EntryTile> {
 
   Widget _buildSwipeBackground(DismissDirection direction) {
     final isEndToStart = direction == DismissDirection.endToStart;
+    final baseColor = isEndToStart
+        ? const Color(0xFF6CCB98)
+        : const Color(0xFF6D9BFF);
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: isEndToStart ? const Color(0xFF81C784) : const Color(0xFF64B5F6),
-        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [baseColor, Color.lerp(baseColor, Colors.black, 0.08)!],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: baseColor.withValues(alpha: 0.20),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       alignment: isEndToStart ? Alignment.centerRight : Alignment.centerLeft,
-      padding: EdgeInsets.symmetric(horizontal: isEndToStart ? 20 : 20),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -671,6 +661,7 @@ class _EntryTileState extends State<_EntryTile> {
 
   Future<void> _showEditDeleteSheet(BuildContext context) async {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     final action = await showModalBottomSheet<String>(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -681,10 +672,10 @@ class _EntryTileState extends State<_EntryTile> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.edit, color: Color(0xFF303133)),
+              leading: Icon(Icons.edit, color: colors.textPrimary),
               title: Text(
                 t.text(AppStringKeys.transactionsEditEntry),
-                style: TextStyle(color: Color(0xFF303133)),
+                style: TextStyle(color: colors.textPrimary),
               ),
               onTap: () => Navigator.pop(ctx, 'edit'),
             ),
@@ -712,6 +703,7 @@ class _EntryTileState extends State<_EntryTile> {
 
   void _showCopyReimbursementSheet(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -722,10 +714,10 @@ class _EntryTileState extends State<_EntryTile> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.content_copy, color: Color(0xFF303133)),
+              leading: Icon(Icons.content_copy, color: colors.textPrimary),
               title: Text(
                 t.text(AppStringKeys.transactionsCopyAmount),
-                style: TextStyle(color: Color(0xFF303133)),
+                style: TextStyle(color: colors.textPrimary),
               ),
               onTap: () {
                 Navigator.pop(ctx);
@@ -742,10 +734,10 @@ class _EntryTileState extends State<_EntryTile> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.receipt_long, color: Color(0xFF303133)),
+              leading: Icon(Icons.receipt_long, color: colors.textPrimary),
               title: Text(
                 t.text(AppStringKeys.transactionsReimbursement),
-                style: TextStyle(color: Color(0xFF303133)),
+                style: TextStyle(color: colors.textPrimary),
               ),
               onTap: () {
                 Navigator.pop(ctx);
@@ -780,6 +772,7 @@ class _EntryTileState extends State<_EntryTile> {
       ),
       builder: (sheetCtx) => StatefulBuilder(
         builder: (sheetCtx, setSheetState) {
+          final colors = Theme.of(sheetCtx).extension<AppColorsExtension>()!;
           return Padding(
             padding: EdgeInsets.only(
               left: 16,
@@ -847,8 +840,9 @@ class _EntryTileState extends State<_EntryTile> {
                           vertical: 14,
                         ),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade400),
-                          borderRadius: BorderRadius.circular(4),
+                          color: colors.secondaryBackground,
+                          border: Border.all(color: colors.subtleBorder),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           t.text(
@@ -867,7 +861,10 @@ class _EntryTileState extends State<_EntryTile> {
                     const SizedBox(height: 12),
                     Text(
                       t.text(AppStringKeys.transactionsSelectCategory),
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: colors.textSecondary,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -886,8 +883,13 @@ class _EntryTileState extends State<_EntryTile> {
                             decoration: BoxDecoration(
                               color: isSelected
                                   ? const Color(0xFF4A47D8)
-                                  : Colors.grey.shade100,
+                                  : colors.secondaryBackground,
                               borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.primary.withValues(alpha: 0.16)
+                                    : colors.subtleBorder,
+                              ),
                             ),
                             child: Text(
                               '${c.icon} ${localizedCategoryName(id: c.id, fallback: c.name, locale: _locale)}',
@@ -978,39 +980,93 @@ class _EmptyState extends StatelessWidget {
     final t = AppStrings.of(context);
     final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          BreathingFloat(
-            child: Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
-                shape: BoxShape.circle,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 360),
+        child: PremiumSurfaceCard(
+          radius: 28,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              BreathingFloat(
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.primary.withValues(alpha: 0.18),
+                        AppColors.primary.withValues(alpha: 0.06),
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.receipt_long_rounded,
+                    size: 34,
+                    color: AppColors.primary,
+                  ),
+                ),
               ),
-              child: const Icon(
-                Icons.receipt_long_rounded,
-                size: 32,
-                color: AppColors.primary,
+              const SizedBox(height: 24),
+              Text(
+                t.text(AppStringKeys.transactionsEmptyTitle),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
               ),
-            ),
+              const SizedBox(height: 8),
+              Text(
+                t.text(AppStringKeys.transactionsEmptySubtitle),
+                style: TextStyle(
+                  color: colors.textSecondary,
+                  fontSize: 13,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
-          const SizedBox(height: 24),
-          Text(
-            t.text(AppStringKeys.transactionsEmptyTitle),
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-              color: colors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            t.text(AppStringKeys.transactionsEmptySubtitle),
-            style: TextStyle(color: colors.textSecondary, fontSize: 13),
-          ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DaySummaryPill extends StatelessWidget {
+  const _DaySummaryPill({
+    required this.text,
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.foregroundColor,
+  });
+
+  final String text;
+  final Color backgroundColor;
+  final Color borderColor;
+  final Color foregroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: borderColor),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: foregroundColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

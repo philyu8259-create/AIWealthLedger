@@ -34,7 +34,6 @@ import 'aliyun_asr_service.dart';
 import 'aliyun_sms_service.dart';
 import 'baidu_ocr_service.dart';
 import 'cloud_service.dart';
-import 'config_service.dart';
 import 'gemini_input_parser_service.dart';
 import 'gemini_spending_prediction_service.dart';
 import 'google_vision_receipt_ocr_service.dart';
@@ -102,14 +101,9 @@ Future<void> configureDependencies() async {
     () => IntlAuthService(getIt<SharedPreferences>()),
   );
 
-  // CloudService — 后台同步到阿里云 FC（如果配置了）
-  if (ConfigService.instance.aliyunFCApi.isNotEmpty) {
-    try {
-      getIt.registerLazySingleton<CloudService>(() => CloudService());
-    } catch (_) {
-      // 未配置阿里云 FC，跳过
-    }
-  }
+  // CloudService 在未配置时会自动降级为空操作实现，因此始终注册，
+  // 避免依赖方在本地预览/离线模式下触发 GetIt runtime error。
+  getIt.registerLazySingleton<CloudService>(() => CloudService());
 
   // 数据层 — 读取优先从云端，缓存到本地 SharedPreferences
   // 写入时同步到阿里云 FC

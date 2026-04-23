@@ -75,6 +75,8 @@ class AppStringKeys {
   static const homeChooseFromLibrary = 'home.chooseFromLibrary';
   static const homeNoImage = 'home.noImage';
   static const homeRecognizingReceipt = 'home.recognizingReceipt';
+  static const homeScannerHudTitle = 'home.scannerHud.title';
+  static const homeScannerHudSubtitle = 'home.scannerHud.subtitle';
   static const homeOcrUnavailable = 'home.ocrUnavailable';
   static const homeOcrSetupRequired = 'home.ocrSetupRequired';
   static const homeOcrFailed = 'home.ocrFailed';
@@ -131,8 +133,13 @@ class AppStringKeys {
   static const reportsBalance = 'reports.balance';
   static const reportsDistribution = 'reports.distribution';
   static const reportsCategoryRank = 'reports.categoryRank';
+  static const reportsDistributionTitle = 'reports.distributionTitle';
+  static const reportsCategoryRankTitle = 'reports.categoryRankTitle';
   static const reportsEmptyTitle = 'reports.empty.title';
   static const reportsEmptySubtitle = 'reports.empty.subtitle';
+  static const reportsBreakdownEmptyTitle = 'reports.breakdownEmpty.title';
+  static const reportsBreakdownEmptySubtitle =
+      'reports.breakdownEmpty.subtitle';
   static const transactionsTitle = 'transactions.title';
   static const transactionsFilterAll = 'transactions.filter.all';
   static const transactionsFilterExpense = 'transactions.filter.expense';
@@ -416,6 +423,8 @@ class AppStringKeys {
   static const categorySystemIncomeTitle = 'category.systemIncome.title';
   static const categoryCustomIncomeTitle = 'category.customIncome.title';
   static const vipActiveTitle = 'vip.activeTitle';
+  static const vipBadgeLabel = 'vip.badgeLabel';
+  static const vipStatusActive = 'vip.statusActive';
   static const vipOpenTitle = 'vip.openTitle';
   static const vipExpireAt = 'vip.expireAt';
   static const vipExpireUntil = 'vip.expireUntil';

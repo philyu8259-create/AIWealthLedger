@@ -10,6 +10,14 @@ class QuickChipService {
     'food',
     'transport',
     'shopping',
+    'housing',
+    'grocery',
+    'daily',
+  ];
+  static const _legacyDefaultIds = [
+    'food',
+    'transport',
+    'shopping',
     'entertainment',
     'housing',
     'coffee',
@@ -28,10 +36,22 @@ class QuickChipService {
     if (saved == null || saved.isEmpty) return List.from(_defaultIds);
     try {
       final list = jsonDecode(saved) as List<dynamic>;
-      return list.cast<String>();
+      final ids = list.cast<String>();
+      if (_matchesLegacyDefaults(ids)) {
+        return List.from(_defaultIds);
+      }
+      return ids;
     } catch (_) {
       return List.from(_defaultIds);
     }
+  }
+
+  bool _matchesLegacyDefaults(List<String> ids) {
+    if (ids.length != _legacyDefaultIds.length) return false;
+    for (var i = 0; i < ids.length; i++) {
+      if (ids[i] != _legacyDefaultIds[i]) return false;
+    }
+    return true;
   }
 
   /// 保存快捷类目 ID 列表

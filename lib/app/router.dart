@@ -28,8 +28,10 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 /// 用于跨页面触发首页 AI 弹窗
 final homeAiTrigger = ValueNotifier<int>(0);
 final homeQuickAddTrigger = ValueNotifier<int>(0);
+final homeOcrHudTrigger = ValueNotifier<int>(0);
 bool _pendingHomeAiOpen = false;
 bool _pendingHomeQuickAddOpen = false;
+bool _pendingHomeOcrHudOpen = false;
 
 void queueHomeAiOpenAfterNavigation() {
   _pendingHomeAiOpen = true;
@@ -51,9 +53,20 @@ bool consumePendingHomeQuickAddOpen() {
   return true;
 }
 
+void queueHomeOcrHudOpenAfterNavigation() {
+  _pendingHomeOcrHudOpen = true;
+}
+
+bool consumePendingHomeOcrHudOpen() {
+  if (!_pendingHomeOcrHudOpen) return false;
+  _pendingHomeOcrHudOpen = false;
+  return true;
+}
+
 void clearPendingHomeOverlayRequests() {
   _pendingHomeAiOpen = false;
   _pendingHomeQuickAddOpen = false;
+  _pendingHomeOcrHudOpen = false;
 }
 
 // 初始路由由 checkFirstTime() 决定，见下方
@@ -167,6 +180,8 @@ class _SplashPageState extends State<_SplashPage> {
           queueHomeAiOpenAfterNavigation();
         } else if (_screenshotOverlay == 'quickadd') {
           queueHomeQuickAddOpenAfterNavigation();
+        } else if (_screenshotOverlay == 'ocrhud') {
+          queueHomeOcrHudOpenAfterNavigation();
         }
       }
       final targetRoute = hasLoggedIn

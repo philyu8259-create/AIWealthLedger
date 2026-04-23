@@ -72,6 +72,31 @@ abstract final class AppColors {
   static const Color disabled = Color(0xFF909399);
 
   // ── 背景色 ─────────────────────────────────────────────
+  /// 页面最底层背景（带有轻微品牌冷调的浅灰）
+  static const Color scaffoldBackground = Color(0xFFF7F8FC);
+
+  /// 二级背景/分组背景
+  static const Color secondaryBackground = Color(0xFFF0F2F8);
+
+  /// 内凹轨道/胶囊底座背景
+  static const Color recessedTrackBackground = Color(0xFFECEFF6);
+
+  /// 纯白卡片色
+  static const Color cardWhite = Colors.white;
+
+  /// 浅色卡片边缘的冷白高光
+  static const Color cardHighlight = Color(0xFFF9FAFF);
+
+  /// 极细微边框色
+  static const Color subtleBorder = Color(0xFFDDE3EF);
+
+  /// 页面背景的柔和环境渐变
+  static const List<Color> ambientGradients = [
+    Color(0xFFF7F8FC),
+    Color(0xFFF0F3FE),
+    Color(0xFFF7F8FC),
+  ];
+
   /// 卡片背景
   static const Color cardBackground = Colors.white;
 
@@ -86,14 +111,14 @@ abstract final class AppColors {
   /// 全局高级弥散阴影（替代原本生硬的纯黑高透明度阴影）
   static List<BoxShadow> get softShadow => [
     BoxShadow(
-      color: const Color(0xFF1A1A2E).withValues(alpha: 0.04),
-      blurRadius: 24,
-      offset: const Offset(0, 8),
+      color: primary.withValues(alpha: 0.03),
+      blurRadius: 30,
+      offset: const Offset(0, 12),
     ),
     BoxShadow(
-      color: const Color(0xFF1A1A2E).withValues(alpha: 0.02),
-      blurRadius: 8,
-      offset: const Offset(0, 4),
+      color: Colors.black.withValues(alpha: 0.02),
+      blurRadius: 4,
+      offset: const Offset(0, 2),
     ),
   ];
 
@@ -166,6 +191,8 @@ abstract final class AppColors {
 class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
   final Color cardBackground;
   final Color background;
+  final Color secondaryBackground;
+  final Color subtleBorder;
   final Color textPrimary;
   final Color textSecondary;
   final List<BoxShadow> softShadow;
@@ -173,33 +200,28 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
   const AppColorsExtension({
     required this.cardBackground,
     required this.background,
+    required this.secondaryBackground,
+    required this.subtleBorder,
     required this.textPrimary,
     required this.textSecondary,
     required this.softShadow,
   });
 
   static final AppColorsExtension light = AppColorsExtension(
-    cardBackground: Colors.white,
-    background: const Color(0xFFF5F6F8),
+    cardBackground: AppColors.cardWhite,
+    background: AppColors.scaffoldBackground,
+    secondaryBackground: AppColors.secondaryBackground,
+    subtleBorder: AppColors.subtleBorder,
     textPrimary: const Color(0xFF1A1A2E),
     textSecondary: const Color(0xFF909399),
-    softShadow: [
-      BoxShadow(
-        color: const Color(0xFF1A1A2E).withValues(alpha: 0.04),
-        blurRadius: 24,
-        offset: const Offset(0, 8),
-      ),
-      BoxShadow(
-        color: const Color(0xFF1A1A2E).withValues(alpha: 0.02),
-        blurRadius: 8,
-        offset: const Offset(0, 4),
-      ),
-    ],
+    softShadow: AppColors.softShadow,
   );
 
   static final AppColorsExtension dark = AppColorsExtension(
     cardBackground: const Color(0xFF1E1E2C),
     background: const Color(0xFF0F0F1A),
+    secondaryBackground: const Color(0xFF191927),
+    subtleBorder: const Color(0xFF2D2D3C),
     textPrimary: const Color(0xFFFFFFFF),
     textSecondary: const Color(0xFFA0A0B0),
     softShadow: [
@@ -215,6 +237,8 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
   ThemeExtension<AppColorsExtension> copyWith({
     Color? cardBackground,
     Color? background,
+    Color? secondaryBackground,
+    Color? subtleBorder,
     Color? textPrimary,
     Color? textSecondary,
     List<BoxShadow>? softShadow,
@@ -222,6 +246,8 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     return AppColorsExtension(
       cardBackground: cardBackground ?? this.cardBackground,
       background: background ?? this.background,
+      secondaryBackground: secondaryBackground ?? this.secondaryBackground,
+      subtleBorder: subtleBorder ?? this.subtleBorder,
       textPrimary: textPrimary ?? this.textPrimary,
       textSecondary: textSecondary ?? this.textSecondary,
       softShadow: softShadow ?? this.softShadow,
@@ -237,6 +263,12 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     return AppColorsExtension(
       cardBackground: Color.lerp(cardBackground, other.cardBackground, t)!,
       background: Color.lerp(background, other.background, t)!,
+      secondaryBackground: Color.lerp(
+        secondaryBackground,
+        other.secondaryBackground,
+        t,
+      )!,
+      subtleBorder: Color.lerp(subtleBorder, other.subtleBorder, t)!,
       textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
       textSecondary: Color.lerp(textSecondary, other.textSecondary, t)!,
       softShadow: t < 0.5 ? softShadow : other.softShadow,

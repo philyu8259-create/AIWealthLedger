@@ -16,6 +16,9 @@ import '../../domain/entities/stock_position.dart';
 import '../../domain/repositories/asset_repository.dart';
 import '../widgets/parallax_asset_card.dart';
 import '../widgets/press_feedback.dart';
+import '../widgets/premium_page_chrome.dart';
+import '../widgets/premium_surface_card.dart';
+import '../widgets/textured_scaffold_background.dart';
 
 Locale _localeFromTag(String raw) {
   final parts = raw.split(RegExp('[-_]'));
@@ -531,13 +534,10 @@ class _AssetManagementPageState extends State<AssetManagementPage>
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
-    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Scaffold(
-      backgroundColor: colors.background,
-      appBar: AppBar(
-        title: Text(t.text(AppStringKeys.assetsTitle)),
-        backgroundColor: const Color(0xFF4A47D8),
-        foregroundColor: Colors.white,
+      backgroundColor: Colors.transparent,
+      appBar: PremiumPageAppBar(
+        title: t.text(AppStringKeys.assetsTitle),
         actions: [
           IconButton(
             onPressed: _refreshingQuotes ? null : _manualRefreshQuotes,
@@ -554,150 +554,152 @@ class _AssetManagementPageState extends State<AssetManagementPage>
           ),
         ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isTablet = constraints.maxWidth >= 768;
-          final horizontalPadding = isTablet
-              ? 24.0
-              : (constraints.maxWidth > 520 ? 16.0 : 0.0);
-          final maxContentWidth = isTablet
-              ? (constraints.maxWidth >= 1024 ? 860.0 : 720.0)
-              : (constraints.maxWidth > 620 ? 520.0 : constraints.maxWidth);
+      body: TexturedScaffoldBackground(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isTablet = constraints.maxWidth >= 768;
+            final horizontalPadding = isTablet
+                ? 24.0
+                : (constraints.maxWidth > 520 ? 16.0 : 0.0);
+            final maxContentWidth = isTablet
+                ? (constraints.maxWidth >= 1024 ? 860.0 : 720.0)
+                : (constraints.maxWidth > 620 ? 520.0 : constraints.maxWidth);
 
-          if (_loading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+            if (_loading) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          return Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxContentWidth),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                child: RefreshIndicator(
-                  onRefresh: () => _loadAll(autoRefreshQuotes: true),
-                  child: ListView(
-                    padding: EdgeInsets.fromLTRB(
-                      16,
-                      16,
-                      16,
-                      MediaQuery.of(context).padding.bottom + 130,
+            return Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxContentWidth),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  child: RefreshIndicator(
+                    onRefresh: () => _loadAll(autoRefreshQuotes: true),
+                    child: ListView(
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        16,
+                        16,
+                        MediaQuery.of(context).padding.bottom + 130,
+                      ),
+                      children: [
+                        _AssetSummaryCard(
+                          totalAssets: _totalAssets,
+                          stockMarketValue: _stockMarketValue,
+                          otherAssetsTotal: _otherAssetsTotal,
+                          stockRatio: _totalAssets <= 0
+                              ? 0
+                              : _stockMarketValue / _totalAssets,
+                          stockProfitAmount: _stockProfitAmount,
+                          stockProfitPercent: _stockProfitPercent,
+                          stockCount: _stocks.length,
+                        ),
+                        const SizedBox(height: 16),
+                        _SectionHeader(
+                          title: t.text(AppStringKeys.assetsStocksSection),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _ActionPill(
+                                icon: _refreshingQuotes ? null : Icons.refresh,
+                                label: _refreshingQuotes
+                                    ? t.text(AppStringKeys.assetsRefreshing)
+                                    : (_lastQuoteUpdatedAt == null
+                                          ? t.text(
+                                              AppStringKeys.assetsRefreshQuotes,
+                                            )
+                                          : AppFormatter.formatShortDate(
+                                              _lastQuoteUpdatedAt!,
+                                              locale: getIt<AppProfileService>()
+                                                  .currentLocale,
+                                            )),
+                                onTap: _refreshingQuotes
+                                    ? null
+                                    : _manualRefreshQuotes,
+                                loading: _refreshingQuotes,
+                                outlined: true,
+                              ),
+                              const SizedBox(width: 8),
+                              _ActionPill(
+                                icon: Icons.add,
+                                label: t.text(AppStringKeys.assetsAddStock),
+                                onTap: () => _showStockForm(),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        if (_stocks.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _StockOverviewStrip(
+                              stockCount: _stocks.length,
+                              stockMarketValue: _stockMarketValue,
+                              stockProfitAmount: _stockProfitAmount,
+                              stockProfitPercent: _stockProfitPercent,
+                            ),
+                          ),
+                        if (_stocks.isEmpty)
+                          _AssetEmptyCard(
+                            icon: '📈',
+                            title: t.text(AppStringKeys.assetsEmptyStocksTitle),
+                            subtitle: t.text(
+                              AppStringKeys.assetsEmptyStocksSubtitle,
+                            ),
+                          )
+                        else
+                          ..._stocks.map(
+                            (stock) => _StockTile(
+                              position: stock,
+                              onEdit: () => _showStockForm(position: stock),
+                              onDelete: () => _confirmDeleteStock(stock),
+                            ),
+                          ),
+                        const SizedBox(height: 16),
+                        _SectionHeader(
+                          title: t.text(AppStringKeys.assetsOtherSection),
+                          trailing: _ActionPill(
+                            icon: Icons.add,
+                            label: t.text(AppStringKeys.assetsAddAsset),
+                            onTap: () => _showAssetForm(),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        if (_assets.isEmpty)
+                          _AssetEmptyCard(
+                            icon: '💼',
+                            title: t.text(AppStringKeys.assetsEmptyOtherTitle),
+                            subtitle: t.text(
+                              AppStringKeys.assetsEmptyOtherSubtitle,
+                            ),
+                          )
+                        else
+                          ..._assets.map(
+                            (asset) => _OtherAssetTile(
+                              asset: asset,
+                              onEdit: () => _showAssetForm(asset: asset),
+                              onDelete: () => _confirmDeleteAsset(asset),
+                            ),
+                          ),
+                        const SizedBox(height: 16),
+                        _SectionHeader(
+                          title: t.text(AppStringKeys.assetsConfigSection),
+                        ),
+                        const SizedBox(height: 8),
+                        _ConfigCard(
+                          searchCacheUpdatedAtMs:
+                              _stockService.searchCacheUpdatedAtMs,
+                          error: _error,
+                        ),
+                      ],
                     ),
-                    children: [
-                      _AssetSummaryCard(
-                        totalAssets: _totalAssets,
-                        stockMarketValue: _stockMarketValue,
-                        otherAssetsTotal: _otherAssetsTotal,
-                        stockRatio: _totalAssets <= 0
-                            ? 0
-                            : _stockMarketValue / _totalAssets,
-                        stockProfitAmount: _stockProfitAmount,
-                        stockProfitPercent: _stockProfitPercent,
-                        stockCount: _stocks.length,
-                      ),
-                      const SizedBox(height: 16),
-                      _SectionHeader(
-                        title: t.text(AppStringKeys.assetsStocksSection),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _ActionPill(
-                              icon: _refreshingQuotes ? null : Icons.refresh,
-                              label: _refreshingQuotes
-                                  ? t.text(AppStringKeys.assetsRefreshing)
-                                  : (_lastQuoteUpdatedAt == null
-                                        ? t.text(
-                                            AppStringKeys.assetsRefreshQuotes,
-                                          )
-                                        : AppFormatter.formatShortDate(
-                                            _lastQuoteUpdatedAt!,
-                                            locale: getIt<AppProfileService>()
-                                                .currentLocale,
-                                          )),
-                              onTap: _refreshingQuotes
-                                  ? null
-                                  : _manualRefreshQuotes,
-                              loading: _refreshingQuotes,
-                              outlined: true,
-                            ),
-                            const SizedBox(width: 8),
-                            _ActionPill(
-                              icon: Icons.add,
-                              label: t.text(AppStringKeys.assetsAddStock),
-                              onTap: () => _showStockForm(),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      if (_stocks.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _StockOverviewStrip(
-                            stockCount: _stocks.length,
-                            stockMarketValue: _stockMarketValue,
-                            stockProfitAmount: _stockProfitAmount,
-                            stockProfitPercent: _stockProfitPercent,
-                          ),
-                        ),
-                      if (_stocks.isEmpty)
-                        _AssetEmptyCard(
-                          icon: '📈',
-                          title: t.text(AppStringKeys.assetsEmptyStocksTitle),
-                          subtitle: t.text(
-                            AppStringKeys.assetsEmptyStocksSubtitle,
-                          ),
-                        )
-                      else
-                        ..._stocks.map(
-                          (stock) => _StockTile(
-                            position: stock,
-                            onEdit: () => _showStockForm(position: stock),
-                            onDelete: () => _confirmDeleteStock(stock),
-                          ),
-                        ),
-                      const SizedBox(height: 16),
-                      _SectionHeader(
-                        title: t.text(AppStringKeys.assetsOtherSection),
-                        trailing: _ActionPill(
-                          icon: Icons.add,
-                          label: t.text(AppStringKeys.assetsAddAsset),
-                          onTap: () => _showAssetForm(),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      if (_assets.isEmpty)
-                        _AssetEmptyCard(
-                          icon: '💼',
-                          title: t.text(AppStringKeys.assetsEmptyOtherTitle),
-                          subtitle: t.text(
-                            AppStringKeys.assetsEmptyOtherSubtitle,
-                          ),
-                        )
-                      else
-                        ..._assets.map(
-                          (asset) => _OtherAssetTile(
-                            asset: asset,
-                            onEdit: () => _showAssetForm(asset: asset),
-                            onDelete: () => _confirmDeleteAsset(asset),
-                          ),
-                        ),
-                      const SizedBox(height: 16),
-                      _SectionHeader(
-                        title: t.text(AppStringKeys.assetsConfigSection),
-                      ),
-                      const SizedBox(height: 8),
-                      _ConfigCard(
-                        searchCacheUpdatedAtMs:
-                            _stockService.searchCacheUpdatedAtMs,
-                        error: _error,
-                      ),
-                    ],
                   ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -725,7 +727,6 @@ class _AssetSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
-    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     final profitColor = _marketChangeBgColor(stockProfitAmount);
     final profitTextColor = _marketChangeColor(stockProfitAmount);
 
@@ -733,11 +734,14 @@ class _AssetSummaryCard extends StatelessWidget {
       children: [
         ParallaxAssetCard(totalAssets: totalAssets),
         Container(
+          margin: const EdgeInsets.only(top: 6),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: colors.cardBackground,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: colors.softShadow,
+            color: AppColors.primary.withValues(alpha: 0.055),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.06),
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -814,32 +818,35 @@ class _SummaryMiniCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final titleColor = const Color(0xFF909399);
-    final valueColor = const Color(0xFF303133);
-    final subtitleColor = const Color(0xFF909399);
-    final bgColor = const Color(0xFFF8F8F8);
-
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.white.withValues(alpha: 0.38),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(color: titleColor, fontSize: 12)),
+          Text(
+            title,
+            style: TextStyle(color: colors.textSecondary, fontSize: 12),
+          ),
           const SizedBox(height: 6),
           Text(
             value,
             style: TextStyle(
-              color: valueColor,
+              color: colors.textPrimary,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 4),
-          Text(subtitle, style: TextStyle(color: subtitleColor, fontSize: 11)),
+          Text(
+            subtitle,
+            style: TextStyle(color: colors.textSecondary, fontSize: 11),
+          ),
         ],
       ),
     );
@@ -884,8 +891,11 @@ class _ActionPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final background = outlined ? Colors.white : const Color(0xFF4A47D8);
-    final foreground = outlined ? const Color(0xFF4A47D8) : Colors.white;
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    final background = outlined
+        ? Colors.white.withValues(alpha: 0.92)
+        : AppColors.primary;
+    final foreground = outlined ? AppColors.primaryDark : Colors.white;
 
     return PressFeedback(
       onTap: onTap,
@@ -895,17 +905,22 @@ class _ActionPill extends StatelessWidget {
           color: background,
           borderRadius: BorderRadius.circular(999),
           border: outlined
-              ? Border.all(
-                  color: const Color(0xFF4A47D8).withValues(alpha: 0.3),
-                )
+              ? Border.all(color: AppColors.primary.withValues(alpha: 0.20))
               : null,
           boxShadow: outlined
-              ? null
+              ? [
+                  ...colors.softShadow,
+                  BoxShadow(
+                    color: Colors.white.withValues(alpha: 0.60),
+                    blurRadius: 8,
+                    offset: const Offset(0, -2),
+                  ),
+                ]
               : [
                   BoxShadow(
-                    color: const Color(0xFF4A47D8).withValues(alpha: 0.18),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
+                    color: AppColors.primary.withValues(alpha: 0.20),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
                   ),
                 ],
         ),
@@ -955,14 +970,15 @@ class _StockOverviewStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     final profitColor = _marketChangeColor(stockProfitAmount);
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE5EAF3)),
+        color: AppColors.primary.withValues(alpha: 0.055),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.06)),
       ),
       child: Row(
         children: [
@@ -972,7 +988,7 @@ class _StockOverviewStrip extends StatelessWidget {
               value: _profileMoney(stockMarketValue),
             ),
           ),
-          Container(width: 1, height: 36, color: const Color(0xFFE5EAF3)),
+          Container(width: 1, height: 36, color: colors.subtleBorder),
           Expanded(
             child: _MiniMetric(
               label: t.text(AppStringKeys.assetsStockProfitLabel),
@@ -992,21 +1008,22 @@ class _MiniMetric extends StatelessWidget {
   const _MiniMetric({
     required this.label,
     required this.value,
-    this.valueColor = const Color(0xFF303133),
+    this.valueColor,
   });
 
   final String label;
   final String value;
-  final Color valueColor;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+          style: TextStyle(fontSize: 11, color: colors.textSecondary),
         ),
         const SizedBox(height: 6),
         Text(
@@ -1015,7 +1032,7 @@ class _MiniMetric extends StatelessWidget {
             fontSize: 13,
             height: 1.3,
             fontWeight: FontWeight.w700,
-            color: valueColor,
+            color: valueColor ?? colors.textPrimary,
           ),
         ),
       ],
@@ -1036,13 +1053,14 @@ class _AssetEmptyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        color: AppColors.primary.withValues(alpha: 0.055),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.06)),
       ),
       child: Column(
         children: [
@@ -1055,7 +1073,7 @@ class _AssetEmptyCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+            style: TextStyle(color: colors.textSecondary, fontSize: 12),
           ),
         ],
       ),
@@ -1077,6 +1095,7 @@ class _StockTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     final quoteColor = _marketChangeColor(position.changePercent);
     final profit = position.profitAmount;
     final profitPercent = position.profitPercent;
@@ -1096,20 +1115,10 @@ class _StockTile extends StatelessWidget {
             locale: locale,
           );
 
-    return Container(
+    return PremiumSurfaceCard(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+      radius: 20,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1135,9 +1144,7 @@ class _StockTile extends StatelessWidget {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF4A47D8,
-                            ).withValues(alpha: 0.1),
+                            color: AppColors.primary.withValues(alpha: 0.10),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -1166,7 +1173,7 @@ class _StockTile extends StatelessWidget {
                         },
                       ),
                       style: TextStyle(
-                        color: Colors.grey.shade600,
+                        color: colors.textSecondary,
                         fontSize: 12,
                       ),
                     ),
@@ -1224,7 +1231,7 @@ class _StockTile extends StatelessWidget {
                     currencyCode: position.marketCurrency,
                     locale: locale,
                   ),
-                  valueColor: const Color(0xFF303133),
+                  valueColor: colors.textPrimary,
                 ),
               ),
             ],
@@ -1235,8 +1242,16 @@ class _StockTile extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8F8F8),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.80),
+                    Color.lerp(Colors.white, colors.secondaryBackground, 0.94)!,
+                  ],
+                ),
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colors.subtleBorder),
               ),
               child: Row(
                 children: [
@@ -1253,7 +1268,7 @@ class _StockTile extends StatelessWidget {
                         },
                       ),
                       style: TextStyle(
-                        color: Colors.grey.shade700,
+                        color: colors.textSecondary,
                         fontSize: 12,
                       ),
                     ),
@@ -1294,6 +1309,7 @@ class _QuoteStatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     final (bg, fg) = switch (status) {
       StockQuoteStatus.normal => (
         const Color(0xFFEAF7EE),
@@ -1304,8 +1320,8 @@ class _QuoteStatusBadge extends StatelessWidget {
         const Color(0xFFE6A23C),
       ),
       StockQuoteStatus.loading => (
-        const Color(0xFFF4F4F5),
-        const Color(0xFF909399),
+        colors.secondaryBackground,
+        colors.textSecondary,
       ),
     };
 
@@ -1327,21 +1343,22 @@ class _MetricItem extends StatelessWidget {
   const _MetricItem({
     required this.label,
     required this.value,
-    this.valueColor = const Color(0xFF303133),
+    this.valueColor,
   });
 
   final String label;
   final String value;
-  final Color valueColor;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+          style: TextStyle(fontSize: 12, color: colors.textSecondary),
         ),
         const SizedBox(height: 4),
         Text(
@@ -1349,7 +1366,7 @@ class _MetricItem extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: valueColor,
+            color: valueColor ?? colors.textPrimary,
           ),
         ),
       ],
@@ -1371,19 +1388,28 @@ class _OtherAssetTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    final badgeColor = const Color(0xFFFFA11A);
 
-    return Card(
+    return PremiumSurfaceCard(
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
         leading: Container(
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: const Color(0xFFFFA11A),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                badgeColor.withValues(alpha: 0.82),
+                badgeColor.withValues(alpha: 0.54),
+              ],
+            ),
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFFFA11A).withValues(alpha: 0.28),
+                color: badgeColor.withValues(alpha: 0.24),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -1405,12 +1431,12 @@ class _OtherAssetTile extends StatelessWidget {
           children: [
             Text(
               _localizedAssetTypeName(asset.type, locale),
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+              style: TextStyle(color: colors.textSecondary, fontSize: 12),
             ),
             if (asset.description != null && asset.description!.isNotEmpty)
               Text(
                 asset.description!,
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                style: TextStyle(color: colors.textSecondary, fontSize: 11),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -1428,7 +1454,7 @@ class _OtherAssetTile extends StatelessWidget {
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 15,
-                color: Color(0xFF4A47D8),
+                color: AppColors.primaryDark,
               ),
             ),
             PopupMenuButton<String>(
@@ -1478,12 +1504,13 @@ class _ConfigCardState extends State<_ConfigCard> {
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
     final cacheText = _stockCacheText(t, widget.searchCacheUpdatedAtMs);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        color: AppColors.primary.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.06)),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -1530,7 +1557,7 @@ class _ConfigCardState extends State<_ConfigCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Divider(height: 1, color: Color(0xFFF2F4F7)),
+                  Divider(height: 1, color: colors.subtleBorder),
                   const SizedBox(height: 12),
                   _ConfigRow(
                     label: t.text(AppStringKeys.assetsConfigSearchCache),

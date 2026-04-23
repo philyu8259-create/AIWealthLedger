@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ $# -lt 5 ]]; then
-  echo "Usage: $0 <device_udid> <flavor:cn|intl> <route> <overlay:none|ai|quickadd|reportsmock|predictionmock> <output_png>" >&2
+  echo "Usage: $0 <device_udid> <flavor:cn|intl> <route> <overlay:none|ai|quickadd|ocrhud|reportsmock|predictionmock> <output_png>" >&2
   exit 1
 fi
 
@@ -46,7 +46,7 @@ if [[ -n "${SCREENSHOT_TARGET_ROUTE:-}" ]]; then
 fi
 if [[ "$OVERLAY" != "none" ]]; then
   case "$OVERLAY" in
-    ai|quickadd)
+    ai|quickadd|ocrhud)
       DEFINE_ARGS+=("--dart-define=SCREENSHOT_OVERLAY=$OVERLAY")
       ;;
     reportsmock)
@@ -90,7 +90,7 @@ if [[ "$READY" -ne 1 ]]; then
 fi
 
 sleep 4
-if [[ "$OVERLAY" == "ai" || "$OVERLAY" == "quickadd" ]]; then
+if [[ "$OVERLAY" == "ai" || "$OVERLAY" == "quickadd" || "$OVERLAY" == "ocrhud" ]]; then
   sleep 3
 fi
 xcrun simctl io "$DEVICE_UDID" screenshot "$OUTPUT_PNG" >/dev/null
