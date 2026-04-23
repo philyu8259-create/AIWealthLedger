@@ -39,6 +39,7 @@ import '../widgets/ai_scanner_hud.dart';
 import '../widgets/ai_sparkles_icon.dart';
 import '../widgets/custom_numpad_sheet.dart';
 import '../widgets/premium_capsule_button.dart';
+import '../widgets/premium_hero_card.dart';
 import '../widgets/premium_surface_card.dart';
 import '../widgets/section_header.dart';
 import '../widgets/shimmer_loading.dart';
@@ -1114,36 +1115,42 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
                               // ── 3. 本月收支汇总卡片 ────────────────────────────────
                               SliverToBoxAdapter(
-                                child: _HeroBalanceCard(
-                                  monthLabel: _homeMonthShortLabel(
-                                    state.selectedYear,
-                                    state.selectedMonth,
-                                  ),
-                                  expense: state.totalExpense.toDouble(),
-                                  income: state.totalIncome.toDouble(),
-                                  expenseTrend:
-                                      state.lastMonthExpense != null &&
-                                          state.lastMonthExpense! > 0
-                                      ? t.text(
-                                          AppStringKeys.homeVsLastMonth,
-                                          params: {
-                                            'direction':
-                                                state.totalExpense >=
-                                                    state.lastMonthExpense!
-                                                ? '↑'
-                                                : '↓',
-                                            'percent':
-                                                (((state.totalExpense -
-                                                                    state
-                                                                        .lastMonthExpense!) /
-                                                                state
-                                                                    .lastMonthExpense!)
-                                                            .abs() *
-                                                        100)
-                                                    .toStringAsFixed(0),
-                                          },
-                                        )
-                                      : null,
+                                child: Builder(
+                                  builder: (context) {
+                                    final isZh =
+                                        Localizations.localeOf(
+                                          context,
+                                        ).languageCode ==
+                                        'zh';
+                                    final monthLabel = _homeMonthShortLabel(
+                                      state.selectedYear,
+                                      state.selectedMonth,
+                                    );
+                                    final monthBalance =
+                                        state.totalIncome.toDouble() -
+                                        state.totalExpense.toDouble();
+
+                                    return PremiumHeroCard(
+                                      title: isZh
+                                          ? '$monthLabel结余'
+                                          : '$monthLabel Balance',
+                                      balanceText: _homeMoney(monthBalance),
+                                      incomeLabel: t.text(
+                                        AppStringKeys.homeMonthIncome,
+                                        params: {'month': monthLabel},
+                                      ),
+                                      incomeText: _homeMoney(
+                                        state.totalIncome.toDouble(),
+                                      ),
+                                      expenseLabel: t.text(
+                                        AppStringKeys.homeMonthExpense,
+                                        params: {'month': monthLabel},
+                                      ),
+                                      expenseText: _homeMoney(
+                                        state.totalExpense.toDouble(),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
 
@@ -2423,257 +2430,6 @@ class _CategorySection extends StatelessWidget {
 }
 
 // ── 动态快捷类目网格 ───────────────────────────────────────────
-class _HeroBalanceCard extends StatelessWidget {
-  const _HeroBalanceCard({
-    required this.monthLabel,
-    required this.expense,
-    required this.income,
-    required this.expenseTrend,
-  });
-
-  final String monthLabel;
-  final double expense;
-  final double income;
-  final String? expenseTrend;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppStrings.of(context);
-    final balance = income - expense;
-    final isZh = Localizations.localeOf(context).languageCode == 'zh';
-    final balanceLabel = isZh ? '结余' : 'Balance';
-    final balanceTone = balance >= 0
-        ? (isZh ? '现金流稳健' : 'Cash flow steady')
-        : (isZh ? '支出偏高' : 'Spending elevated');
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 0, 20, 4),
-      padding: const EdgeInsets.fromLTRB(18, 14, 18, 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF5B42F3), Color(0xFF3A38C8)],
-        ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.24),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: -34,
-            right: -12,
-            child: IgnorePointer(
-              child: Container(
-                width: 112,
-                height: 112,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      Colors.white.withValues(alpha: 0.14),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            t.text(
-                              AppStringKeys.homeMonthExpense,
-                              params: {'month': monthLabel},
-                            ),
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.72),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            _homeMoney(expense),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 30,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -1.1,
-                              height: 1,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        if (expenseTrend != null)
-                          _HeroMetaPill(
-                            text: expenseTrend!,
-                            foregroundColor: Colors.white.withValues(
-                              alpha: 0.78,
-                            ),
-                          ),
-                        if (expenseTrend != null) const SizedBox(height: 8),
-                        _HeroMetaPill(
-                          text: balanceTone,
-                          foregroundColor: Colors.white.withValues(alpha: 0.92),
-                          backgroundColor: Colors.white.withValues(alpha: 0.15),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.09),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.08),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _HeroInlineMetric(
-                        label: t.text(
-                          AppStringKeys.homeMonthIncome,
-                          params: {'month': monthLabel},
-                        ),
-                        amountText: _homeMoney(income),
-                      ),
-                    ),
-                    Container(
-                      width: 1,
-                      height: 16,
-                      margin: const EdgeInsets.symmetric(horizontal: 10),
-                      color: Colors.white.withValues(alpha: 0.14),
-                    ),
-                    Expanded(
-                      child: _HeroInlineMetric(
-                        label: balanceLabel,
-                        amountText:
-                            '${balance >= 0 ? '+' : '-'}${_homeMoney(balance.abs())}',
-                        alignEnd: true,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HeroMetaPill extends StatelessWidget {
-  const _HeroMetaPill({
-    required this.text,
-    this.backgroundColor,
-    this.foregroundColor,
-  });
-
-  final String text;
-  final Color? backgroundColor;
-  final Color? foregroundColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final resolvedText = text;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color:
-            backgroundColor ?? Colors.white.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Text(
-        resolvedText,
-        style: TextStyle(
-          color: foregroundColor ?? Colors.white.withValues(alpha: 0.78),
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          height: 1,
-        ),
-      ),
-    );
-  }
-}
-
-class _HeroInlineMetric extends StatelessWidget {
-  const _HeroInlineMetric({
-    required this.label,
-    required this.amountText,
-    this.alignEnd = false,
-  });
-
-  final String label;
-  final String amountText;
-  final bool alignEnd;
-
-  @override
-  Widget build(BuildContext context) {
-    return RichText(
-      textAlign: alignEnd ? TextAlign.end : TextAlign.start,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      text: TextSpan(
-        children: [
-          TextSpan(
-            text: '$label ',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.66),
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          TextSpan(
-            text: amountText,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.2,
-              height: 1,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class TintedSurfaceCard extends StatelessWidget {
   const TintedSurfaceCard({
     super.key,
