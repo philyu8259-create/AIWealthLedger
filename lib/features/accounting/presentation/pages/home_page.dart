@@ -113,7 +113,7 @@ bool _homeOcrReady() {
     case OcrProviderType.googleExpenseParser:
       return ConfigService.instance.isGoogleVisionConfigured;
     case OcrProviderType.legacyCnOcr:
-      return true;
+      return ConfigService.instance.isBaiduOcrConfigured;
   }
 }
 
@@ -781,16 +781,23 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     );
     final type = isIncome ? 'income' : 'expense';
     final entryType = isIncome ? EntryType.income : EntryType.expense;
+    String? submittedAmount;
 
-    final amount = await showModalBottomSheet<double>(
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.4),
       builder: (ctx) =>
-          CustomNumpadSheet(title: '$icon $note', isIncome: isIncome),
+          CustomNumpadSheet(
+            title: '$icon $note',
+            isIncome: isIncome,
+            onSubmit: (value) => submittedAmount = value,
+          ),
     );
 
-    if (!mounted || amount == null || amount <= 0) return;
+    final amount = double.tryParse(submittedAmount ?? '') ?? 0;
+    if (!mounted || amount <= 0) return;
 
     await _confirmAndSave([
       ParsedResult(
@@ -2731,6 +2738,7 @@ class _RecentEntryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final catDef =
         CategoryDef.findById(entry.category) ??
         CategoryDef(
@@ -2742,6 +2750,26 @@ class _RecentEntryRow extends StatelessWidget {
         );
     final categoryName = categoryNameResolver(catDef.id, catDef.name);
     final catColor = AppColors.getCategoryColor(catDef.id);
+    final iconPlateGradient = isDark
+        ? [
+            catColor.withValues(alpha: 0.22),
+            catColor.withValues(alpha: 0.10),
+          ]
+        : [
+            catColor.withValues(alpha: 0.18),
+            catColor.withValues(alpha: 0.08),
+          ];
+    final categoryPillBackground = isDark
+        ? catColor.withValues(alpha: 0.16)
+        : catColor.withValues(alpha: 0.09);
+    final categoryPillForeground = isDark
+        ? Color.lerp(catColor, Colors.white, 0.22)!
+        : catColor;
+    final amountColor = entry.type == EntryType.income
+        ? (isDark
+              ? Color.lerp(AppColors.primary, Colors.white, 0.24)!
+              : AppColors.primary)
+        : colors.textPrimary;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -2755,12 +2783,14 @@ class _RecentEntryRow extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  catColor.withValues(alpha: 0.18),
-                  catColor.withValues(alpha: 0.08),
-                ],
+                colors: iconPlateGradient,
               ),
               borderRadius: BorderRadius.circular(15),
+              border: Border.all(
+                color: isDark
+                    ? catColor.withValues(alpha: 0.14)
+                    : catColor.withValues(alpha: 0.08),
+              ),
             ),
             child: Text(catDef.icon, style: const TextStyle(fontSize: 21)),
           ),
@@ -2786,14 +2816,14 @@ class _RecentEntryRow extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: catColor.withValues(alpha: 0.09),
+                        color: categoryPillBackground,
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
                         categoryName,
                         style: TextStyle(
                           fontSize: 11,
-                          color: catColor,
+                          color: categoryPillForeground,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -2820,9 +2850,7 @@ class _RecentEntryRow extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: entry.type == EntryType.income
-                      ? AppColors.primary
-                      : colors.textPrimary,
+                  color: amountColor,
                 ),
               ),
               const SizedBox(height: 4),
@@ -2834,7 +2862,9 @@ class _RecentEntryRow extends StatelessWidget {
                 ),
                 style: TextStyle(
                   fontSize: 11,
-                  color: colors.textSecondary,
+                  color: colors.textSecondary.withValues(
+                    alpha: isDark ? 0.76 : 1.0,
+                  ),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -2862,19 +2892,45 @@ class _RecentEntryGroupSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final dayNet = group.entries.fold<double>(
       0,
       (sum, entry) =>
           sum + (entry.type == EntryType.income ? entry.amount : -entry.amount),
     );
     final isPositive = dayNet >= 0;
+    final sectionBackground = isDark
+        ? LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color.lerp(colors.cardBackground, colors.secondaryBackground, 0.20)!,
+              Color.lerp(colors.cardBackground, Colors.black, 0.10)!,
+            ],
+          )
+        : null;
+    final sectionColor = isDark ? null : Colors.white.withValues(alpha: 0.52);
+    final headerBackground = isDark
+        ? AppColors.primary.withValues(alpha: 0.10)
+        : AppColors.primary.withValues(alpha: 0.06);
+    final outlineColor = isDark
+        ? colors.subtleBorder.withValues(alpha: 0.55)
+        : AppColors.primary.withValues(alpha: 0.05);
+    final dividerColor = isDark
+        ? colors.subtleBorder.withValues(alpha: 0.34)
+        : AppColors.listDivider.withValues(alpha: 0.9);
+    final netColor = isPositive
+        ? (isDark
+              ? Color.lerp(AppColors.primary, Colors.white, 0.24)!
+              : AppColors.primary)
+        : colors.textPrimary;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.52),
+        color: sectionColor,
+        gradient: sectionBackground,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.05),
-        ),
+        border: Border.all(color: outlineColor),
       ),
       child: Column(
         children: [
@@ -2883,8 +2939,13 @@ class _RecentEntryGroupSection extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.06),
+                color: headerBackground,
                 borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : AppColors.primary.withValues(alpha: 0.03),
+                ),
               ),
               child: Row(
                 children: [
@@ -2902,9 +2963,7 @@ class _RecentEntryGroupSection extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: isPositive
-                          ? AppColors.primary
-                          : colors.textPrimary,
+                      color: netColor,
                     ),
                   ),
                 ],
@@ -2922,7 +2981,7 @@ class _RecentEntryGroupSection extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 child: Container(
                   height: 0.5,
-                  color: AppColors.listDivider.withValues(alpha: 0.9),
+                  color: dividerColor,
                 ),
               ),
           ],

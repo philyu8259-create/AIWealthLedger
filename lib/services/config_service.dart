@@ -120,6 +120,7 @@ class ConfigService {
   bool get isQwenConfigured => qwenApiKey.isNotEmpty;
   bool get isGeminiConfigured => geminiApiKey.isNotEmpty;
   bool get isGoogleVisionConfigured => googleVisionApiKey.isNotEmpty;
+  bool get isBaiduOcrConfigured => baiduAk.isNotEmpty && baiduSk.isNotEmpty;
   bool get isFinnhubConfigured => finnhubApiKey.isNotEmpty;
 
   // ——— 阿里云函数计算 ———
