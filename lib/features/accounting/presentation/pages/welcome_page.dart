@@ -12,7 +12,6 @@ import '../../../../services/app_profile_service.dart';
 import '../../../../services/demo_data_seeder.dart';
 import '../../../../services/injection.dart';
 import '../../../../services/intl_auth_service.dart';
-import '../../../../services/vip_service.dart';
 
 class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
@@ -285,11 +284,6 @@ class _WelcomePageState extends State<WelcomePage> {
         await prefs.setString('logged_in_auth_provider', 'demo');
         await prefs.setString('logged_in_display_name', 'DemoAccount');
         await getIt<AppProfileService>().lockCurrentMode();
-        try {
-          await getIt<VipService>().restorePurchases();
-        } catch (e) {
-          debugPrint('[WelcomePage] cn demo restorePurchases error: $e');
-        }
       } else {
         await getIt<IntlAuthService>().signInWithIntlDemo();
       }

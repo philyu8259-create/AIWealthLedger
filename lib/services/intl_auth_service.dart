@@ -249,13 +249,6 @@ class IntlAuthService {
     await _prefs.setString(_providerKey, 'demo');
     await _prefs.setString(_displayNameKey, 'AI Money Demo');
     await getIt<AppProfileService>().lockCurrentMode();
-
-    try {
-      await getIt<VipService>().restorePurchases();
-      debugPrint('[IntlAuthService] intl demo restorePurchases done');
-    } catch (e) {
-      debugPrint('[IntlAuthService] intl demo restorePurchases error: $e');
-    }
   }
 
   Future<void> _completeSignIn({

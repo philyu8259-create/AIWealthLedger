@@ -242,12 +242,6 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
         } catch (e) {
           debugPrint('[PhoneLogin] restoreFromCloudIfNeeded error: $e');
         }
-        // 开发者账号登录后恢复购买
-        try {
-          await getIt<VipService>().restorePurchases();
-        } catch (e) {
-          debugPrint('[PhoneLogin] dev restorePurchases error: $e');
-        }
         // 登录后同步云端 VIP 档案
         try {
           await getIt<VipService>().syncFromCloud();
@@ -287,12 +281,6 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
         await getIt<StockService>().restoreFromCloudIfNeeded();
       } catch (e) {
         debugPrint('[PhoneLogin] restoreFromCloudIfNeeded error: $e');
-      }
-      // 登录后恢复购买
-      try {
-        await getIt<VipService>().restorePurchases();
-      } catch (e) {
-        debugPrint('[PhoneLogin] restorePurchases error: $e');
       }
       // 登录后同步云端 VIP 档案
       try {

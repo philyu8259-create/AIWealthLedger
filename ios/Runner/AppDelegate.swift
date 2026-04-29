@@ -58,6 +58,11 @@ import UIKit
                 return
             }
 
+            if pendingReceiptResult != nil {
+                result(FlutterError(code: "RECEIPT_REFRESH_IN_PROGRESS", message: "Receipt refresh already in progress", details: nil))
+                return
+            }
+
             pendingReceiptResult = result
             let request = SKReceiptRefreshRequest()
             receiptRefreshRequest = request
