@@ -1,5 +1,6 @@
 import 'package:ai_accounting_app/services/ai/input_parser_service.dart';
 import 'package:ai_accounting_app/services/gemini_input_parser_service.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -144,5 +145,86 @@ Refund ticket
 
       expect(results.map((e) => e.amount), containsAll([5, 12.50]));
     });
+
+    test('skips Gemini when OCR receipt parsing is high confidence', () async {
+      final dio = Dio();
+      final adapter = _CountingAdapter(
+        responseJson:
+            '{"candidates":[{"content":{"parts":[{"text":"{\\"transactions\\":[{\\"amount\\":10.26,\\"category\\":\\"shopping\\",\\"note\\":\\"FreshMart\\",\\"type\\":\\"expense\\"}]}"}]}}]}',
+      );
+      dio.httpClientAdapter = adapter;
+      final service = GeminiInputParserService(
+        dio: dio,
+        forceConfiguredForTesting: true,
+      );
+
+      final results = await service.parseInput('''
+Shopping Receipt
+Store: FreshMart
+Item        Quantity    Price
+Apples      3           \$2.50
+Milk        1           \$3.00
+Bread       2           \$4.00
+Subtotal: \$9.50
+Tax: \$0.76
+Total: \$10.26
+Thank you for shopping!
+''');
+
+      expect(adapter.requestCount, 0);
+      expect(results, hasLength(3));
+      expect(results.map((e) => e.amount), containsAll([2.50, 3.00, 4.00]));
+    });
+
+    test('uses Gemini when local parse confidence is low', () async {
+      final dio = Dio();
+      final adapter = _CountingAdapter(
+        responseJson:
+            '{"candidates":[{"content":{"parts":[{"text":"{\\"transactions\\":[{\\"amount\\":24,\\"category\\":\\"food\\",\\"note\\":\\"dinner\\",\\"type\\":\\"expense\\"}]}"}]}}]}',
+      );
+      dio.httpClientAdapter = adapter;
+      final service = GeminiInputParserService(
+        dio: dio,
+        forceConfiguredForTesting: true,
+      );
+
+      final results = await service.parseInput('dinner 24');
+
+      expect(adapter.requestCount, 1);
+      expect(results, [
+        const ParsedResult(
+          amount: 24,
+          category: 'food',
+          note: 'dinner',
+          type: 'expense',
+        ),
+      ]);
+    });
   });
+}
+
+class _CountingAdapter implements HttpClientAdapter {
+  _CountingAdapter({required this.responseJson});
+
+  final String responseJson;
+  int requestCount = 0;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<List<int>>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    requestCount += 1;
+    return ResponseBody.fromString(
+      responseJson,
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
 }

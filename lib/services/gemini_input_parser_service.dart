@@ -8,15 +8,23 @@ import 'ai/input_parser_service.dart';
 import 'config_service.dart';
 
 class GeminiInputParserService implements InputParserService {
-  final Dio _dio = Dio(
-    BaseOptions(
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 15),
-    ),
-  );
+  GeminiInputParserService({Dio? dio, bool? forceConfiguredForTesting})
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
+              connectTimeout: const Duration(seconds: 15),
+              receiveTimeout: const Duration(seconds: 15),
+            ),
+          ),
+      _forceConfiguredForTesting = forceConfiguredForTesting;
+
+  final Dio _dio;
+  final bool? _forceConfiguredForTesting;
 
   String get _apiKey => ConfigService.instance.geminiApiKey;
-  bool get _isConfigured => ConfigService.instance.isGeminiConfigured;
+  bool get _isConfigured =>
+      _forceConfiguredForTesting ?? ConfigService.instance.isGeminiConfigured;
 
   static const String _systemPrompt =
       '''You are an accounting parser for a personal finance app.
@@ -50,7 +58,15 @@ Format:
 
   @override
   Future<List<ParsedResult>> parseInput(String input) async {
-    if (!_isConfigured) return _fallbackParse(input);
+    final localDecision = _localParseDecision(input);
+    if (localDecision.shouldSkipModel) {
+      debugPrint(
+        '[GeminiInputParser] local parse hit confidence=${localDecision.confidence.toStringAsFixed(2)} reason=${localDecision.reason}',
+      );
+      return localDecision.results;
+    }
+    if (!_isConfigured) return localDecision.results;
+
     final inputTokenEstimate =
         AiUsageLogger.estimateTokens(_systemPrompt) +
         AiUsageLogger.estimateTokens(input);
@@ -168,6 +184,52 @@ Format:
     if (shouldPreferDeterministic) return deterministic;
 
     return modelResults;
+  }
+
+  _LocalParseDecision _localParseDecision(String input) {
+    final results = _fallbackParse(input);
+    if (results.isEmpty) {
+      return const _LocalParseDecision(
+        results: [],
+        confidence: 0,
+        reason: 'empty',
+      );
+    }
+
+    final isItemizedReceipt = _looksLikeItemizedReceipt(input);
+    if (isItemizedReceipt && results.length >= 2) {
+      return _LocalParseDecision(
+        results: results,
+        confidence: 0.95,
+        reason: 'itemized_receipt',
+      );
+    }
+
+    final isMultiOrderReceipt = _looksLikeMultiOrderReceipt(input);
+    if (isMultiOrderReceipt && results.length >= 2) {
+      return _LocalParseDecision(
+        results: results,
+        confidence: 0.95,
+        reason: 'multi_order_receipt',
+      );
+    }
+
+    if (_looksLikeReceipt(input) &&
+        results.length == 1 &&
+        _hasStrongReceiptTotal(input) &&
+        _hasReceiptIdentity(input)) {
+      return _LocalParseDecision(
+        results: results,
+        confidence: 0.86,
+        reason: 'single_receipt_total',
+      );
+    }
+
+    return _LocalParseDecision(
+      results: results,
+      confidence: _looksLikeReceipt(input) ? 0.65 : 0.35,
+      reason: _looksLikeReceipt(input) ? 'ambiguous_receipt' : 'natural_text',
+    );
   }
 
   List<ParsedResult> _fallbackParse(String input) {
@@ -426,6 +488,30 @@ Format:
     return 3;
   }
 
+  bool _hasStrongReceiptTotal(String input) {
+    return RegExp(
+      r'grand total|amount due|balance due|total paid|total payment|net amount|card sale|total charge|actual paid|paid amount|amount paid|实付|应付|付款',
+      caseSensitive: false,
+    ).hasMatch(input);
+  }
+
+  bool _hasReceiptIdentity(String input) {
+    final lines = input
+        .split(RegExp(r'[\r\n]+'))
+        .map((line) => _cleanFallbackNote(line))
+        .where((line) => line.isNotEmpty)
+        .toList();
+    return lines.any((line) {
+      if (RegExp(
+        r'\d+[,.]\d{1,2}|total|subtotal|tax|vat|gst|paid|payment|amount|invoice|order|terminal|auth|approval|date|time|合计|总计|金额|付款',
+        caseSensitive: false,
+      ).hasMatch(line)) {
+        return false;
+      }
+      return RegExp(r'[\p{L}\p{Script=Han}]', unicode: true).hasMatch(line);
+    });
+  }
+
   bool _isReceiptNoiseLine(String line) {
     final lower = line.toLowerCase();
     if (_receiptLinePriority(line) <= 1) return false;
@@ -561,4 +647,21 @@ Format:
     }
     return 'other';
   }
+}
+
+class _LocalParseDecision {
+  const _LocalParseDecision({
+    required this.results,
+    required this.confidence,
+    required this.reason,
+  });
+
+  static const double _skipModelThreshold = 0.82;
+
+  final List<ParsedResult> results;
+  final double confidence;
+  final String reason;
+
+  bool get shouldSkipModel =>
+      results.isNotEmpty && confidence >= _skipModelThreshold;
 }
