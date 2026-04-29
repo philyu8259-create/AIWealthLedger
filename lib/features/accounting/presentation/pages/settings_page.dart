@@ -45,6 +45,10 @@ String _settingsShortDate(DateTime date) {
   return AppFormatter.formatShortDate(date, locale: _settingsLocale());
 }
 
+String _settingsShortDateTime(DateTime date) {
+  return AppFormatter.formatShortDateTime(date, locale: _settingsLocale());
+}
+
 String _settingsMoney(
   num amount, {
   String? currencyCode,
@@ -122,6 +126,7 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     _loadUserInfo();
     _loadAppVersion();
+    unawaited(getIt<VipService>().syncFromCloud());
   }
 
   Future<void> _loadAppVersion() async {
@@ -2279,7 +2284,7 @@ class _VipBanner extends StatelessWidget {
                   AppStringKeys.vipExpireAt,
                   params: {
                     'date': expireDate != null
-                        ? _settingsShortDate(expireDate)
+                        ? _settingsShortDateTime(expireDate)
                         : '—',
                   },
                 )
@@ -2361,6 +2366,44 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
         _yearlyProduct = yearly;
       });
     } catch (_) {}
+  }
+
+  Future<void> _confirmVipChangeInBackground(
+    VipService vipService,
+    VipType previousType,
+    DateTime? previousExpire,
+    AppStrings t,
+  ) async {
+    final previousMs = previousExpire?.millisecondsSinceEpoch;
+    var changed = false;
+    for (var i = 0; i < 10; i += 1) {
+      await Future<void>.delayed(const Duration(seconds: 2));
+      final refreshed = await vipService.refreshFromAppStoreServer();
+      if (!refreshed) {
+        await vipService.syncFromCloud();
+      }
+      final currentMs = vipService.expireDate?.millisecondsSinceEpoch;
+      if ((currentMs != null && currentMs != previousMs) ||
+          vipService.vipType != previousType) {
+        changed = true;
+        break;
+      }
+    }
+    if (!mounted) return;
+    final currentExpire = vipService.expireDate;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          changed && currentExpire != null
+              ? t.text(
+                  AppStringKeys.vipUpdated,
+                  params: {'date': _settingsShortDateTime(currentExpire)},
+                )
+              : t.text(AppStringKeys.vipUnchanged),
+        ),
+      ),
+    );
   }
 
   @override
@@ -2447,7 +2490,9 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                               AppStringKeys.vipExpireUntil,
                               params: {
                                 'date': vipService.expireDate != null
-                                    ? _settingsShortDate(vipService.expireDate!)
+                                    ? _settingsShortDateTime(
+                                        vipService.expireDate!,
+                                      )
                                     : '—',
                               },
                             ),
@@ -2515,6 +2560,8 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                           : () async {
                               setState(() => _isLoading = true);
                               try {
+                                final previousType = vipService.vipType;
+                                final previousExpire = vipService.expireDate;
                                 final started = _selectedType == VipType.monthly
                                     ? await vipService.purchaseMonthly()
                                     : await vipService.purchaseYearly();
@@ -2526,6 +2573,25 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                                           AppStringKeys.vipProductUnavailable,
                                         ),
                                       ),
+                                    ),
+                                  );
+                                }
+                                if (started) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          t.text(AppStringKeys.vipConfirming),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  unawaited(
+                                    _confirmVipChangeInBackground(
+                                      vipService,
+                                      previousType,
+                                      previousExpire,
+                                      t,
                                     ),
                                   );
                                 }

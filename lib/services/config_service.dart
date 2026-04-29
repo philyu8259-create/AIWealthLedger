@@ -116,12 +116,14 @@ class ConfigService {
   String get geminiApiKey => _env('GEMINI_API_KEY');
   String get googleVisionApiKey => _env('GOOGLE_VISION_API_KEY');
   String get finnhubApiKey => _env('FINNHUB_API_KEY');
+  String get zhituApiToken => _env('ZHITU_API_TOKEN');
 
   bool get isQwenConfigured => qwenApiKey.isNotEmpty;
   bool get isGeminiConfigured => geminiApiKey.isNotEmpty;
   bool get isGoogleVisionConfigured => googleVisionApiKey.isNotEmpty;
   bool get isBaiduOcrConfigured => baiduAk.isNotEmpty && baiduSk.isNotEmpty;
   bool get isFinnhubConfigured => finnhubApiKey.isNotEmpty;
+  bool get isZhituConfigured => zhituApiToken.isNotEmpty;
 
   // ——— 阿里云函数计算 ———
 
@@ -133,8 +135,7 @@ class ConfigService {
 
   String get googleIosClientId => _env('GOOGLE_IOS_CLIENT_ID');
   String get googleServerClientId => _env('GOOGLE_SERVER_CLIENT_ID');
-  String get googleIosReversedClientId =>
-      _env('GOOGLE_IOS_REVERSED_CLIENT_ID');
+  String get googleIosReversedClientId => _env('GOOGLE_IOS_REVERSED_CLIENT_ID');
 
   bool get isGoogleSignInConfigured => googleIosClientId.isNotEmpty;
   bool get isGoogleSignInFullyConfigured =>
@@ -142,10 +143,4 @@ class ConfigService {
       googleServerClientId.isNotEmpty &&
       googleIosReversedClientId.isNotEmpty;
 
-  // ——— Apple App Store ———
-
-  /// Apple 订阅收据验证密钥（从 App Store Connect 获取）
-  String get appStoreSharedSecret => _env('APP_STORE_SHARED_SECRET');
-
-  bool get isAppStoreSecretConfigured => appStoreSharedSecret.isNotEmpty;
 }

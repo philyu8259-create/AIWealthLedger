@@ -34,20 +34,26 @@ class _WelcomePageState extends State<WelcomePage> {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final authProviders =
-        getIt<AppProfileService>().currentProfile.capabilityProfile.authProviders;
+    final authProviders = getIt<AppProfileService>()
+        .currentProfile
+        .capabilityProfile
+        .authProviders;
     final usesPhoneAuth = authProviders.contains(AuthProviderType.phoneSms);
+    final usesAppleAuth = authProviders.contains(AuthProviderType.apple);
 
     return Scaffold(
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final compact = constraints.maxWidth < 360 || constraints.maxHeight < 720;
+            final compact =
+                constraints.maxWidth < 360 || constraints.maxHeight < 720;
             final isTablet = constraints.maxWidth >= 768;
             final horizontalPadding = isTablet
                 ? 40.0
                 : (constraints.maxWidth < 380 ? 20.0 : 32.0);
-            final maxContentWidth = isTablet ? 560.0 : (constraints.maxWidth > 520 ? 420.0 : constraints.maxWidth);
+            final maxContentWidth = isTablet
+                ? 560.0
+                : (constraints.maxWidth > 520 ? 420.0 : constraints.maxWidth);
             final iconSize = compact ? 68.0 : 80.0;
             final titleSize = compact ? 28.0 : 32.0;
             final subtitleSize = compact ? 14.0 : 15.0;
@@ -59,14 +65,20 @@ class _WelcomePageState extends State<WelcomePage> {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: maxContentWidth),
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                    ),
                     child: Column(
                       children: [
                         SizedBox(height: compact ? 12 : 24),
                         GestureDetector(
                           behavior: HitTestBehavior.opaque,
-                          onTapDown: _loggingInDemo ? null : (_) => _startDemoPress(),
-                          onTapUp: _loggingInDemo ? null : (_) => _cancelDemoPress(),
+                          onTapDown: _loggingInDemo
+                              ? null
+                              : (_) => _startDemoPress(),
+                          onTapUp: _loggingInDemo
+                              ? null
+                              : (_) => _cancelDemoPress(),
                           onTapCancel: _loggingInDemo ? null : _cancelDemoPress,
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(20),
@@ -132,6 +144,14 @@ class _WelcomePageState extends State<WelcomePage> {
                               ),
                             ),
                           ),
+                          if (usesAppleAuth) ...[
+                            const SizedBox(height: 12),
+                            _IntlAuthEntryButton(
+                              icon: Icons.apple,
+                              label: strings.text(AppStringKeys.intlAuthApple),
+                              onTap: () => _signInWithApple(context),
+                            ),
+                          ],
                         ] else ...[
                           SizedBox(
                             width: double.infinity,
@@ -169,7 +189,9 @@ class _WelcomePageState extends State<WelcomePage> {
                           TextSpan(
                             children: [
                               TextSpan(
-                                text: strings.text(AppStringKeys.welcomeAgreementPrefix),
+                                text: strings.text(
+                                  AppStringKeys.welcomeAgreementPrefix,
+                                ),
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: Colors.grey.shade500,
@@ -178,7 +200,9 @@ class _WelcomePageState extends State<WelcomePage> {
                               TextSpan(
                                 text: _docLinkTitle(
                                   context,
-                                  strings.text(AppStringKeys.settingsTermsTitle),
+                                  strings.text(
+                                    AppStringKeys.settingsTermsTitle,
+                                  ),
                                 ),
                                 style: const TextStyle(
                                   fontSize: 11,
@@ -189,7 +213,9 @@ class _WelcomePageState extends State<WelcomePage> {
                                   ..onTap = () => _openTermsOfService(context),
                               ),
                               TextSpan(
-                                text: strings.text(AppStringKeys.welcomeAgreementAnd),
+                                text: strings.text(
+                                  AppStringKeys.welcomeAgreementAnd,
+                                ),
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: Colors.grey.shade500,
@@ -198,7 +224,9 @@ class _WelcomePageState extends State<WelcomePage> {
                               TextSpan(
                                 text: _docLinkTitle(
                                   context,
-                                  strings.text(AppStringKeys.settingsPrivacyTitle),
+                                  strings.text(
+                                    AppStringKeys.settingsPrivacyTitle,
+                                  ),
                                 ),
                                 style: const TextStyle(
                                   fontSize: 11,
@@ -358,7 +386,11 @@ class _WelcomePageState extends State<WelcomePage> {
     }
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppStrings.of(context).text(AppStringKeys.welcomeOpenPrivacyFailed))),
+      SnackBar(
+        content: Text(
+          AppStrings.of(context).text(AppStringKeys.welcomeOpenPrivacyFailed),
+        ),
+      ),
     );
   }
 
@@ -370,7 +402,11 @@ class _WelcomePageState extends State<WelcomePage> {
     }
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppStrings.of(context).text(AppStringKeys.welcomeOpenTermsFailed))),
+      SnackBar(
+        content: Text(
+          AppStrings.of(context).text(AppStringKeys.welcomeOpenTermsFailed),
+        ),
+      ),
     );
   }
 }

@@ -28,9 +28,44 @@ class AppProfileService extends ChangeNotifier {
 
   List<Locale> get supportedLocales => const [
     Locale('zh', 'CN'),
+    Locale('zh', 'TW'),
+    Locale('zh', 'HK'),
+    Locale('zh', 'MO'),
     Locale('en', 'US'),
     Locale('en', 'GB'),
     Locale('en', 'AU'),
+    Locale('en', 'CA'),
+    Locale('en', 'NZ'),
+    Locale('en', 'IE'),
+    Locale('en', 'PH'),
+    Locale('en', 'SG'),
+    Locale('en', 'MY'),
+    Locale('en', 'IN'),
+    Locale('en', 'HK'),
+    Locale('en', 'ZA'),
+    Locale('en', 'AE'),
+    Locale('en', 'SA'),
+    Locale('ja', 'JP'),
+    Locale('ko', 'KR'),
+    Locale('id', 'ID'),
+    Locale('th', 'TH'),
+    Locale('tr', 'TR'),
+    Locale('vi', 'VN'),
+    Locale('de', 'DE'),
+    Locale('fr', 'FR'),
+    Locale('it', 'IT'),
+    Locale('es', 'ES'),
+    Locale('es', 'MX'),
+    Locale('nl', 'NL'),
+    Locale('pt', 'PT'),
+    Locale('pt', 'BR'),
+    Locale('pl', 'PL'),
+    Locale('sv', 'SE'),
+    Locale('da', 'DK'),
+    Locale('nb', 'NO'),
+    Locale('cs', 'CZ'),
+    Locale('hu', 'HU'),
+    Locale('ro', 'RO'),
   ];
 
   Future<void> ensureInitialized({Locale? deviceLocale}) async {
@@ -57,14 +92,18 @@ class AppProfileService extends ChangeNotifier {
       fallback,
       resolvedMode,
     );
-    final shouldSeedFlavorLocale = previousStoredMode == null &&
+    final shouldSeedFlavorLocale =
+        previousStoredMode == null &&
         sessionExists &&
         resolvedMode != inferredMode;
     final initialLocale = shouldSeedFlavorLocale
         ? fallback
-        : (resolvedMode == AppFlavor.cn ? fallback : resolvedDeviceLocale);
-    final initialCountry =
-        resolvedMode == AppFlavor.cn ? 'CN' : (initialLocale.countryCode ?? 'US');
+        : resolvedDeviceLocale;
+    final initialCountry = _countryCodeForProfile(
+      deviceLocale: shouldSeedFlavorLocale ? null : deviceLocale,
+      locale: initialLocale,
+      flavor: resolvedMode,
+    );
     final initialCurrency = _defaultCurrencyForCountry(initialCountry);
     final shouldSeedModeDefaults = previousStoredMode == null;
 
@@ -97,9 +136,12 @@ class AppProfileService extends ChangeNotifier {
       fallback,
       targetMode,
     );
-    final locale = targetMode == AppFlavor.cn ? fallback : resolvedDeviceLocale;
-    final countryCode =
-        targetMode == AppFlavor.cn ? 'CN' : (locale.countryCode ?? 'US');
+    final locale = resolvedDeviceLocale;
+    final countryCode = _countryCodeForProfile(
+      deviceLocale: deviceLocale,
+      locale: locale,
+      flavor: targetMode,
+    );
     final baseCurrency = _defaultCurrencyForCountry(countryCode);
 
     await _prefs.setString(_modeKey, targetMode.name);
@@ -110,7 +152,8 @@ class AppProfileService extends ChangeNotifier {
     notifyListeners();
   }
 
-  int get currentSchemaVersion => _prefs.getInt(_schemaVersionKey) ?? schemaVersion;
+  int get currentSchemaVersion =>
+      _prefs.getInt(_schemaVersionKey) ?? schemaVersion;
 
   int get currentMigrationVersion =>
       _prefs.getInt(_migrationVersionKey) ?? migrationVersion;
@@ -121,7 +164,8 @@ class AppProfileService extends ChangeNotifier {
     capabilityProfile: _buildCapabilityProfile(),
   );
 
-  String get appTitle => flavor == AppFlavor.cn ? 'AI财富记账本' : 'AI Wealth Tracker';
+  String get appTitle =>
+      flavor == AppFlavor.cn ? 'AI财富记账本' : 'AI Wealth Tracker';
 
   String get privacyPolicyUrl => flavor == AppFlavor.intl
       ? 'https://philyu8259-create.github.io/ai-accounting-privacy/privacy_policy_en.html'
@@ -156,12 +200,14 @@ class AppProfileService extends ChangeNotifier {
     final locale = storedLocale == null
         ? fallback
         : _fromStorageLocale(storedLocale, fallback);
-    final countryCode = (_prefs.getString(_countryCodeKey) ??
-            locale.countryCode ??
-            (flavor == AppFlavor.cn ? 'CN' : 'US'))
-        .toUpperCase();
+    final countryCode =
+        (_prefs.getString(_countryCodeKey) ??
+                locale.countryCode ??
+                (flavor == AppFlavor.cn ? 'CN' : 'US'))
+            .toUpperCase();
     final baseCurrency =
-        (_prefs.getString(_baseCurrencyKey) ?? _defaultCurrencyForCountry(countryCode))
+        (_prefs.getString(_baseCurrencyKey) ??
+                _defaultCurrencyForCountry(countryCode))
             .toUpperCase();
 
     return LocaleProfile(
@@ -177,7 +223,7 @@ class AppProfileService extends ChangeNotifier {
   CapabilityProfile _buildCapabilityProfile() {
     if (flavor == AppFlavor.cn) {
       return const CapabilityProfile(
-        authProviders: [AuthProviderType.phoneSms],
+        authProviders: [AuthProviderType.phoneSms, AuthProviderType.apple],
         ocrProvider: OcrProviderType.legacyCnOcr,
         aiProvider: AiProviderType.legacyCnAi,
         stockMarketScope: StockMarketScope.cn,
@@ -219,14 +265,28 @@ class AppProfileService extends ChangeNotifier {
     Locale fallback,
     AppFlavor flavor,
   ) {
-    if (flavor == AppFlavor.cn) return const Locale('zh', 'CN');
     if (deviceLocale == null) return fallback;
 
     final languageCode = deviceLocale.languageCode.toLowerCase();
     final country = (deviceLocale.countryCode ?? '').toUpperCase();
 
-    if (languageCode.startsWith('zh')) {
+    if (flavor == AppFlavor.cn) {
+      if (country == 'TW') return const Locale('zh', 'TW');
+      if (country == 'HK') return const Locale('zh', 'HK');
+      if (country == 'MO') return const Locale('zh', 'MO');
       return const Locale('zh', 'CN');
+    }
+
+    if (languageCode.startsWith('zh')) {
+      if (country == 'TW') return const Locale('zh', 'TW');
+      if (country == 'HK') return const Locale('zh', 'HK');
+      if (country == 'MO') return const Locale('zh', 'MO');
+      return const Locale('zh', 'CN');
+    }
+
+    final regionalLocale = _localeForLanguageAndCountry(languageCode, country);
+    if (regionalLocale != null) {
+      return regionalLocale;
     }
 
     if (languageCode != 'en') {
@@ -238,11 +298,93 @@ class AppProfileService extends ChangeNotifier {
         return const Locale('en', 'GB');
       case 'AU':
         return const Locale('en', 'AU');
+      case 'CA':
+        return const Locale('en', 'CA');
+      case 'NZ':
+        return const Locale('en', 'NZ');
+      case 'IE':
+        return const Locale('en', 'IE');
+      case 'PH':
+        return const Locale('en', 'PH');
+      case 'SG':
+        return const Locale('en', 'SG');
+      case 'MY':
+        return const Locale('en', 'MY');
+      case 'IN':
+        return const Locale('en', 'IN');
+      case 'HK':
+        return const Locale('en', 'HK');
+      case 'ZA':
+        return const Locale('en', 'ZA');
+      case 'AE':
+        return const Locale('en', 'AE');
+      case 'SA':
+        return const Locale('en', 'SA');
       case 'US':
         return const Locale('en', 'US');
       default:
         return const Locale('en', 'US');
     }
+  }
+
+  Locale? _localeForLanguageAndCountry(String languageCode, String country) {
+    switch ('${languageCode}_$country') {
+      case 'ja_JP':
+        return const Locale('ja', 'JP');
+      case 'ko_KR':
+        return const Locale('ko', 'KR');
+      case 'id_ID':
+        return const Locale('id', 'ID');
+      case 'th_TH':
+        return const Locale('th', 'TH');
+      case 'tr_TR':
+        return const Locale('tr', 'TR');
+      case 'vi_VN':
+        return const Locale('vi', 'VN');
+      case 'de_DE':
+        return const Locale('de', 'DE');
+      case 'fr_FR':
+        return const Locale('fr', 'FR');
+      case 'it_IT':
+        return const Locale('it', 'IT');
+      case 'es_ES':
+        return const Locale('es', 'ES');
+      case 'es_MX':
+        return const Locale('es', 'MX');
+      case 'nl_NL':
+        return const Locale('nl', 'NL');
+      case 'pt_PT':
+        return const Locale('pt', 'PT');
+      case 'pt_BR':
+        return const Locale('pt', 'BR');
+      case 'pl_PL':
+        return const Locale('pl', 'PL');
+      case 'sv_SE':
+        return const Locale('sv', 'SE');
+      case 'da_DK':
+        return const Locale('da', 'DK');
+      case 'nb_NO':
+        return const Locale('nb', 'NO');
+      case 'cs_CZ':
+        return const Locale('cs', 'CZ');
+      case 'hu_HU':
+        return const Locale('hu', 'HU');
+      case 'ro_RO':
+        return const Locale('ro', 'RO');
+      default:
+        return null;
+    }
+  }
+
+  String _countryCodeForProfile({
+    required Locale? deviceLocale,
+    required Locale locale,
+    required AppFlavor flavor,
+  }) {
+    final deviceCountry = (deviceLocale?.countryCode ?? '').toUpperCase();
+    if (_hasCurrencyForCountry(deviceCountry)) return deviceCountry;
+    return (locale.countryCode ?? (flavor == AppFlavor.cn ? 'CN' : 'US'))
+        .toUpperCase();
   }
 
   AppFlavor? get _storedMode {
@@ -255,7 +397,8 @@ class AppProfileService extends ChangeNotifier {
   bool get _hasExistingSession {
     final hasLoggedIn = _prefs.getBool('has_logged_in') ?? false;
     final accountKey = _prefs.getString('logged_in_phone')?.trim() ?? '';
-    final authProvider = _prefs.getString('logged_in_auth_provider')?.trim() ?? '';
+    final authProvider =
+        _prefs.getString('logged_in_auth_provider')?.trim() ?? '';
     return hasLoggedIn || accountKey.isNotEmpty || authProvider.isNotEmpty;
   }
 
@@ -265,7 +408,9 @@ class AppProfileService extends ChangeNotifier {
   }) {
     final storedMode = _storedMode;
     if (storedMode != null) return storedMode;
-    return sessionExists ? _inferModeFromStoredSession(inferredMode) : inferredMode;
+    return sessionExists
+        ? _inferModeFromStoredSession(inferredMode)
+        : inferredMode;
   }
 
   AppFlavor _inferMode(Locale? deviceLocale) {
@@ -285,7 +430,9 @@ class AppProfileService extends ChangeNotifier {
       case 'email':
         return AppFlavor.intl;
       case 'demo':
-        final email = (_prefs.getString('logged_in_email') ?? '').trim().toLowerCase();
+        final email = (_prefs.getString('logged_in_email') ?? '')
+            .trim()
+            .toLowerCase();
         if (email == 'demo@aimoneyledger.app') return AppFlavor.intl;
         return AppFlavor.cn;
       case 'guest':
@@ -298,10 +445,66 @@ class AppProfileService extends ChangeNotifier {
     switch (countryCode.toUpperCase()) {
       case 'CN':
         return 'CNY';
+      case 'TW':
+        return 'TWD';
+      case 'MO':
+        return 'MOP';
+      case 'PH':
+        return 'PHP';
+      case 'TR':
+        return 'TRY';
+      case 'SG':
+        return 'SGD';
+      case 'MY':
+        return 'MYR';
+      case 'TH':
+        return 'THB';
+      case 'HK':
+        return 'HKD';
+      case 'VN':
+        return 'VND';
+      case 'JP':
+        return 'JPY';
+      case 'KR':
+        return 'KRW';
+      case 'IN':
+        return 'INR';
+      case 'ID':
+        return 'IDR';
+      case 'CA':
+        return 'CAD';
       case 'GB':
         return 'GBP';
       case 'AU':
         return 'AUD';
+      case 'NZ':
+        return 'NZD';
+      case 'CH':
+        return 'CHF';
+      case 'SE':
+        return 'SEK';
+      case 'NO':
+        return 'NOK';
+      case 'DK':
+        return 'DKK';
+      case 'PL':
+        return 'PLN';
+      case 'CZ':
+        return 'CZK';
+      case 'HU':
+        return 'HUF';
+      case 'RO':
+        return 'RON';
+      case 'BR':
+        return 'BRL';
+      case 'MX':
+        return 'MXN';
+      case 'ZA':
+        return 'ZAR';
+      case 'AE':
+        return 'AED';
+      case 'SA':
+        return 'SAR';
       case 'DE':
       case 'FR':
       case 'IT':
@@ -314,10 +517,76 @@ class AppProfileService extends ChangeNotifier {
       case 'AT':
       case 'GR':
       case 'LU':
+      case 'EE':
+      case 'LV':
+      case 'LT':
+      case 'SI':
+      case 'SK':
+      case 'MT':
+      case 'CY':
         return 'EUR';
       case 'US':
       default:
         return 'USD';
+    }
+  }
+
+  bool _hasCurrencyForCountry(String countryCode) {
+    switch (countryCode.toUpperCase()) {
+      case 'CN':
+      case 'TW':
+      case 'MO':
+      case 'PH':
+      case 'TR':
+      case 'SG':
+      case 'MY':
+      case 'TH':
+      case 'HK':
+      case 'VN':
+      case 'JP':
+      case 'KR':
+      case 'IN':
+      case 'ID':
+      case 'CA':
+      case 'GB':
+      case 'AU':
+      case 'NZ':
+      case 'CH':
+      case 'SE':
+      case 'NO':
+      case 'DK':
+      case 'PL':
+      case 'CZ':
+      case 'HU':
+      case 'RO':
+      case 'BR':
+      case 'MX':
+      case 'ZA':
+      case 'AE':
+      case 'SA':
+      case 'DE':
+      case 'FR':
+      case 'IT':
+      case 'ES':
+      case 'NL':
+      case 'BE':
+      case 'FI':
+      case 'IE':
+      case 'PT':
+      case 'AT':
+      case 'GR':
+      case 'LU':
+      case 'EE':
+      case 'LV':
+      case 'LT':
+      case 'SI':
+      case 'SK':
+      case 'MT':
+      case 'CY':
+      case 'US':
+        return true;
+      default:
+        return false;
     }
   }
 

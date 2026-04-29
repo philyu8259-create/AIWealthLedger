@@ -196,7 +196,7 @@ class CloudSyncAccountDataSource implements IAccountEntryDataSource {
     final phone = _prefs.getString('logged_in_phone');
     final isDemo = phone == 'DemoAccount';
     debugPrint(
-      '[CloudSync] addEntry BEGIN, phone=$phone, isDemo=$isDemo, entry.id=${entry.id}',
+      '[CloudSync] addEntry BEGIN, hasPhone=${phone?.isNotEmpty == true}, isDemo=$isDemo, entry.id=${entry.id}',
     );
 
     // 写入本地（初始为 pending）
@@ -211,7 +211,9 @@ class CloudSyncAccountDataSource implements IAccountEntryDataSource {
         '[CloudSync] addEntry _saveAll done (pending), count=${all.length}',
       );
     } catch (e) {
-      debugPrint('[CloudSync] addEntry getEntries failed: $e, saving single entry');
+      debugPrint(
+        '[CloudSync] addEntry getEntries failed: $e, saving single entry',
+      );
       await _saveAll([entry], forDemo: isDemo);
     }
 
@@ -219,7 +221,9 @@ class CloudSyncAccountDataSource implements IAccountEntryDataSource {
     if (phone != null && phone.isNotEmpty) {
       try {
         final result = await CloudService().addEntry(entry);
-        debugPrint('[CloudSync] addEntry cloud result: $result');
+        debugPrint(
+          '[CloudSync] addEntry cloud result keys=${result?.keys.toList()}',
+        );
         // 云端成功返回（不区分 body 内容），更新本地 syncStatus 为 synced
         if (result != null) {
           final all = await getEntries();
@@ -253,7 +257,9 @@ class CloudSyncAccountDataSource implements IAccountEntryDataSource {
         await _saveAll(all, forDemo: isDemo);
       }
     } catch (e) {
-      debugPrint('[CloudSyncAccountDataSource] updateEntry getEntries failed: $e');
+      debugPrint(
+        '[CloudSyncAccountDataSource] updateEntry getEntries failed: $e',
+      );
     }
 
     // 已登录用户：同时更新云端（失败不影响本地）
@@ -292,7 +298,9 @@ class CloudSyncAccountDataSource implements IAccountEntryDataSource {
       all.removeWhere((e) => e.id == id);
       await _saveAll(all, forDemo: isDemo);
     } catch (e) {
-      debugPrint('[CloudSyncAccountDataSource] deleteEntry getEntries failed: $e');
+      debugPrint(
+        '[CloudSyncAccountDataSource] deleteEntry getEntries failed: $e',
+      );
     }
 
     // 已登录用户：同时删除云端（失败不影响本地）
@@ -338,12 +346,13 @@ class CloudSyncAccountDataSource implements IAccountEntryDataSource {
     await _prefs.setString(key, jsonEncode(jsonList));
   }
 
-
   AccountEntry _fromJson(Map<String, dynamic> json) {
     final entry = AccountEntry.fromJson(json);
     final profile = _profile.currentProfile.localeProfile;
-    final hasOriginalCurrency = (json['originalCurrency'] as String?)?.isNotEmpty == true;
-    final hasBaseCurrency = (json['baseCurrency'] as String?)?.isNotEmpty == true;
+    final hasOriginalCurrency =
+        (json['originalCurrency'] as String?)?.isNotEmpty == true;
+    final hasBaseCurrency =
+        (json['baseCurrency'] as String?)?.isNotEmpty == true;
     final hasLocale = (json['locale'] as String?)?.isNotEmpty == true;
     final hasCountryCode = (json['countryCode'] as String?)?.isNotEmpty == true;
 
@@ -360,5 +369,4 @@ class CloudSyncAccountDataSource implements IAccountEntryDataSource {
       countryCode: hasCountryCode ? entry.countryCode : profile.countryCode,
     );
   }
-
 }

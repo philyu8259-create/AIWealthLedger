@@ -38,6 +38,7 @@ import '../widgets/ai_bottom_sheet.dart';
 import '../widgets/ai_scanner_hud.dart';
 import '../widgets/ai_sparkles_icon.dart';
 import '../widgets/custom_numpad_sheet.dart';
+import '../widgets/financial_health_report.dart';
 import '../widgets/premium_capsule_button.dart';
 import '../widgets/premium_hero_card.dart';
 import '../widgets/premium_surface_card.dart';
@@ -623,7 +624,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       final ocr = getIt<ReceiptOcrService>();
       try {
         final bytes = await image.readAsBytes();
-        final text = await ocr.recognizeText(bytes);
+        final text = await _recognizeHomeReceipt(bytes, ocr);
         if (hudVisible && mounted) {
           Navigator.of(context, rootNavigator: true).pop();
           hudVisible = false;
@@ -650,6 +651,24 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           ),
         ),
       );
+    }
+  }
+
+  Future<String?> _recognizeHomeReceipt(
+    List<int> bytes,
+    ReceiptOcrService ocr,
+  ) {
+    final provider =
+        getIt<AppProfileService>().currentProfile.capabilityProfile.ocrProvider;
+    switch (provider) {
+      case OcrProviderType.legacyCnOcr:
+        // Keep Chinese receipt scans on the proven 1.3.1 path. Baidu's
+        // structured receipt endpoint can vary by document type, while the
+        // general OCR text gives Qwen the full context to parse multiple bills.
+        return ocr.recognizeText(bytes);
+      case OcrProviderType.googleVisionGemini:
+      case OcrProviderType.googleExpenseParser:
+        return ocr.recognizeReceipt(bytes);
     }
   }
 
@@ -788,12 +807,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.4),
-      builder: (ctx) =>
-          CustomNumpadSheet(
-            title: '$icon $note',
-            isIncome: isIncome,
-            onSubmit: (value) => submittedAmount = value,
-          ),
+      builder: (ctx) => CustomNumpadSheet(
+        title: '$icon $note',
+        isIncome: isIncome,
+        onSubmit: (value) => submittedAmount = value,
+      ),
     );
 
     final amount = double.tryParse(submittedAmount ?? '') ?? 0;
@@ -937,7 +955,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     return DateFormat('MMM d', locale.toLanguageTag()).format(d);
   }
 
-  List<_RecentEntryGroupData> _buildRecentEntryGroups(List<AccountEntry> entries) {
+  List<_RecentEntryGroupData> _buildRecentEntryGroups(
+    List<AccountEntry> entries,
+  ) {
     final groups = <_RecentEntryGroupData>[];
     for (final entry in entries) {
       final date = DateTime(entry.date.year, entry.date.month, entry.date.day);
@@ -1207,6 +1227,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                 ),
                               ),
 
+                              SliverToBoxAdapter(
+                                child: FinancialHealthTeaserCard(
+                                  report: FinancialHealthReport.fromEntries(
+                                    entries: state.entries,
+                                    year: state.selectedYear,
+                                    month: state.selectedMonth,
+                                    lastMonthExpense: state.lastMonthExpense,
+                                    lastMonthIncome: state.lastMonthIncome,
+                                  ),
+                                  onTap: () => context.go('/analysis'),
+                                ),
+                              ),
+
                               // ── 4. 资产管理入口 ───────────────────────────────────────
                               SliverToBoxAdapter(
                                 child: Padding(
@@ -1363,7 +1396,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                                 color: AppColors
                                                                     .primary
                                                                     .withValues(
-                                                                      alpha: 0.08,
+                                                                      alpha:
+                                                                          0.08,
                                                                     ),
                                                               ),
                                                               borderRadius:
@@ -2751,14 +2785,8 @@ class _RecentEntryRow extends StatelessWidget {
     final categoryName = categoryNameResolver(catDef.id, catDef.name);
     final catColor = AppColors.getCategoryColor(catDef.id);
     final iconPlateGradient = isDark
-        ? [
-            catColor.withValues(alpha: 0.22),
-            catColor.withValues(alpha: 0.10),
-          ]
-        : [
-            catColor.withValues(alpha: 0.18),
-            catColor.withValues(alpha: 0.08),
-          ];
+        ? [catColor.withValues(alpha: 0.22), catColor.withValues(alpha: 0.10)]
+        : [catColor.withValues(alpha: 0.18), catColor.withValues(alpha: 0.08)];
     final categoryPillBackground = isDark
         ? catColor.withValues(alpha: 0.16)
         : catColor.withValues(alpha: 0.09);
@@ -2904,7 +2932,11 @@ class _RecentEntryGroupSection extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color.lerp(colors.cardBackground, colors.secondaryBackground, 0.20)!,
+              Color.lerp(
+                colors.cardBackground,
+                colors.secondaryBackground,
+                0.20,
+              )!,
               Color.lerp(colors.cardBackground, Colors.black, 0.10)!,
             ],
           )
@@ -2979,10 +3011,7 @@ class _RecentEntryGroupSection extends StatelessWidget {
             if (index != group.entries.length - 1)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 18),
-                child: Container(
-                  height: 0.5,
-                  color: dividerColor,
-                ),
+                child: Container(height: 0.5, color: dividerColor),
               ),
           ],
         ],
@@ -2992,10 +3021,7 @@ class _RecentEntryGroupSection extends StatelessWidget {
 }
 
 class _RecentEntryGroupData {
-  _RecentEntryGroupData({
-    required this.date,
-    required this.entries,
-  });
+  _RecentEntryGroupData({required this.date, required this.entries});
 
   final DateTime date;
   final List<AccountEntry> entries;

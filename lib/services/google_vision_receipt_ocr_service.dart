@@ -40,9 +40,7 @@ class GoogleVisionReceiptOcrService implements ReceiptOcrService {
               'features': [
                 {'type': 'DOCUMENT_TEXT_DETECTION'},
               ],
-              'imageContext': {
-                'languageHints': ['en', 'zh'],
-              },
+              'imageContext': {'languageHints': _languageHints()},
             },
           ],
         },
@@ -58,7 +56,9 @@ class GoogleVisionReceiptOcrService implements ReceiptOcrService {
         return null;
       }
 
-      final fullText = (first['fullTextAnnotation'] as Map<String, dynamic>?)?['text'] as String?;
+      final fullText =
+          (first['fullTextAnnotation'] as Map<String, dynamic>?)?['text']
+              as String?;
       if (fullText != null && fullText.trim().isNotEmpty) {
         return fullText.trim();
       }
@@ -66,7 +66,8 @@ class GoogleVisionReceiptOcrService implements ReceiptOcrService {
       final textAnnotations = first['textAnnotations'] as List<dynamic>?;
       final description = textAnnotations == null || textAnnotations.isEmpty
           ? null
-          : (textAnnotations.first as Map<String, dynamic>)['description'] as String?;
+          : (textAnnotations.first as Map<String, dynamic>)['description']
+                as String?;
       return description?.trim();
     } catch (e) {
       if (e is DioException) {
@@ -78,5 +79,47 @@ class GoogleVisionReceiptOcrService implements ReceiptOcrService {
       }
       return null;
     }
+  }
+
+  List<String> _languageHints() {
+    final locale = PlatformDispatcher.instance.locale;
+    final languageCode = locale.languageCode.toLowerCase();
+    final countryCode = (locale.countryCode ?? '').toUpperCase();
+    final hints = <String>['en', languageCode];
+
+    switch (countryCode) {
+      case 'CN':
+      case 'TW':
+      case 'HK':
+      case 'MO':
+        hints.add('zh');
+        break;
+      case 'PH':
+        hints.addAll(['fil', 'tl']);
+        break;
+      case 'TH':
+        hints.add('th');
+        break;
+      case 'VN':
+        hints.add('vi');
+        break;
+      case 'JP':
+        hints.add('ja');
+        break;
+      case 'KR':
+        hints.add('ko');
+        break;
+      case 'ID':
+        hints.add('id');
+        break;
+      case 'MY':
+        hints.add('ms');
+        break;
+      case 'TR':
+        hints.add('tr');
+        break;
+    }
+
+    return hints.where((hint) => hint.isNotEmpty).toSet().toList();
   }
 }

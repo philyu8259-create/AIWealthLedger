@@ -37,7 +37,6 @@ class StockService {
 
   String _message(String zh, String en) => _isIntl ? en : zh;
 
-  static const _token = '9CC9221B-67A1-4326-9401-60A3F0627B83';
   static const _legacyPositionsKey = 'stock_positions_v1';
   static const _positionsKeyPrefix = 'stock_positions_v2_';
   static const _demoPositionsKey = 'demo_stock_positions_v1';
@@ -73,11 +72,10 @@ class StockService {
         _cloud.isConfigured;
   }
 
-  StockMarketScope get _stockMarketScope =>
-      GetIt.instance<AppProfileService>()
-          .currentProfile
-          .capabilityProfile
-          .stockMarketScope;
+  StockMarketScope get _stockMarketScope => GetIt.instance<AppProfileService>()
+      .currentProfile
+      .capabilityProfile
+      .stockMarketScope;
 
   bool get isUsScope => _stockMarketScope == StockMarketScope.us;
 
@@ -87,12 +85,20 @@ class StockService {
 
   String get _finnhubApiKey => ConfigService.instance.finnhubApiKey;
 
-  bool get isProviderReady => !_isUsScope || _isFinnhubConfigured;
+  bool get _isZhituConfigured => ConfigService.instance.isZhituConfigured;
+
+  String get _zhituApiToken => ConfigService.instance.zhituApiToken;
+
+  bool get isProviderReady =>
+      _isUsScope ? _isFinnhubConfigured : _isZhituConfigured;
 
   bool get usesOnDemandSearch => _isUsScope && _isFinnhubConfigured;
 
   Exception get _usStockPendingException =>
       Exception('US stock search and quotes are not connected yet');
+
+  Exception get _cnStockPendingException =>
+      Exception('CN stock search and quotes are not connected yet');
 
   Future<List<StockPosition>> getPositions({bool tryRestore = false}) async {
     if (tryRestore) {
@@ -117,15 +123,18 @@ class StockService {
     if (raw == null || raw.isEmpty) return [];
     try {
       final list = jsonDecode(raw) as List<dynamic>;
-      final positions = list
-          .map(
-            (e) => _normalizePositionMarketProfile(
-              StockPosition.fromJson(Map<String, dynamic>.from(e as Map)),
-            ),
-          )
-          .toList()
-        ..sort((a, b) => a.code.compareTo(b.code));
-      final normalizedRaw = jsonEncode(positions.map((e) => e.toJson()).toList());
+      final positions =
+          list
+              .map(
+                (e) => _normalizePositionMarketProfile(
+                  StockPosition.fromJson(Map<String, dynamic>.from(e as Map)),
+                ),
+              )
+              .toList()
+            ..sort((a, b) => a.code.compareTo(b.code));
+      final normalizedRaw = jsonEncode(
+        positions.map((e) => e.toJson()).toList(),
+      );
       if (normalizedRaw != raw) {
         await _prefs.setString(_activePositionsKey, normalizedRaw);
       }
@@ -136,9 +145,7 @@ class StockService {
   }
 
   Future<void> savePositions(List<StockPosition> positions) async {
-    final normalized = positions
-        .map(_normalizePositionMarketProfile)
-        .toList()
+    final normalized = positions.map(_normalizePositionMarketProfile).toList()
       ..sort((a, b) => a.code.compareTo(b.code));
     final raw = jsonEncode(normalized.map((e) => e.toJson()).toList());
     await _prefs.setString(_activePositionsKey, raw);
@@ -146,7 +153,8 @@ class StockService {
 
   StockPosition _normalizePositionMarketProfile(StockPosition position) {
     final exchange = position.exchange.toUpperCase();
-    final isUs = exchange.contains('NASDAQ') ||
+    final isUs =
+        exchange.contains('NASDAQ') ||
         exchange.contains('NYSE') ||
         exchange == 'US';
 
@@ -369,15 +377,20 @@ class StockService {
 
     final cached = _loadSearchCache();
     if (!force && cached.isNotEmpty) return cached;
+    if (!isProviderReady) {
+      throw _cnStockPendingException;
+    }
 
     final resp = await _dio.get(
       'https://api.zhituapi.com/hs/list/all',
-      queryParameters: {'token': _token, 'page': 1, 'limit': 5000},
+      queryParameters: {'token': _zhituApiToken, 'page': 1, 'limit': 5000},
     );
 
     final data = resp.data;
     if (data is! List) {
-      throw Exception(_message('股票列表接口返回异常', 'Stock list API returned an unexpected payload'));
+      throw Exception(
+        _message('股票列表接口返回异常', 'Stock list API returned an unexpected payload'),
+      );
     }
 
     final items = data
@@ -459,7 +472,12 @@ class StockService {
     if (manual && !force) {
       final lastManualMs = _prefs.getInt(_lastManualRefreshMsKey) ?? 0;
       if (nowMs - lastManualMs < 3000) {
-        throw Exception(_message('刷新过于频繁，请 3 秒后再试', 'Refreshing too frequently. Please try again in 3 seconds.'));
+        throw Exception(
+          _message(
+            '刷新过于频繁，请 3 秒后再试',
+            'Refreshing too frequently. Please try again in 3 seconds.',
+          ),
+        );
       }
       await _prefs.setInt(_lastManualRefreshMsKey, nowMs);
     }
@@ -491,16 +509,19 @@ class StockService {
     }
 
     try {
+      if (!isProviderReady) return position;
       final resp = await _dio.get(
         'https://api.zhituapi.com/hs/real/time/${position.code}',
-        queryParameters: {'token': _token},
+        queryParameters: {'token': _zhituApiToken},
       );
       final data = resp.data;
       if (data is Map && data['error'] != null) {
         throw Exception(data['error']);
       }
       if (data is! Map) {
-        throw Exception(_message('行情返回异常', 'Quote API returned an unexpected payload'));
+        throw Exception(
+          _message('行情返回异常', 'Quote API returned an unexpected payload'),
+        );
       }
 
       final latestPrice = (data['p'] as num?)?.toDouble();

@@ -40,6 +40,10 @@ class AppFormatter {
     return DateFormat.yMd(_localeTag(locale)).format(date);
   }
 
+  static String formatShortDateTime(DateTime date, {required Locale locale}) {
+    return DateFormat.yMd(_localeTag(locale)).add_Hm().format(date);
+  }
+
   static String formatMediumDate(DateTime date, {required Locale locale}) {
     return DateFormat.yMMMd(_localeTag(locale)).format(date);
   }

@@ -127,6 +127,14 @@ GOOGLE_IOS_REVERSED_CLIENT_ID=
 - `FINNHUB_API_KEY`：intl 美股搜索与行情
 - `GOOGLE_*`：intl Google 登录
 
+### 中国区行情
+
+```bash
+ZHITU_API_TOKEN=
+```
+
+- `ZHITU_API_TOKEN`：中国区 A 股搜索与行情
+
 ### 云端接口
 
 ```bash
@@ -159,17 +167,13 @@ ALIYUN_ASR_APP_KEY=
 - `ALIYUN_ACCESS_KEY_ID` / `ALIYUN_ACCESS_KEY_SECRET`：阿里云能力接入
 - `ALIYUN_ASR_APP_KEY`：阿里云语音识别
 
-### App Store
-
-```bash
-APP_STORE_SHARED_SECRET=
-```
-
 ## 说明
 
 - 如果 `FINNHUB_API_KEY` 未配置，intl 资产页会保持“美股接入中”并阻止股票新增 / 刷新。
+- 如果 `ZHITU_API_TOKEN` 未配置，中国区 A 股搜索与行情会保持不可用或仅显示本地缓存数据。
 - 如果 intl 的 `GEMINI_API_KEY` 或 `GOOGLE_VISION_API_KEY` 未配置，对应 AI / OCR 能力会表现为不可用，而不会伪装回退到中国区 provider。
 - 如果中国区 `QWEN_API_KEY`、OCR 或阿里云凭据未配置，对应能力会按当前代码路径降级或不可用。
+- App Store shared secret / Server API private key 只允许配置在后端函数环境变量中，不能放入 App `.env` 或客户端包体。
 - 本仓库已经移除 `.env`、`ios/Runner/.env`、`tmp/` 等本地敏感或临时内容，不会上传这些文件。
 
 ## 模式解析规则

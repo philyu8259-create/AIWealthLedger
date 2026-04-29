@@ -94,9 +94,8 @@ class CloudAssetDataSource implements IAssetDataSource {
   ({String localeTag, String countryCode, String baseCurrency})
   get _fallbackLocaleConfig {
     if (GetIt.instance.isRegistered<AppProfileService>()) {
-      final localeProfile = GetIt.instance<AppProfileService>()
-          .currentProfile
-          .localeProfile;
+      final localeProfile =
+          GetIt.instance<AppProfileService>().currentProfile.localeProfile;
       return (
         localeTag: localeProfile.localeTag.replaceAll('_', '-'),
         countryCode: localeProfile.countryCode,
@@ -133,9 +132,9 @@ class CloudAssetDataSource implements IAssetDataSource {
   }
 
   Map<String, dynamic> _toJson(Asset asset) {
-    return AssetModel.fromEntity(asset)
-        .copyWith(syncStatus: SyncStatus.synced)
-        .toJson();
+    return AssetModel.fromEntity(
+      asset,
+    ).copyWith(syncStatus: SyncStatus.synced).toJson();
   }
 
   bool get _chinaWalletAssetsEnabled {
@@ -234,7 +233,9 @@ class CloudAssetDataSource implements IAssetDataSource {
     }
 
     final resp = await _cloud.post('/assets', body: _toJson(asset));
-    debugPrint('[CloudAssetDataSource] addAsset resp=$resp');
+    debugPrint(
+      '[CloudAssetDataSource] addAsset response keys=${resp?.keys.toList()}',
+    );
     if (resp == null) {
       // 云端失败 → 先存本地，防止重启后丢失
       final assets = _loadLocalAssets();
@@ -264,7 +265,9 @@ class CloudAssetDataSource implements IAssetDataSource {
       _saveLocalAssets(assets);
       return newAsset;
     }
-    debugPrint('[CloudAssetDataSource] addAsset: resp keys=${resp.keys.toList()}');
+    debugPrint(
+      '[CloudAssetDataSource] addAsset: resp keys=${resp.keys.toList()}',
+    );
     // FC 返回 {'asset': {...}} 或 {'data': {'asset': {...}}}
     Map<String, dynamic>? assetData;
     if (resp.containsKey('asset')) {

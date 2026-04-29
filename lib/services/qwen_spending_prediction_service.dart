@@ -33,6 +33,7 @@ class QwenSpendingPredictionService implements SpendingPredictionService {
   Future<Either<String, SpendingPrediction>> predictSpending({
     required List<AccountEntry> entries,
     required double currentMonthExpense,
+    String feature = 'spending_prediction',
   }) async {
     if (!_isConfigured) {
       debugPrint(
@@ -183,8 +184,9 @@ $history
     required List<AccountEntry> entries,
     required double currentMonthExpense,
   }) {
-    final expenseEntries = entries.where((e) => e.type == EntryType.expense).toList()
-      ..sort((a, b) => a.date.compareTo(b.date));
+    final expenseEntries =
+        entries.where((e) => e.type == EntryType.expense).toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
 
     final monthlyTotals = <String, double>{};
     final monthlyCategoryTotals = <String, Map<String, double>>{};
@@ -195,7 +197,8 @@ $history
       monthlyTotals[monthKey] = (monthlyTotals[monthKey] ?? 0) + entry.amount;
       monthlyCategoryTotals.putIfAbsent(monthKey, () => <String, double>{});
       monthlyCategoryTotals[monthKey]![entry.category] =
-          (monthlyCategoryTotals[monthKey]![entry.category] ?? 0) + entry.amount;
+          (monthlyCategoryTotals[monthKey]![entry.category] ?? 0) +
+          entry.amount;
     }
 
     final monthCount = monthlyTotals.isEmpty ? 1 : monthlyTotals.length;
@@ -226,13 +229,12 @@ $history
             (averageCategoryTotals[item.key] ?? 0) + item.value;
       }
     }
-    averageCategoryTotals.updateAll(
-      (key, value) => value / monthCount,
-    );
+    averageCategoryTotals.updateAll((key, value) => value / monthCount);
 
     final currentMonthEntries = expenseEntries
         .where(
-          (entry) => entry.date.year == now.year && entry.date.month == now.month,
+          (entry) =>
+              entry.date.year == now.year && entry.date.month == now.month,
         )
         .toList();
     final currentMonthCategories = <String, double>{};
@@ -277,8 +279,8 @@ $history
     final topCategory = categoryPredictions.entries.isEmpty
         ? null
         : (categoryPredictions.entries.toList()
-              ..sort((a, b) => b.value.compareTo(a.value)))
-            .first;
+                ..sort((a, b) => b.value.compareTo(a.value)))
+              .first;
     final topCategoryName = topCategory == null
         ? '日常开销'
         : (CategoryDef.findById(topCategory.key)?.name ?? topCategory.key);

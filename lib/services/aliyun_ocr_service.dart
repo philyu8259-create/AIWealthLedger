@@ -83,7 +83,7 @@ class AliyunOCRService {
       debugPrint('[OCR] response status: ${resp.statusCode}');
 
       if (resp.statusCode != 200) {
-        debugPrint('[OCR] HTTP error: ${resp.statusCode}, data: ${resp.data}');
+        debugPrint('[OCR] HTTP error: ${resp.statusCode}');
         return null;
       }
 

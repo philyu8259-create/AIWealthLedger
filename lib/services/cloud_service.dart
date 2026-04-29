@@ -50,6 +50,17 @@ class CloudService {
     };
   }
 
+  String _safeResponseSummary(Response response) {
+    final data = response.data;
+    if (data is Map<String, dynamic>) {
+      return 'keys=${data.keys.toList()}';
+    }
+    if (data is List) {
+      return 'list(length=${data.length})';
+    }
+    return 'type=${data.runtimeType}';
+  }
+
   Future<Map<String, dynamic>?> _request(
     String method,
     String path, {
@@ -70,7 +81,7 @@ class CloudService {
       if (method == 'GET') {
         resp = await _dio.get(url, options: Options(headers: _headers));
         debugPrint(
-          '[CloudService] GET response: status=${resp.statusCode} data=${resp.data}',
+          '[CloudService] GET response: status=${resp.statusCode} ${_safeResponseSummary(resp)}',
         );
       } else if (method == 'POST') {
         resp = await _dio.post(
@@ -79,7 +90,7 @@ class CloudService {
           options: Options(headers: _headers),
         );
         debugPrint(
-          '[CloudService] POST resp status=${resp.statusCode} data_type=${resp.data?.runtimeType} data=${resp.data}',
+          '[CloudService] POST response: status=${resp.statusCode} ${_safeResponseSummary(resp)}',
         );
       } else if (method == 'PUT') {
         resp = await _dio.put(
@@ -124,12 +135,16 @@ class CloudService {
           }
           // 兼容旧 FC: body 是 json.dumps() 后的字符串
           final body = data['body'];
-          debugPrint('[CloudService] body type=${body.runtimeType} body=$body');
+          debugPrint('[CloudService] body type=${body.runtimeType}');
           if (body is String) {
             try {
               final parsed = jsonDecode(body);
-              debugPrint('[CloudService] parsed=$parsed');
-              if (parsed is Map<String, dynamic>) return parsed;
+              if (parsed is Map<String, dynamic>) {
+                debugPrint(
+                  '[CloudService] parsed keys=${parsed.keys.toList()}',
+                );
+                return parsed;
+              }
             } catch (e) {
               debugPrint('[CloudService] jsonDecode failed: $e');
             }
@@ -144,7 +159,7 @@ class CloudService {
           debugPrint('[CloudService] failed: ${data['msg'] ?? data['error']}');
           try {
             File('/tmp/cloud_service_error.log').writeAsStringSync(
-              'failed: method=$method path=$path data=$data\n',
+              'failed: method=$method path=$path keys=${data.keys.toList()}\n',
             );
           } catch (_) {}
           return null;
@@ -313,12 +328,47 @@ class CloudService {
     }
   }
 
+  /// 主动通过 App Store Server API 刷新云端 VIP 档案。
+  Future<Map<String, dynamic>?> refreshVipProfile({
+    String? transactionId,
+    String? vipEnvironment,
+  }) async {
+    if (!isConfigured) return null;
+    try {
+      final result = await _request(
+        'POST',
+        '/vip/refresh',
+        body: {
+          ...?(transactionId == null || transactionId.isEmpty
+              ? null
+              : {'transaction_id': transactionId}),
+          ...?(vipEnvironment == null || vipEnvironment.isEmpty
+              ? null
+              : {'vip_environment': vipEnvironment}),
+        },
+      );
+      if (result != null && result.containsKey('profile')) {
+        final profile = result['profile'];
+        if (profile is Map<String, dynamic>) {
+          return profile;
+        }
+      }
+      return result;
+    } catch (e) {
+      debugPrint('[CloudService] refreshVipProfile error: $e');
+      return null;
+    }
+  }
+
   /// 同步 VIP 档案到云端
   /// 如果云端返回 403（订阅已过期），抛出异常供调用方处理
   Future<Map<String, dynamic>?> syncVipProfile({
     required String vipType,
     required int expireMs,
     String? receiptData,
+    String? transactionId,
+    String? originalTransactionId,
+    String? appAccountToken,
   }) async {
     if (!isConfigured) return null;
     try {
@@ -329,6 +379,15 @@ class CloudService {
           'vip_type': vipType,
           'vip_expire_ms': expireMs,
           ...?(receiptData == null ? null : {'receipt_data': receiptData}),
+          ...?(transactionId == null || transactionId.isEmpty
+              ? null
+              : {'transaction_id': transactionId}),
+          ...?(originalTransactionId == null || originalTransactionId.isEmpty
+              ? null
+              : {'original_transaction_id': originalTransactionId}),
+          ...?(appAccountToken == null || appAccountToken.isEmpty
+              ? null
+              : {'app_account_token': appAccountToken}),
         },
       );
       if (result != null && result.containsKey('profile')) {

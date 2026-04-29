@@ -1,3 +1,6 @@
+import 'dart:ui' show PointerDeviceKind;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -79,10 +82,23 @@ class AIAccountingApp extends StatelessWidget {
               ),
             ),
             themeMode: themeModeService.themeMode,
+            scrollBehavior: const _DesktopAwareScrollBehavior(),
             routerConfig: appRouter,
           ),
         );
       },
     );
+  }
+}
+
+class _DesktopAwareScrollBehavior extends MaterialScrollBehavior {
+  const _DesktopAwareScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices {
+    final devices = super.dragDevices;
+    if (defaultTargetPlatform != TargetPlatform.macOS) return devices;
+
+    return {...devices, PointerDeviceKind.mouse, PointerDeviceKind.trackpad};
   }
 }

@@ -449,6 +449,9 @@ class AppStringKeys {
   static const vipOpenFailed = 'vip.openFailed';
   static const vipProductUnavailable = 'vip.productUnavailable';
   static const vipLoadingPrice = 'vip.loadingPrice';
+  static const vipConfirming = 'vip.confirming';
+  static const vipUpdated = 'vip.updated';
+  static const vipUnchanged = 'vip.unchanged';
   static const smsCodeDialogTitle = 'smsCodeDialog.title';
   static const smsCodeDialogSentTo = 'smsCodeDialog.sentTo';
   static const smsCodeDialogHint = 'smsCodeDialog.hint';

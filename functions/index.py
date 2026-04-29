@@ -9,6 +9,7 @@ import hmac
 import hashlib
 import base64
 import urllib.parse
+import urllib.request
 import traceback
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -28,6 +29,16 @@ SMS_REGION               = 'cn-hangzhou'
 APP_STORE_SHARED_SECRET = os.environ.get('APP_STORE_SHARED_SECRET', '')
 APPLE_VERIFY_URL = 'https://buy.itunes.apple.com/verifyReceipt'
 SANDBOX_VERIFY_URL = 'https://sandbox.itunes.apple.com/verifyReceipt'
+APP_STORE_BUNDLE_ID = os.environ.get('APP_STORE_BUNDLE_ID', 'com.phil.AIAccountant')
+APP_STORE_SERVER_ISSUER_ID = os.environ.get('APP_STORE_SERVER_ISSUER_ID', '')
+APP_STORE_SERVER_KEY_ID = os.environ.get('APP_STORE_SERVER_KEY_ID', '')
+APP_STORE_SERVER_PRIVATE_KEY = os.environ.get('APP_STORE_SERVER_PRIVATE_KEY', '')
+APP_STORE_SERVER_PRIVATE_KEY_PATH = os.environ.get('APP_STORE_SERVER_PRIVATE_KEY_PATH', '')
+APP_STORE_SERVER_API_ENV = os.environ.get('APP_STORE_SERVER_API_ENV', 'production').lower()
+APP_STORE_ROOT_CERT_PEM = os.environ.get('APP_STORE_ROOT_CERT_PEM', '')
+APP_STORE_REQUIRE_TRUSTED_JWS = os.environ.get('APP_STORE_REQUIRE_TRUSTED_JWS', 'false').lower() == 'true'
+APP_STORE_PRODUCTION_API = 'https://api.storekit.itunes.apple.com'
+APP_STORE_SANDBOX_API = 'https://api.storekit-sandbox.itunes.apple.com'
 
 # ─── OTS 配置（SDK v5.4.1）──────────────
 OTS_INSTANCE_NAME = os.environ.get('OTS_INSTANCE_NAME', 'ai-accountant-cu')
@@ -648,6 +659,12 @@ def _ots_put_vip_profile(user_phone, profile):
             ['vip_environment', profile.get('vip_environment', 'unknown')],
             ['vip_verify_status', str(profile.get('vip_verify_status', ''))],
             ['vip_verify_error', str(profile.get('vip_verify_error', ''))],
+            ['product_id', str(profile.get('product_id', ''))],
+            ['transaction_id', str(profile.get('transaction_id', ''))],
+            ['original_transaction_id', str(profile.get('original_transaction_id', ''))],
+            ['app_account_token', str(profile.get('app_account_token', ''))],
+            ['purchase_ms', int(profile.get('purchase_ms', 0) or 0)],
+            ['revocation_ms', int(profile.get('revocation_ms', 0) or 0)],
             ['updated_at', profile.get('updated_at', datetime.now().isoformat())],
         ]
         row = tablestore.Row(primary_key, attribute_columns)
@@ -661,6 +678,41 @@ def _ots_put_vip_profile(user_phone, profile):
         print(f'[OTS Error] put_vip_profile: {e}')
         traceback.print_exc()
         return False
+
+
+def _ots_find_vip_user_by_subscription(app_account_token='', transaction_id='', original_transaction_id=''):
+    """Best-effort mapping from an Apple notification back to the app user.
+
+    The VIP table is tiny today and keyed by user_phone, so a bounded scan is
+    acceptable. If ads/subscriptions scale up, replace this with an OTS secondary
+    index on app_account_token/original_transaction_id.
+    """
+    try:
+        import tablestore
+        client = _get_ots_client()
+        _, _, rows, _ = client.get_range(
+            VIP_TABLE,
+            tablestore.Direction.FORWARD,
+            [['user_phone', ''], ['profile_key', '']],
+            [['user_phone', tablestore.INF_MAX], ['profile_key', tablestore.INF_MAX]],
+            limit=1000
+        )
+        for row in rows:
+            attrs = {col[0]: col[1] for col in row.attribute_columns}
+            primary_key = dict(row.primary_key)
+            user_phone = primary_key.get('user_phone', '')
+            if not user_phone:
+                continue
+            if app_account_token and attrs.get('app_account_token') == app_account_token:
+                return user_phone
+            if original_transaction_id and attrs.get('original_transaction_id') == original_transaction_id:
+                return user_phone
+            if transaction_id and attrs.get('transaction_id') == transaction_id:
+                return user_phone
+    except Exception as e:
+        print(f'[OTS Error] find_vip_user_by_subscription: {e}')
+        traceback.print_exc()
+    return ''
 
 
 def _ots_delete_vip_profile(user_phone):
@@ -693,6 +745,382 @@ def _vip_environment_priority(environment):
     if environment == 'unknown':
         return 1
     return 0
+
+
+def _b64url_decode(raw):
+    raw = raw.encode('utf-8') if isinstance(raw, str) else raw
+    raw += b'=' * (-len(raw) % 4)
+    return base64.urlsafe_b64decode(raw)
+
+
+def _b64url_encode(raw):
+    return base64.urlsafe_b64encode(raw).rstrip(b'=').decode('utf-8')
+
+
+def _crypto_imports():
+    try:
+        from cryptography import x509
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric import ec
+        from cryptography.hazmat.primitives.asymmetric.utils import (
+            decode_dss_signature,
+            encode_dss_signature,
+        )
+        return {
+            'x509': x509,
+            'hashes': hashes,
+            'serialization': serialization,
+            'ec': ec,
+            'decode_dss_signature': decode_dss_signature,
+            'encode_dss_signature': encode_dss_signature,
+        }
+    except Exception as e:
+        print(f'[AppStore] cryptography unavailable: {e}')
+        return None
+
+
+def _load_app_store_private_key():
+    crypto = _crypto_imports()
+    if crypto is None:
+        return None
+
+    key_pem = APP_STORE_SERVER_PRIVATE_KEY
+    if not key_pem and APP_STORE_SERVER_PRIVATE_KEY_PATH:
+        try:
+            with open(APP_STORE_SERVER_PRIVATE_KEY_PATH, 'r', encoding='utf-8') as f:
+                key_pem = f.read()
+        except Exception as e:
+            print(f'[AppStore] private key path read failed: {e}')
+            return None
+
+    if not key_pem:
+        return None
+
+    key_pem = key_pem.replace('\\n', '\n').strip()
+    try:
+        return crypto['serialization'].load_pem_private_key(
+            key_pem.encode('utf-8'),
+            password=None,
+        )
+    except Exception as e:
+        print(f'[AppStore] private key load failed: {e}')
+        return None
+
+
+def _is_app_store_server_api_configured():
+    return bool(
+        APP_STORE_SERVER_ISSUER_ID
+        and APP_STORE_SERVER_KEY_ID
+        and (APP_STORE_SERVER_PRIVATE_KEY or APP_STORE_SERVER_PRIVATE_KEY_PATH)
+    )
+
+
+def _make_app_store_server_jwt():
+    crypto = _crypto_imports()
+    private_key = _load_app_store_private_key()
+    if crypto is None or private_key is None:
+        return None
+
+    now = int(time.time())
+    header = {
+        'alg': 'ES256',
+        'kid': APP_STORE_SERVER_KEY_ID,
+        'typ': 'JWT',
+    }
+    payload = {
+        'iss': APP_STORE_SERVER_ISSUER_ID,
+        'iat': now,
+        'exp': now + 20 * 60,
+        'aud': 'appstoreconnect-v1',
+        'bid': APP_STORE_BUNDLE_ID,
+    }
+    signing_input = '.'.join([
+        _b64url_encode(json.dumps(header, separators=(',', ':')).encode('utf-8')),
+        _b64url_encode(json.dumps(payload, separators=(',', ':')).encode('utf-8')),
+    ]).encode('utf-8')
+
+    der_sig = private_key.sign(signing_input, crypto['ec'].ECDSA(crypto['hashes'].SHA256()))
+    r, s = crypto['decode_dss_signature'](der_sig)
+    raw_sig = r.to_bytes(32, 'big') + s.to_bytes(32, 'big')
+    return signing_input.decode('utf-8') + '.' + _b64url_encode(raw_sig)
+
+
+def _verify_cert_signed_by(child_cert, issuer_cert, crypto):
+    try:
+        issuer_public_key = issuer_cert.public_key()
+        issuer_public_key.verify(
+            child_cert.signature,
+            child_cert.tbs_certificate_bytes,
+            crypto['ec'].ECDSA(child_cert.signature_hash_algorithm),
+        )
+        return True
+    except Exception:
+        try:
+            from cryptography.hazmat.primitives.asymmetric import padding
+            issuer_public_key.verify(
+                child_cert.signature,
+                child_cert.tbs_certificate_bytes,
+                padding.PKCS1v15(),
+                child_cert.signature_hash_algorithm,
+            )
+            return True
+        except Exception as e:
+            print(f'[AppStore] certificate chain verify failed: {e}')
+            return False
+
+
+def _is_trusted_app_store_chain(certs, crypto):
+    if not certs:
+        return False
+
+    now = datetime.utcnow()
+    for cert in certs:
+        if cert.not_valid_before > now or cert.not_valid_after < now:
+            print('[AppStore] certificate is not currently valid')
+            return False
+
+    for idx in range(len(certs) - 1):
+        if not _verify_cert_signed_by(certs[idx], certs[idx + 1], crypto):
+            return False
+
+    if not APP_STORE_ROOT_CERT_PEM:
+        return not APP_STORE_REQUIRE_TRUSTED_JWS
+
+    try:
+        trusted_root = crypto['x509'].load_pem_x509_certificate(
+            APP_STORE_ROOT_CERT_PEM.replace('\\n', '\n').encode('utf-8')
+        )
+        if certs[-1].fingerprint(crypto['hashes'].SHA256()) == trusted_root.fingerprint(
+            crypto['hashes'].SHA256()
+        ):
+            return True
+        return _verify_cert_signed_by(certs[-1], trusted_root, crypto)
+    except Exception as e:
+        print(f'[AppStore] trusted root cert parse failed: {e}')
+        return False
+
+
+def _decode_signed_payload(jws, *, verify=True):
+    if not jws or not isinstance(jws, str):
+        return None
+    parts = jws.split('.')
+    if len(parts) != 3:
+        print('[AppStore] invalid JWS compact form')
+        return None
+
+    try:
+        header = json.loads(_b64url_decode(parts[0]).decode('utf-8'))
+        payload = json.loads(_b64url_decode(parts[1]).decode('utf-8'))
+    except Exception as e:
+        print(f'[AppStore] JWS decode failed: {e}')
+        return None
+
+    if not verify:
+        return payload
+
+    crypto = _crypto_imports()
+    if crypto is None:
+        return None
+
+    try:
+        x5c = header.get('x5c') or []
+        if not x5c:
+            print('[AppStore] JWS missing x5c certificate chain')
+            return None
+
+        certs = [
+            crypto['x509'].load_der_x509_certificate(base64.b64decode(raw_cert))
+            for raw_cert in x5c
+        ]
+        if not _is_trusted_app_store_chain(certs, crypto):
+            print('[AppStore] JWS certificate chain is not trusted')
+            return None
+
+        signature = _b64url_decode(parts[2])
+        if len(signature) != 64:
+            print('[AppStore] ES256 signature is not 64 bytes')
+            return None
+        r = int.from_bytes(signature[:32], 'big')
+        s = int.from_bytes(signature[32:], 'big')
+        der_signature = crypto['encode_dss_signature'](r, s)
+        signing_input = f'{parts[0]}.{parts[1]}'.encode('utf-8')
+        certs[0].public_key().verify(
+            der_signature,
+            signing_input,
+            crypto['ec'].ECDSA(crypto['hashes'].SHA256()),
+        )
+        return payload
+    except Exception as e:
+        print(f'[AppStore] JWS verification failed: {e}')
+        return None
+
+
+def _app_store_api_base(environment):
+    return APP_STORE_SANDBOX_API if environment == 'sandbox' else APP_STORE_PRODUCTION_API
+
+
+def _app_store_api_get(path, *, environment='production', query=None):
+    token = _make_app_store_server_jwt()
+    if not token:
+        return None
+    query_string = ''
+    if query:
+        query_string = '?' + urllib.parse.urlencode(query, doseq=True)
+    url = _app_store_api_base(environment) + path + query_string
+    req = urllib.request.Request(
+        url,
+        headers={
+            'Authorization': f'Bearer {token}',
+            'Accept': 'application/json',
+        },
+        method='GET',
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        print(f'[AppStore] API GET failed env={environment} path={path}: {e}')
+        return None
+
+
+def _product_id_to_vip_type(product_id):
+    product_id = product_id or ''
+    if 'year' in product_id:
+        return 'yearly'
+    if 'mon' in product_id:
+        return 'monthly'
+    return ''
+
+
+def _safe_vip_log_profile(profile):
+    if not isinstance(profile, dict):
+        return profile
+    return {
+        'vip_type': profile.get('vip_type', ''),
+        'vip_expire_ms': profile.get('vip_expire_ms', 0),
+        'vip_environment': profile.get('vip_environment', 'unknown'),
+        'vip_verify_status': profile.get('vip_verify_status', ''),
+        'vip_verify_error': profile.get('vip_verify_error', ''),
+        'product_id': profile.get('product_id', ''),
+        'has_transaction_id': bool(profile.get('transaction_id')),
+        'has_original_transaction_id': bool(profile.get('original_transaction_id')),
+        'has_app_account_token': bool(profile.get('app_account_token')),
+        'purchase_ms': profile.get('purchase_ms', 0),
+        'revocation_ms': profile.get('revocation_ms', 0),
+    }
+
+
+def _extract_ms(value):
+    if value is None:
+        return 0
+    try:
+        return int(value)
+    except Exception:
+        return 0
+
+
+def _vip_profile_from_transaction_payload(transaction, *, environment, source, notification_type=''):
+    if not isinstance(transaction, dict):
+        return None
+    bundle_id = transaction.get('bundleId') or ''
+    if bundle_id and bundle_id != APP_STORE_BUNDLE_ID:
+        print(f'[AppStore] ignore transaction for bundle_id={bundle_id}')
+        return None
+
+    product_id = transaction.get('productId') or ''
+    expires_ms = _extract_ms(transaction.get('expiresDate'))
+    purchase_ms = _extract_ms(transaction.get('purchaseDate'))
+    revoked_ms = _extract_ms(transaction.get('revocationDate'))
+    transaction_id = str(transaction.get('transactionId') or '')
+    original_transaction_id = str(transaction.get('originalTransactionId') or '')
+    app_account_token = str(transaction.get('appAccountToken') or '')
+
+    if revoked_ms > 0:
+        expires_ms = min(expires_ms, revoked_ms) if expires_ms > 0 else revoked_ms
+
+    profile = {
+        'vip_type': _product_id_to_vip_type(product_id),
+        'vip_expire_ms': expires_ms,
+        'vip_environment': environment or 'unknown',
+        'vip_verify_status': source,
+        'vip_verify_error': notification_type,
+        'product_id': product_id,
+        'transaction_id': transaction_id,
+        'original_transaction_id': original_transaction_id,
+        'app_account_token': app_account_token,
+        'purchase_ms': purchase_ms,
+        'revocation_ms': revoked_ms,
+        'updated_at': datetime.now().isoformat(),
+    }
+    return profile
+
+
+def _fetch_latest_vip_profile_from_app_store(transaction_id, *, preferred_environment=None):
+    if not transaction_id or not _is_app_store_server_api_configured():
+        return None
+
+    environments = []
+    if preferred_environment in ('production', 'sandbox'):
+        environments.append(preferred_environment)
+    for env in (APP_STORE_SERVER_API_ENV, 'production', 'sandbox'):
+        if env in ('production', 'sandbox') and env not in environments:
+            environments.append(env)
+
+    for env in environments:
+        response = _app_store_api_get(
+            f'/inApps/v1/subscriptions/{urllib.parse.quote(str(transaction_id), safe="")}',
+            environment=env,
+        )
+        if not response:
+            continue
+
+        latest_profile = None
+        for item in response.get('data') or []:
+            for tx in item.get('lastTransactions') or []:
+                signed_transaction = tx.get('signedTransactionInfo')
+                transaction = _decode_signed_payload(signed_transaction)
+                profile = _vip_profile_from_transaction_payload(
+                    transaction,
+                    environment=env,
+                    source='app_store_server_api',
+                )
+                if profile and (
+                    latest_profile is None
+                    or int(profile.get('vip_expire_ms', 0) or 0) > int(latest_profile.get('vip_expire_ms', 0) or 0)
+                ):
+                    latest_profile = profile
+        if latest_profile:
+            return latest_profile
+    return None
+
+
+def _merge_vip_profile(existing_profile, incoming_profile):
+    if not incoming_profile:
+        return existing_profile or {}
+    if not existing_profile:
+        return incoming_profile
+
+    existing_environment = existing_profile.get('vip_environment', 'unknown')
+    incoming_environment = incoming_profile.get('vip_environment', 'unknown')
+    existing_expire_ms = int(existing_profile.get('vip_expire_ms', 0) or 0)
+    incoming_expire_ms = int(incoming_profile.get('vip_expire_ms', 0) or 0)
+    incoming_verify_status = incoming_profile.get('vip_verify_status', '')
+    incoming_is_apple_authoritative = (
+        incoming_verify_status in ('app_store_server_api', 'app_store_notification', 0, '0')
+    )
+
+    if _vip_environment_priority(existing_environment) > _vip_environment_priority(incoming_environment):
+        return existing_profile
+    # Apple-verified subscription state must be authoritative, even when it is
+    # shorter than a previously cached client-calculated expiry. This matters
+    # especially in sandbox, where subscription durations are accelerated.
+    if incoming_is_apple_authoritative and incoming_expire_ms > 0:
+        return {**existing_profile, **incoming_profile}
+    if incoming_expire_ms <= 0 and existing_expire_ms > 0:
+        return {**existing_profile, **incoming_profile}
+    if existing_expire_ms > incoming_expire_ms and incoming_profile.get('revocation_ms', 0) <= 0:
+        return existing_profile
+    return {**existing_profile, **incoming_profile}
 
 
 def _verify_receipt_with_apple(receipt_data):
@@ -835,6 +1263,12 @@ class Handler(BaseHTTPRequestHandler):
                     'ASSET_TABLE': ASSET_TABLE,
                     'VIP_TABLE': VIP_TABLE,
                     'APP_STORE_SHARED_SECRET_LEN': len(APP_STORE_SHARED_SECRET),
+                    'APP_STORE_BUNDLE_ID': APP_STORE_BUNDLE_ID,
+                    'APP_STORE_SERVER_ISSUER_ID_LEN': len(APP_STORE_SERVER_ISSUER_ID),
+                    'APP_STORE_SERVER_KEY_ID_LEN': len(APP_STORE_SERVER_KEY_ID),
+                    'APP_STORE_SERVER_PRIVATE_KEY_CONFIGURED': bool(APP_STORE_SERVER_PRIVATE_KEY or APP_STORE_SERVER_PRIVATE_KEY_PATH),
+                    'APP_STORE_ROOT_CERT_CONFIGURED': bool(APP_STORE_ROOT_CERT_PEM),
+                    'APP_STORE_REQUIRE_TRUSTED_JWS': APP_STORE_REQUIRE_TRUSTED_JWS,
                     'OTS_ACCESS_KEY_ID_LEN': len(OTS_ACCESS_KEY_ID),
                     'OTS_ACCESS_KEY_SECRET_LEN': len(OTS_ACCESS_KEY_SECRET),
                 }
@@ -1040,6 +1474,109 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 self._respond(200, {'success': False, 'error': result.get('error', 'Unknown error')})
 
+        elif self.path in ('/app-store/notifications', '/app-store/notifications/v2'):
+            length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(length).decode('utf-8')
+            data = json.loads(body) if body else {}
+
+            signed_payload = data.get('signedPayload')
+            notification = _decode_signed_payload(signed_payload)
+            if not notification:
+                self._respond(400, {'error': 'invalid_signed_payload'})
+                return
+
+            notification_type = notification.get('notificationType', '')
+            subtype = notification.get('subtype', '')
+            notification_data = notification.get('data') or {}
+            bundle_id = notification_data.get('bundleId') or ''
+            if bundle_id and bundle_id != APP_STORE_BUNDLE_ID:
+                print(f'[AppStore] ignore notification for bundle_id={bundle_id}')
+                self._respond(200, {'accepted': True, 'ignored': 'bundle_id_mismatch'})
+                return
+
+            environment = str(notification_data.get('environment') or notification.get('environment') or 'unknown').lower()
+            if environment not in ('production', 'sandbox'):
+                environment = 'unknown'
+
+            signed_transaction = notification_data.get('signedTransactionInfo')
+            transaction = _decode_signed_payload(signed_transaction)
+            incoming_profile = _vip_profile_from_transaction_payload(
+                transaction,
+                environment=environment,
+                source='app_store_notification',
+                notification_type=':'.join([v for v in (notification_type, subtype) if v]),
+            )
+            if not incoming_profile:
+                print(f'[AppStore] notification has no usable transaction, type={notification_type} subtype={subtype}')
+                self._respond(200, {'accepted': True, 'mapped': False, 'reason': 'no_transaction'})
+                return
+
+            user_phone = _ots_find_vip_user_by_subscription(
+                app_account_token=incoming_profile.get('app_account_token', ''),
+                transaction_id=incoming_profile.get('transaction_id', ''),
+                original_transaction_id=incoming_profile.get('original_transaction_id', ''),
+            )
+            if not user_phone:
+                print(
+                    '[AppStore] notification accepted but not mapped: '
+                    f'type={notification_type} subtype={subtype} '
+                    f'has_tx={bool(incoming_profile.get("transaction_id", ""))}'
+                )
+                self._respond(200, {'accepted': True, 'mapped': False})
+                return
+
+            existing_profile = _ots_get_vip_profile(user_phone)
+            profile = _merge_vip_profile(existing_profile, incoming_profile)
+            success = _ots_put_vip_profile(user_phone, profile)
+            if success:
+                print(f'[AppStore] notification saved user={user_phone} type={notification_type} subtype={subtype}')
+                self._respond(200, {'accepted': True, 'mapped': True, 'profile': profile})
+            else:
+                self._respond(500, {'error': 'OTS vip write failed'})
+
+        elif self.path == '/vip/refresh':
+            user_phone = self._get_user_phone()
+            if not user_phone:
+                self._respond(400, {'error': 'Missing X-User-Phone header'})
+                return
+
+            length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(length).decode('utf-8')
+            data = json.loads(body) if body else {}
+            existing_profile = _ots_get_vip_profile(user_phone)
+            transaction_id = str(
+                data.get('transaction_id')
+                or existing_profile.get('transaction_id')
+                or existing_profile.get('original_transaction_id')
+                or ''
+            ).strip()
+            preferred_environment = str(
+                data.get('vip_environment')
+                or existing_profile.get('vip_environment')
+                or ''
+            ).lower()
+
+            if not transaction_id:
+                self._respond(400, {'error': 'missing_transaction_id'})
+                return
+
+            incoming_profile = _fetch_latest_vip_profile_from_app_store(
+                transaction_id,
+                preferred_environment=preferred_environment,
+            )
+            if not incoming_profile:
+                self._respond(502, {'error': 'app_store_lookup_failed'})
+                return
+
+            if existing_profile.get('app_account_token') and not incoming_profile.get('app_account_token'):
+                incoming_profile['app_account_token'] = existing_profile.get('app_account_token')
+            profile = _merge_vip_profile(existing_profile, incoming_profile)
+            success = _ots_put_vip_profile(user_phone, profile)
+            if success:
+                self._respond(200, {'profile': profile})
+            else:
+                self._respond(500, {'error': 'OTS vip write failed'})
+
         elif self.path == '/vip/sync':
             user_phone = self._get_user_phone()
             if not user_phone:
@@ -1053,16 +1590,39 @@ class Handler(BaseHTTPRequestHandler):
             vip_type = data.get('vip_type', '')
             vip_expire_ms = int(data.get('vip_expire_ms', 0) or 0)
             receipt_data = data.get('receipt_data')
+            transaction_id = str(data.get('transaction_id') or '').strip()
+            original_transaction_id = str(data.get('original_transaction_id') or '').strip()
+            app_account_token = str(data.get('app_account_token') or '').strip()
             incoming_environment = data.get('vip_environment', 'unknown') or 'unknown'
             existing_profile = _ots_get_vip_profile(user_phone)
             existing_environment = existing_profile.get('vip_environment', 'unknown')
             existing_expire_ms = int(existing_profile.get('vip_expire_ms', 0) or 0)
+            product_id = ''
+            purchase_ms = 0
+            revocation_ms = 0
 
             print(
                 f'[VIP] /vip/sync user={user_phone} vip_type={vip_type} expire_ms={vip_expire_ms} '
                 f'incoming_env={incoming_environment} existing_env={existing_environment} '
-                f'has_receipt={bool(receipt_data)}'
+                f'has_receipt={bool(receipt_data)} has_tx={bool(transaction_id)} '
+                f'has_app_account_token={bool(app_account_token)}'
             )
+
+            server_profile = _fetch_latest_vip_profile_from_app_store(
+                transaction_id or existing_profile.get('transaction_id', ''),
+                preferred_environment=incoming_environment.lower() if isinstance(incoming_environment, str) else None,
+            )
+            if server_profile:
+                if app_account_token and not server_profile.get('app_account_token'):
+                    server_profile['app_account_token'] = app_account_token
+                profile = _merge_vip_profile(existing_profile, server_profile)
+                success = _ots_put_vip_profile(user_phone, profile)
+                if success:
+                    print(f'[VIP] /vip/sync saved server profile={_safe_vip_log_profile(profile)}')
+                    self._respond(200, {'profile': profile})
+                else:
+                    self._respond(500, {'error': 'OTS vip write failed'})
+                return
 
             if receipt_data:
                 receipt_result = _verify_receipt_with_apple(receipt_data)
@@ -1075,17 +1635,19 @@ class Handler(BaseHTTPRequestHandler):
                     receipt_info = receipt_result.get('receipt_info')
                     latest_receipt_info = _pick_latest_receipt_info(receipt_info)
                     apple_expire_ms = _apple_subscription_expire_ms(latest_receipt_info)
+                    if isinstance(latest_receipt_info, dict):
+                        product_id = latest_receipt_info.get('product_id', '')
+                        transaction_id = transaction_id or str(latest_receipt_info.get('transaction_id') or '')
+                        original_transaction_id = (
+                            original_transaction_id
+                            or str(latest_receipt_info.get('original_transaction_id') or '')
+                        )
+                        purchase_ms = _extract_ms(
+                            latest_receipt_info.get('purchase_date_ms')
+                            or latest_receipt_info.get('original_purchase_date_ms')
+                        )
                     if apple_expire_ms > 0:
-                        if apple_expire_ms >= vip_expire_ms:
-                            vip_expire_ms = apple_expire_ms
-                        else:
-                            print(
-                                f'[VIP] keep later incoming expire_ms, apple_expire_ms={apple_expire_ms} '
-                                f'incoming_expire_ms={vip_expire_ms}'
-                            )
-                        product_id = ''
-                        if isinstance(latest_receipt_info, dict):
-                            product_id = latest_receipt_info.get('product_id', '')
+                        vip_expire_ms = apple_expire_ms
                         if 'year' in product_id:
                             vip_type = 'yearly'
                         elif 'mon' in product_id:
@@ -1124,18 +1686,29 @@ class Handler(BaseHTTPRequestHandler):
                 })
                 return
 
+            if not vip_type and vip_expire_ms <= 0:
+                print('[VIP] /vip/sync no active subscription in receipt, skip empty profile write')
+                self._respond(200, {'profile': existing_profile or {}})
+                return
+
             profile = {
                 'vip_type': vip_type,
                 'vip_expire_ms': vip_expire_ms,
                 'vip_environment': incoming_environment,
                 'vip_verify_status': verify_status,
                 'vip_verify_error': verify_error,
+                'product_id': product_id,
+                'transaction_id': transaction_id,
+                'original_transaction_id': original_transaction_id,
+                'app_account_token': app_account_token or existing_profile.get('app_account_token', ''),
+                'purchase_ms': purchase_ms,
+                'revocation_ms': revocation_ms,
                 'updated_at': datetime.now().isoformat(),
             }
 
             success = _ots_put_vip_profile(user_phone, profile)
             if success:
-                print(f'[VIP] /vip/sync saved profile={profile}')
+                print(f'[VIP] /vip/sync saved profile={_safe_vip_log_profile(profile)}')
                 self._respond(200, {'profile': profile})
             else:
                 self._respond(500, {'error': 'OTS vip write failed'})

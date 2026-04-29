@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +11,7 @@ import '../../../../services/aliyun_sms_service.dart';
 import '../../../../services/app_profile_service.dart';
 import '../../../../services/demo_data_seeder.dart';
 import '../../../../services/injection.dart';
+import '../../../../services/intl_auth_service.dart';
 import '../../../../services/stock_service.dart';
 import '../../../../services/vip_service.dart';
 import '../../data/datasources/i_account_entry_datasource.dart';
@@ -27,6 +30,7 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
   int _countdown = 0;
   bool _sending = false;
   bool _verifying = false;
+  bool _appleSigningIn = false;
   String? _phoneError;
   String? _codeError;
 
@@ -54,7 +58,9 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppStrings.of(context).text(AppStringKeys.phoneLoginOpenPrivacyFailed),
+              AppStrings.of(
+                context,
+              ).text(AppStringKeys.phoneLoginOpenPrivacyFailed),
             ),
           ),
         );
@@ -71,7 +77,9 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppStrings.of(context).text(AppStringKeys.phoneLoginOpenTermsFailed),
+              AppStrings.of(
+                context,
+              ).text(AppStringKeys.phoneLoginOpenTermsFailed),
             ),
           ),
         );
@@ -87,7 +95,9 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
     }
     if (phone.length != 11) {
       setState(
-        () => _phoneError = AppStrings.of(context).text(AppStringKeys.phoneLoginInvalidPhone),
+        () => _phoneError = AppStrings.of(
+          context,
+        ).text(AppStringKeys.phoneLoginInvalidPhone),
       );
     } else {
       setState(() => _phoneError = null);
@@ -95,14 +105,17 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
   }
 
   void _validateCode() {
-    final code = _codeController.text.trim();
+    final code = _normalizedCodeText(_codeController.text);
+    _syncNormalizedCode(code);
     if (code.isEmpty) {
       setState(() => _codeError = null);
       return;
     }
     if (code.length < 4 || code.length > 8) {
       setState(
-        () => _codeError = AppStrings.of(context).text(AppStringKeys.phoneLoginInvalidCodeLength),
+        () => _codeError = AppStrings.of(
+          context,
+        ).text(AppStringKeys.phoneLoginInvalidCodeLength),
       );
     } else {
       setState(() => _codeError = null);
@@ -113,7 +126,9 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
     final phone = _phoneController.text.trim();
     if (phone.isEmpty || phone.length != 11) {
       setState(
-        () => _phoneError = AppStrings.of(context).text(AppStringKeys.phoneLoginInvalidPhone),
+        () => _phoneError = AppStrings.of(
+          context,
+        ).text(AppStringKeys.phoneLoginInvalidPhone),
       );
       return;
     }
@@ -122,9 +137,27 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
     setState(() => _sending = true);
 
     try {
-      await _smsService.sendCode(phone);
+      final countdownSeconds = await _smsService.sendCode(phone);
+      if (countdownSeconds <= 0) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppStrings.of(context).text(
+                  AppStringKeys.phoneLoginSendFailed,
+                  params: {'error': 'SMS service unavailable'},
+                ),
+              ),
+              backgroundColor: Colors.red.shade400,
+            ),
+          );
+          setState(() => _sending = false);
+        }
+        return;
+      }
+      if (!mounted) return;
       setState(() {
-        _countdown = 60;
+        _countdown = countdownSeconds;
         _countingDown = true;
         _sending = false;
       });
@@ -164,18 +197,23 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
   Future<void> _verifyCode() async {
     // validate all fields
     final phone = _phoneController.text.trim();
-    final code = _codeController.text.trim();
+    final code = _normalizedCodeText(_codeController.text);
+    _syncNormalizedCode(code);
 
     bool hasError = false;
     if (phone.isEmpty || phone.length != 11) {
       setState(
-        () => _phoneError = AppStrings.of(context).text(AppStringKeys.phoneLoginInvalidPhone),
+        () => _phoneError = AppStrings.of(
+          context,
+        ).text(AppStringKeys.phoneLoginInvalidPhone),
       );
       hasError = true;
     }
     if (code.isEmpty || code.length < 4 || code.length > 8) {
       setState(
-        () => _codeError = AppStrings.of(context).text(AppStringKeys.phoneLoginInvalidCodeInput),
+        () => _codeError = AppStrings.of(
+          context,
+        ).text(AppStringKeys.phoneLoginInvalidCodeInput),
       );
       hasError = true;
     }
@@ -184,11 +222,12 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
     setState(() => _verifying = true);
 
     try {
-      // 开发者 bypass：直接过审（无需真实验证码）
-      if (phone == '15692162538' ||
-          phone == '17512122538' ||
-          phone == '15601891127' ||
-          phone == '15618231127') {
+      // 开发调试 bypass：仅 debug 包启用，正式/TestFlight/profile 包必须走验证码。
+      if (kDebugMode &&
+          (phone == '15692162538' ||
+              phone == '17512122538' ||
+              phone == '15601891127' ||
+              phone == '15618231127')) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('has_logged_in', true);
         await prefs.setString('logged_in_phone', phone);
@@ -282,6 +321,52 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
     }
   }
 
+  String _normalizedCodeText(String value) {
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.length.isEven) {
+      final half = digits.length ~/ 2;
+      if (half >= 4 && half <= 8) {
+        final left = digits.substring(0, half);
+        final right = digits.substring(half);
+        if (left == right) return left;
+      }
+    }
+    return digits.length > 8 ? digits.substring(0, 8) : digits;
+  }
+
+  void _syncNormalizedCode(String code) {
+    if (_codeController.text == code) return;
+    _codeController.value = TextEditingValue(
+      text: code,
+      selection: TextSelection.collapsed(offset: code.length),
+    );
+  }
+
+  Future<void> _signInWithApple() async {
+    if (_appleSigningIn || _verifying || _sending) return;
+
+    setState(() => _appleSigningIn = true);
+    try {
+      await getIt<IntlAuthService>().signInWithApple();
+      if (!mounted) return;
+      context.go('/home');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppStrings.of(
+              context,
+            ).text(AppStringKeys.intlAuthLoginFailed, params: {'error': '$e'}),
+          ),
+          backgroundColor: Colors.red.shade400,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _appleSigningIn = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
@@ -310,12 +395,15 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final compact = constraints.maxWidth < 360 || constraints.maxHeight < 720;
+            final compact =
+                constraints.maxWidth < 360 || constraints.maxHeight < 720;
             final isTablet = constraints.maxWidth >= 768;
             final horizontalPadding = isTablet
                 ? 40.0
                 : (constraints.maxWidth < 380 ? 20.0 : 28.0);
-            final maxContentWidth = isTablet ? 560.0 : (constraints.maxWidth > 520 ? 420.0 : constraints.maxWidth);
+            final maxContentWidth = isTablet
+                ? 560.0
+                : (constraints.maxWidth > 520 ? 420.0 : constraints.maxWidth);
             final heroSize = compact ? 64.0 : 72.0;
             final titleSize = compact ? 24.0 : 26.0;
             final buttonHeight = compact ? 48.0 : 52.0;
@@ -326,7 +414,9 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: maxContentWidth),
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -373,7 +463,9 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                strings.text(AppStringKeys.phoneLoginAutoCreateNotice),
+                                strings.text(
+                                  AppStringKeys.phoneLoginAutoCreateNotice,
+                                ),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: compact ? 13 : 14,
@@ -386,313 +478,380 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
 
                         SizedBox(height: compact ? 32 : 48),
 
-              // 手机号
-              Text(
-                strings.text(AppStringKeys.phoneLoginPhoneLabel),
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF374151),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 15,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF9FAFB),
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        bottomLeft: Radius.circular(12),
-                      ),
-                      border: Border.all(
-                        color: _phoneError != null
-                            ? Colors.red.shade400
-                            : const Color(0xFFE5E7EB),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
+                        // 手机号
                         Text(
-                          '🇨🇳  +86',
+                          strings.text(AppStringKeys.phoneLoginPhoneLabel),
                           style: TextStyle(
-                            fontSize: 15,
-                            color: Colors.grey.shade700,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF374151),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Container(
-                          width: 1,
-                          height: 20,
-                          color: const Color(0xFFE5E7EB),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      maxLength: 11,
-                      onChanged: (_) => _validatePhone(),
-                      decoration: InputDecoration(
-                        hintText: strings.text(AppStringKeys.phoneLoginPhoneHint),
-                        hintStyle: TextStyle(
-                          color: Colors.grey.shade400,
-                          fontSize: 15,
-                        ),
-                        border: const OutlineInputBorder(
-                          borderRadius: BorderRadius.only(
-                            topRight: Radius.circular(12),
-                            bottomRight: Radius.circular(12),
-                          ),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: const OutlineInputBorder(
-                          borderRadius: BorderRadius.only(
-                            topRight: Radius.circular(12),
-                            bottomRight: Radius.circular(12),
-                          ),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: const OutlineInputBorder(
-                          borderRadius: BorderRadius.only(
-                            topRight: Radius.circular(12),
-                            bottomRight: Radius.circular(12),
-                          ),
-                          borderSide: BorderSide(
-                            color: Color(0xFF4A47D8),
-                            width: 1.5,
-                          ),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: const BorderRadius.only(
-                            topRight: Radius.circular(12),
-                            bottomRight: Radius.circular(12),
-                          ),
-                          borderSide: BorderSide(color: Colors.red.shade400),
-                        ),
-                        focusedErrorBorder: OutlineInputBorder(
-                          borderRadius: const BorderRadius.only(
-                            topRight: Radius.circular(12),
-                            bottomRight: Radius.circular(12),
-                          ),
-                          borderSide: BorderSide(
-                            color: Colors.red.shade400,
-                            width: 1.5,
-                          ),
-                        ),
-                        filled: true,
-                        fillColor: const Color(0xFFF9FAFB),
-                        counterText: '',
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 15,
-                        ),
-                        errorText: _phoneError,
-                        errorStyle: TextStyle(
-                          color: Colors.red.shade400,
-                          fontSize: 12,
-                        ),
-                      ),
-                      style: const TextStyle(fontSize: 15, letterSpacing: 1),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              // 验证码
-              Text(
-                strings.text(AppStringKeys.phoneLoginCodeLabel),
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF374151),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _codeController,
-                keyboardType: TextInputType.number,
-                maxLength: 8,
-                onChanged: (_) => _validateCode(),
-                decoration: InputDecoration(
-                  hintText: strings.text(AppStringKeys.phoneLoginCodeHint),
-                  hintStyle: TextStyle(
-                    color: Colors.grey.shade400,
-                    fontSize: 15,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: _codeError != null
-                          ? Colors.red.shade400
-                          : const Color(0xFFE5E7EB),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: Color(0xFF4A47D8),
-                      width: 1.5,
-                    ),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.red.shade400),
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFFF9FAFB),
-                  counterText: '',
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 15,
-                  ),
-                  errorText: _codeError,
-                  errorStyle: TextStyle(
-                    color: Colors.red.shade400,
-                    fontSize: 12,
-                  ),
-                  suffixIcon: _countingDown
-                      ? Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(
-                                0xFF4A47D8,
-                              ).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              '${_countdown}s',
-                              style: const TextStyle(
-                                color: Color(0xFF4A47D8),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 15,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF9FAFB),
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(12),
+                                  bottomLeft: Radius.circular(12),
+                                ),
+                                border: Border.all(
+                                  color: _phoneError != null
+                                      ? Colors.red.shade400
+                                      : const Color(0xFFE5E7EB),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    '🇨🇳  +86',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: Colors.grey.shade700,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    width: 1,
+                                    height: 20,
+                                    color: const Color(0xFFE5E7EB),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                        )
-                      : TextButton(
-                          onPressed: _phoneError == null ? _sendCode : null,
-                          child: Text(
-                            _sending
-                                ? strings.text(AppStringKeys.phoneLoginSendingCode)
-                                : strings.text(AppStringKeys.phoneLoginSendCode),
-                            style: TextStyle(
-                              color: _phoneError == null
-                                  ? const Color(0xFF4A47D8)
-                                  : Colors.grey.shade400,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
+                            Expanded(
+                              child: TextField(
+                                controller: _phoneController,
+                                keyboardType: TextInputType.phone,
+                                maxLength: 11,
+                                onChanged: (_) => _validatePhone(),
+                                decoration: InputDecoration(
+                                  hintText: strings.text(
+                                    AppStringKeys.phoneLoginPhoneHint,
+                                  ),
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey.shade400,
+                                    fontSize: 15,
+                                  ),
+                                  border: const OutlineInputBorder(
+                                    borderRadius: BorderRadius.only(
+                                      topRight: Radius.circular(12),
+                                      bottomRight: Radius.circular(12),
+                                    ),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  enabledBorder: const OutlineInputBorder(
+                                    borderRadius: BorderRadius.only(
+                                      topRight: Radius.circular(12),
+                                      bottomRight: Radius.circular(12),
+                                    ),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: const OutlineInputBorder(
+                                    borderRadius: BorderRadius.only(
+                                      topRight: Radius.circular(12),
+                                      bottomRight: Radius.circular(12),
+                                    ),
+                                    borderSide: BorderSide(
+                                      color: Color(0xFF4A47D8),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: const BorderRadius.only(
+                                      topRight: Radius.circular(12),
+                                      bottomRight: Radius.circular(12),
+                                    ),
+                                    borderSide: BorderSide(
+                                      color: Colors.red.shade400,
+                                    ),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: const BorderRadius.only(
+                                      topRight: Radius.circular(12),
+                                      bottomRight: Radius.circular(12),
+                                    ),
+                                    borderSide: BorderSide(
+                                      color: Colors.red.shade400,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  filled: true,
+                                  fillColor: const Color(0xFFF9FAFB),
+                                  counterText: '',
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 15,
+                                  ),
+                                  errorText: _phoneError,
+                                  errorStyle: TextStyle(
+                                    color: Colors.red.shade400,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  letterSpacing: 1,
+                                ),
+                              ),
                             ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // 验证码
+                        Text(
+                          strings.text(AppStringKeys.phoneLoginCodeLabel),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF374151),
                           ),
                         ),
-                ),
-                style: const TextStyle(fontSize: 15, letterSpacing: 4),
-                onSubmitted: (_) => _verifyCode(),
-              ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: _codeController,
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
+                          autofillHints: const [AutofillHints.oneTimeCode],
+                          inputFormatters: const [_SmsCodeInputFormatter()],
+                          maxLength: 8,
+                          onChanged: (_) => _validateCode(),
+                          decoration: InputDecoration(
+                            hintText: strings.text(
+                              AppStringKeys.phoneLoginCodeHint,
+                            ),
+                            hintStyle: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontSize: 15,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: _codeError != null
+                                    ? Colors.red.shade400
+                                    : const Color(0xFFE5E7EB),
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: Color(0xFFE5E7EB),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF4A47D8),
+                                width: 1.5,
+                              ),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: Colors.red.shade400,
+                              ),
+                            ),
+                            filled: true,
+                            fillColor: const Color(0xFFF9FAFB),
+                            counterText: '',
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 15,
+                            ),
+                            errorText: _codeError,
+                            errorStyle: TextStyle(
+                              color: Colors.red.shade400,
+                              fontSize: 12,
+                            ),
+                            suffixIcon: _countingDown
+                                ? Padding(
+                                    padding: const EdgeInsets.only(right: 12),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFF4A47D8,
+                                        ).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        '${_countdown}s',
+                                        style: const TextStyle(
+                                          color: Color(0xFF4A47D8),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : TextButton(
+                                    onPressed: _phoneError == null
+                                        ? _sendCode
+                                        : null,
+                                    child: Text(
+                                      _sending
+                                          ? strings.text(
+                                              AppStringKeys
+                                                  .phoneLoginSendingCode,
+                                            )
+                                          : strings.text(
+                                              AppStringKeys.phoneLoginSendCode,
+                                            ),
+                                      style: TextStyle(
+                                        color: _phoneError == null
+                                            ? const Color(0xFF4A47D8)
+                                            : Colors.grey.shade400,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            letterSpacing: 4,
+                          ),
+                          onSubmitted: (_) => _verifyCode(),
+                        ),
 
-              const SizedBox(height: 32),
+                        const SizedBox(height: 32),
 
                         // 登录按钮
                         SizedBox(
                           width: double.infinity,
                           height: buttonHeight,
                           child: ElevatedButton(
-                  onPressed: _verifying ? null : _verifyCode,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4A47D8),
-                    disabledBackgroundColor: const Color(
-                      0xFF4A47D8,
-                    ).withValues(alpha: 0.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: _verifying
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
+                            onPressed: _verifying ? null : _verifyCode,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4A47D8),
+                              disabledBackgroundColor: const Color(
+                                0xFF4A47D8,
+                              ).withValues(alpha: 0.5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
                             ),
-                          ),
-                        )
-                      : Text(
-                          strings.text(AppStringKeys.phoneLoginLogin),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
+                            child: _verifying
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                : Text(
+                                    strings.text(AppStringKeys.phoneLoginLogin),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                           ),
                         ),
 
                         SizedBox(height: compact ? 20 : 24),
 
-              // 协议提示
-              Center(
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: strings.text(AppStringKeys.phoneLoginAgreementPrefix),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade500,
+                        SizedBox(
+                          width: double.infinity,
+                          height: buttonHeight,
+                          child: OutlinedButton.icon(
+                            onPressed: _appleSigningIn
+                                ? null
+                                : _signInWithApple,
+                            icon: _appleSigningIn
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.apple, size: 22),
+                            label: Text(
+                              strings.text(AppStringKeys.intlAuthApple),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF111827),
+                              side: const BorderSide(color: Color(0xFFE5E7EB)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      TextSpan(
-                        text: '《${strings.text(AppStringKeys.settingsTermsTitle)}》',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF4A47D8),
-                          fontWeight: FontWeight.w500,
+
+                        SizedBox(height: compact ? 20 : 24),
+
+                        // 协议提示
+                        Center(
+                          child: Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: strings.text(
+                                    AppStringKeys.phoneLoginAgreementPrefix,
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text:
+                                      '《${strings.text(AppStringKeys.settingsTermsTitle)}》',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF4A47D8),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = _openTermsOfService,
+                                ),
+                                TextSpan(
+                                  text: strings.text(
+                                    AppStringKeys.phoneLoginAgreementAnd,
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text:
+                                      '《${strings.text(AppStringKeys.settingsPrivacyTitle)}》',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF4A47D8),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = _openPrivacyPolicy,
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = _openTermsOfService,
-                      ),
-                      TextSpan(
-                        text: strings.text(AppStringKeys.phoneLoginAgreementAnd),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade500,
-                        ),
-                      ),
-                      TextSpan(
-                        text: '《${strings.text(AppStringKeys.settingsPrivacyTitle)}》',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF4A47D8),
-                          fontWeight: FontWeight.w500,
-                        ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = _openPrivacyPolicy,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
 
                         SizedBox(height: compact ? 24 : 40),
                       ],
@@ -705,5 +864,36 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
         ),
       ),
     );
+  }
+}
+
+class _SmsCodeInputFormatter extends TextInputFormatter {
+  const _SmsCodeInputFormatter();
+
+  static const _maxCodeLength = 8;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    var digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    digits = _collapseDuplicatedCode(digits);
+    if (digits.length > _maxCodeLength) {
+      digits = digits.substring(0, _maxCodeLength);
+    }
+    return TextEditingValue(
+      text: digits,
+      selection: TextSelection.collapsed(offset: digits.length),
+    );
+  }
+
+  String _collapseDuplicatedCode(String digits) {
+    if (digits.length.isOdd) return digits;
+    final half = digits.length ~/ 2;
+    if (half < 4 || half > _maxCodeLength) return digits;
+    final left = digits.substring(0, half);
+    final right = digits.substring(half);
+    return left == right ? left : digits;
   }
 }

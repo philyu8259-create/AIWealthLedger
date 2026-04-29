@@ -69,7 +69,7 @@ class BaiduOCRService implements ReceiptOcrService {
       final expiresIn = data['expires_in'] as int?;
 
       if (token == null) {
-        debugPrint('[BaiduOCR] no access_token in response: $data');
+        debugPrint('[BaiduOCR] no access_token in response');
         return null;
       }
 
@@ -189,27 +189,60 @@ class BaiduOCRService implements ReceiptOcrService {
       final data = resp.data as Map<String, dynamic>;
       final errorCode = data['error_code'];
       if (errorCode != null) {
-        debugPrint('[BaiduOCR] receipt API error: $errorCode ${data['error_msg']}');
-        return null;
-      }
-
-      // 票据返回的是结构化数组
-      final result = data['words_result'] as Map<String, dynamic>?;
-      if (result == null) {
-        // 尝试通用文字识别
+        debugPrint(
+          '[BaiduOCR] receipt API error: $errorCode ${data['error_msg']}',
+        );
         return recognizeText(imageBytes);
       }
 
-      final lines = result.entries
-          .map((e) => '${e.key}: ${e.value['words'] ?? ''}')
-          .join('\n');
+      // 票据返回的是结构化数组
+      final result = data['words_result'];
+      final lines = _flattenReceiptWords(result);
+      if (lines.isEmpty) return recognizeText(imageBytes);
 
       debugPrint('[BaiduOCR] receipt success');
       return lines;
     } catch (e) {
       debugPrint('[BaiduOCR] receipt error: $e');
-      return null;
+      return recognizeText(imageBytes);
     }
+  }
+
+  String _flattenReceiptWords(Object? result) {
+    final lines = <String>[];
+
+    void addLine(Object? value, {String? label}) {
+      final text = switch (value) {
+        {'words': final Object words} => '$words',
+        {'word': final Object word} => '$word',
+        {'text': final Object text} => '$text',
+        String s => s,
+        num n => '$n',
+        _ => '',
+      };
+      final clean = text.trim();
+      if (clean.isEmpty) return;
+      lines.add(label == null || label.isEmpty ? clean : '$label: $clean');
+    }
+
+    if (result is Map<String, dynamic>) {
+      for (final entry in result.entries) {
+        final value = entry.value;
+        if (value is List) {
+          for (final item in value) {
+            addLine(item, label: entry.key);
+          }
+        } else {
+          addLine(value, label: entry.key);
+        }
+      }
+    } else if (result is List) {
+      for (final item in result) {
+        addLine(item);
+      }
+    }
+
+    return lines.join('\n');
   }
 
   /// 从识别文字中提取金额

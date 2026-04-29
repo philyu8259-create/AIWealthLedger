@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 
 import '../features/accounting/domain/entities/entities.dart';
 import '../features/accounting/domain/usecases/predict_spending.dart';
+import 'ai_usage_logger.dart';
 import 'config_service.dart';
 
 class GeminiSpendingPredictionService implements SpendingPredictionService {
@@ -32,16 +33,23 @@ Based on the user's historical expenses, return valid JSON only with:
   Future<Either<String, SpendingPrediction>> predictSpending({
     required List<AccountEntry> entries,
     required double currentMonthExpense,
+    String feature = 'spending_prediction',
   }) async {
     if (!_isConfigured) {
       return const Left('Gemini API key is not configured');
     }
 
-    final prompt = _buildPrompt(_buildHistorySummary(entries), currentMonthExpense);
+    final prompt = _buildPrompt(
+      _buildHistorySummary(entries),
+      currentMonthExpense,
+    );
+    final inputTokenEstimate =
+        AiUsageLogger.estimateTokens(_systemPrompt) +
+        AiUsageLogger.estimateTokens(prompt);
 
     try {
       final response = await _dio.post(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$_apiKey',
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=$_apiKey',
         options: Options(headers: {'Content-Type': 'application/json'}),
         data: {
           'systemInstruction': {
@@ -67,8 +75,24 @@ Based on the user's historical expenses, return valid JSON only with:
 
       final content = _extractText(response.data);
       if (content.isEmpty) {
+        AiUsageLogger.logGemini(
+          feature: feature,
+          model: 'gemini-2.5-flash-lite',
+          inputTokens: inputTokenEstimate,
+          outputTokens: 0,
+          cacheHit: false,
+          status: 'empty',
+        );
         return const Left('Gemini response is empty');
       }
+      AiUsageLogger.logGemini(
+        feature: feature,
+        model: 'gemini-2.5-flash-lite',
+        inputTokens: inputTokenEstimate,
+        outputTokens: AiUsageLogger.estimateTokens(content),
+        cacheHit: false,
+        status: 'ok',
+      );
 
       final jsonMatch = RegExp(r'\{[\s\S]*\}').firstMatch(content);
       if (jsonMatch == null) {
@@ -83,10 +107,24 @@ Based on the user's historical expenses, return valid JSON only with:
         debugPrint(
           '[GeminiPrediction] error type=${e.type} message=${e.message} status=${e.response?.statusCode} data=${e.response?.data} error=${e.error}',
         );
-        return Left(
-          'Failed to generate prediction, please retry.',
+        AiUsageLogger.logGemini(
+          feature: feature,
+          model: 'gemini-2.5-flash-lite',
+          inputTokens: inputTokenEstimate,
+          outputTokens: 0,
+          cacheHit: false,
+          status: 'error_${e.response?.statusCode ?? e.type.name}',
         );
+        return Left('Failed to generate prediction, please retry.');
       }
+      AiUsageLogger.logGemini(
+        feature: feature,
+        model: 'gemini-2.5-flash-lite',
+        inputTokens: inputTokenEstimate,
+        outputTokens: 0,
+        cacheHit: false,
+        status: 'error',
+      );
       return Left('Gemini prediction failed: $e');
     }
   }
@@ -114,7 +152,9 @@ Based on the user's historical expenses, return valid JSON only with:
       double monthTotal = 0;
       for (final cat in entry.value.entries) {
         final catDef = CategoryDef.findById(cat.key);
-        buffer.writeln('  ${catDef?.name ?? cat.key}: ${cat.value.toStringAsFixed(0)}');
+        buffer.writeln(
+          '  ${catDef?.name ?? cat.key}: ${cat.value.toStringAsFixed(0)}',
+        );
         monthTotal += cat.value;
       }
       buffer.writeln('  Total expense: ${monthTotal.toStringAsFixed(0)}');
@@ -146,11 +186,14 @@ $history''';
     final budgetRaw = json['budgetRecommendations'] as Map<String, dynamic>?;
     budgetRaw?.forEach((k, v) => budgetRecs[k] = (v as num).toDouble());
 
-    final warnings = (json['warnings'] as List?)?.map((e) => e.toString()).toList() ?? [];
+    final warnings =
+        (json['warnings'] as List?)?.map((e) => e.toString()).toList() ?? [];
 
     return SpendingPrediction(
-      predictedTotalExpense: (json['predictedTotalExpense'] as num?)?.toDouble() ?? 0,
-      predictedDailyAverage: (json['predictedDailyAverage'] as num?)?.toDouble() ?? 0,
+      predictedTotalExpense:
+          (json['predictedTotalExpense'] as num?)?.toDouble() ?? 0,
+      predictedDailyAverage:
+          (json['predictedDailyAverage'] as num?)?.toDouble() ?? 0,
       categoryPredictions: catPreds,
       budgetRecommendations: budgetRecs,
       warnings: warnings,

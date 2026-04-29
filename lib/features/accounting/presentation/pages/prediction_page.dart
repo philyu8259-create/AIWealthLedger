@@ -1,21 +1,31 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/formatters/app_formatter.dart';
 import '../../../../core/formatters/category_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../l10n/app_string_keys.dart';
 import '../../../../l10n/app_strings.dart';
 import '../../../../services/app_profile_service.dart';
+import '../../../../services/ai_usage_logger.dart';
 import '../../../../services/config_service.dart';
 import '../../../../services/injection.dart';
+import '../../../../services/stock_service.dart';
 import '../../../../app/profile/capability_profile.dart';
 import '../../domain/entities/entities.dart';
+import '../../domain/entities/stock_position.dart';
+import '../../domain/repositories/account_entry_repository.dart';
+import '../../domain/repositories/asset_repository.dart';
 import '../bloc/account_bloc.dart';
+import '../bloc/account_state.dart';
 import '../../domain/usecases/get_historical_entries.dart';
 import '../../domain/usecases/predict_spending.dart';
 import '../widgets/ai_typewriter_markdown.dart';
+import '../widgets/financial_health_report.dart';
 import '../widgets/premium_page_chrome.dart';
 import '../widgets/premium_surface_card.dart';
 import '../widgets/textured_scaffold_background.dart';
@@ -232,10 +242,14 @@ class PredictionPage extends StatefulWidget {
 }
 
 class _PredictionPageState extends State<PredictionPage> {
+  static const _cacheTtl = Duration(hours: 24);
+
   SpendingPrediction? _prediction;
   bool _isLoading = false;
   String? _errorMsg;
   List<AccountEntry> _history = [];
+  List<Asset> _healthAssets = const [];
+  List<StockPosition> _healthStocks = const [];
   bool _didLoadOnce = false;
 
   @override
@@ -246,7 +260,7 @@ class _PredictionPageState extends State<PredictionPage> {
     _load();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool forceRefresh = false}) async {
     setState(() {
       _isLoading = true;
       _errorMsg = null;
@@ -254,8 +268,70 @@ class _PredictionPageState extends State<PredictionPage> {
 
     final t = AppStrings.of(context);
     if (_screenshotPredictionMock) {
+      final now = DateTime.now();
+      final isUsd = _predictionCurrency() == 'USD';
       setState(() {
         _history = _mockPredictionHistory();
+        _healthAssets = [
+          Asset(
+            id: 'mock_cash',
+            name: isUsd ? 'Cash reserve' : '现金备用金',
+            type: AssetType.cash,
+            balance: isUsd ? 6800 : 52000,
+            currency: _predictionCurrency(),
+            locale: _predictionLocale().toLanguageTag(),
+            countryCode: isUsd ? 'US' : 'CN',
+            createdAt: now,
+            syncStatus: SyncStatus.synced,
+          ),
+          Asset(
+            id: 'mock_fund',
+            name: isUsd ? 'Index fund' : '指数基金',
+            type: AssetType.fund,
+            balance: isUsd ? 12400 : 86000,
+            currency: _predictionCurrency(),
+            locale: _predictionLocale().toLanguageTag(),
+            countryCode: isUsd ? 'US' : 'CN',
+            createdAt: now,
+            syncStatus: SyncStatus.synced,
+          ),
+        ];
+        _healthStocks = [
+          StockPosition(
+            id: 'mock_stock_1',
+            code: isUsd ? 'AAPL' : '600519',
+            name: isUsd ? 'Apple' : '贵州茅台',
+            exchange: isUsd ? 'NASDAQ' : 'SH',
+            marketCurrency: _predictionCurrency(),
+            locale: _predictionLocale().toLanguageTag(),
+            countryCode: isUsd ? 'US' : 'CN',
+            quantity: isUsd ? 24 : 100,
+            costPrice: isUsd ? 168 : 1468,
+            latestPrice: isUsd ? 184.5 : 1526.8,
+            changePercent: isUsd ? 1.4 : 1.82,
+            quoteUpdatedAt: now,
+            quoteStatus: StockQuoteStatus.normal,
+            createdAt: now.subtract(const Duration(days: 42)),
+            updatedAt: now,
+          ),
+          StockPosition(
+            id: 'mock_stock_2',
+            code: isUsd ? 'MSFT' : '000001',
+            name: isUsd ? 'Microsoft' : '平安银行',
+            exchange: isUsd ? 'NASDAQ' : 'SZ',
+            marketCurrency: _predictionCurrency(),
+            locale: _predictionLocale().toLanguageTag(),
+            countryCode: isUsd ? 'US' : 'CN',
+            quantity: isUsd ? 12 : 800,
+            costPrice: isUsd ? 452 : 10.82,
+            latestPrice: isUsd ? 438 : 11.36,
+            changePercent: isUsd ? -3.2 : 2.07,
+            quoteUpdatedAt: now,
+            quoteStatus: StockQuoteStatus.normal,
+            createdAt: now.subtract(const Duration(days: 25)),
+            updatedAt: now,
+          ),
+        ];
         _prediction = SpendingPrediction(
           predictedTotalExpense: _predictionCurrency() == 'USD' ? 2530 : 4860,
           predictedDailyAverage: _predictionCurrency() == 'USD' ? 84 : 162,
@@ -291,12 +367,14 @@ class _PredictionPageState extends State<PredictionPage> {
     }
 
     try {
-      final expense = context.read<AccountBloc>().state.totalExpense;
+      final accountState = context.read<AccountBloc>().state;
+      final expense = accountState.totalExpense;
       final r1 = await getIt<GetHistoricalEntries>()(
         const GetHistoricalEntriesParams(months: 3),
       );
       final hist = r1.fold((_) => <AccountEntry>[], (r) => r);
       _history = hist;
+      await _loadHealthContext();
 
       if (hist.isEmpty) {
         setState(() {
@@ -306,8 +384,39 @@ class _PredictionPageState extends State<PredictionPage> {
         return;
       }
 
+      final cacheKey = _predictionCacheKey(
+        accountState: accountState,
+        history: hist,
+        currentMonthExpense: expense,
+      );
+      if (!forceRefresh) {
+        final cached = await _readCachedPrediction(cacheKey);
+        if (!mounted) return;
+        if (cached != null) {
+          AiUsageLogger.logGemini(
+            feature: 'spending_prediction',
+            model: 'gemini-2.5-flash-lite',
+            cacheHit: true,
+            inputTokens: 0,
+            outputTokens: 0,
+            status: 'cache_hit',
+          );
+          setState(() {
+            _prediction = cached;
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+
       final r2 = await getIt<PredictSpending>()(
-        PredictSpendingParams(entries: hist, currentMonthExpense: expense),
+        PredictSpendingParams(
+          entries: hist,
+          currentMonthExpense: expense,
+          feature: forceRefresh
+              ? 'spending_prediction_manual_refresh'
+              : 'spending_prediction',
+        ),
       );
       if (!mounted) return;
       r2.fold(
@@ -315,10 +424,14 @@ class _PredictionPageState extends State<PredictionPage> {
           _errorMsg = e;
           _isLoading = false;
         }),
-        (p) => setState(() {
-          _prediction = p;
-          _isLoading = false;
-        }),
+        (p) async {
+          await _writeCachedPrediction(cacheKey, p);
+          if (!mounted) return;
+          setState(() {
+            _prediction = p;
+            _isLoading = false;
+          });
+        },
       );
     } catch (e) {
       if (!mounted) return;
@@ -339,7 +452,7 @@ class _PredictionPageState extends State<PredictionPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _load,
+            onPressed: () => _load(forceRefresh: true),
           ),
         ],
       ),
@@ -353,20 +466,33 @@ class _PredictionPageState extends State<PredictionPage> {
             final maxContentWidth = isTablet
                 ? (constraints.maxWidth >= 1024 ? 860.0 : 720.0)
                 : (constraints.maxWidth > 560 ? 520.0 : constraints.maxWidth);
+            final accountState = context.watch<AccountBloc>().state;
 
             Widget child;
             if (_isLoading) {
               child = const Center(child: CircularProgressIndicator());
             } else if (_errorMsg != null) {
-              child = Center(
+              child = _HealthOnlyBody(
+                accountState: accountState,
+                assets: _healthAssets,
+                stocks: _healthStocks,
                 child: _ErrorWidget(msg: _errorMsg!, onRetry: _load),
               );
             } else if (_prediction == null) {
-              child = Center(
+              child = _HealthOnlyBody(
+                accountState: accountState,
+                assets: _healthAssets,
+                stocks: _healthStocks,
                 child: Text(t.text(AppStringKeys.reportsEmptyTitle)),
               );
             } else {
-              child = _Body(prediction: _prediction!, history: _history);
+              child = _Body(
+                prediction: _prediction!,
+                history: _history,
+                accountState: accountState,
+                assets: _healthAssets,
+                stocks: _healthStocks,
+              );
             }
 
             return Center(
@@ -382,6 +508,109 @@ class _PredictionPageState extends State<PredictionPage> {
         ),
       ),
     );
+  }
+
+  String _predictionCacheKey({
+    required AccountState accountState,
+    required List<AccountEntry> history,
+    required double currentMonthExpense,
+  }) {
+    final repo = getIt<AccountEntryRepository>();
+    final accountKey = repo.getCurrentPhone() ?? 'guest';
+    final fingerprintSource = [
+      accountKey,
+      accountState.selectedYear,
+      accountState.selectedMonth,
+      currentMonthExpense.toStringAsFixed(2),
+      ...history.map(
+        (entry) =>
+            '${entry.id}|${entry.amount.toStringAsFixed(2)}|${entry.type.name}|${entry.category}|${entry.date.millisecondsSinceEpoch}|${entry.description}',
+      ),
+    ].join('::');
+    final fingerprint = fingerprintSource.hashCode
+        .toUnsigned(32)
+        .toRadixString(16);
+    return 'prediction_cache_v1_${accountKey}_${accountState.selectedYear}_${accountState.selectedMonth}_$fingerprint';
+  }
+
+  Future<SpendingPrediction?> _readCachedPrediction(String key) async {
+    final prefs = getIt<SharedPreferences>();
+    final raw = prefs.getString(key);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final payload = jsonDecode(raw) as Map<String, dynamic>;
+      final savedAtMs = payload['savedAtMs'] as int? ?? 0;
+      final savedAt = DateTime.fromMillisecondsSinceEpoch(savedAtMs);
+      if (DateTime.now().difference(savedAt) > _cacheTtl) {
+        await prefs.remove(key);
+        return null;
+      }
+      return _predictionFromJson(
+        Map<String, dynamic>.from(payload['prediction'] as Map),
+      );
+    } catch (_) {
+      await prefs.remove(key);
+      return null;
+    }
+  }
+
+  Future<void> _writeCachedPrediction(
+    String key,
+    SpendingPrediction prediction,
+  ) async {
+    final prefs = getIt<SharedPreferences>();
+    await prefs.setString(
+      key,
+      jsonEncode({
+        'savedAtMs': DateTime.now().millisecondsSinceEpoch,
+        'prediction': _predictionToJson(prediction),
+      }),
+    );
+  }
+
+  Map<String, dynamic> _predictionToJson(SpendingPrediction prediction) => {
+    'predictedTotalExpense': prediction.predictedTotalExpense,
+    'predictedDailyAverage': prediction.predictedDailyAverage,
+    'categoryPredictions': prediction.categoryPredictions,
+    'budgetRecommendations': prediction.budgetRecommendations,
+    'warnings': prediction.warnings,
+    'aiInsight': prediction.aiInsight,
+  };
+
+  SpendingPrediction _predictionFromJson(Map<String, dynamic> json) {
+    Map<String, double> toDoubleMap(dynamic raw) {
+      final map = <String, double>{};
+      if (raw is Map) {
+        raw.forEach((key, value) {
+          map[key.toString()] = (value as num).toDouble();
+        });
+      }
+      return map;
+    }
+
+    return SpendingPrediction(
+      predictedTotalExpense: (json['predictedTotalExpense'] as num).toDouble(),
+      predictedDailyAverage: (json['predictedDailyAverage'] as num).toDouble(),
+      categoryPredictions: toDoubleMap(json['categoryPredictions']),
+      budgetRecommendations: toDoubleMap(json['budgetRecommendations']),
+      warnings: (json['warnings'] as List? ?? [])
+          .map((value) => value.toString())
+          .toList(),
+      aiInsight: (json['aiInsight'] as String? ?? '').trim(),
+    );
+  }
+
+  Future<void> _loadHealthContext() async {
+    try {
+      final assetResult = await getIt<AssetRepository>().getAssets();
+      final assets = assetResult.fold((_) => <Asset>[], (items) => items);
+      final stocks = await getIt<StockService>().getPositions();
+      _healthAssets = assets;
+      _healthStocks = stocks;
+    } catch (_) {
+      _healthAssets = const [];
+      _healthStocks = const [];
+    }
   }
 }
 
@@ -481,20 +710,77 @@ class _ErrorWidget extends StatelessWidget {
   }
 }
 
-class _Body extends StatelessWidget {
-  final SpendingPrediction prediction;
-  final List<AccountEntry> history;
-  const _Body({required this.prediction, required this.history});
+class _HealthOnlyBody extends StatelessWidget {
+  const _HealthOnlyBody({
+    required this.accountState,
+    required this.assets,
+    required this.stocks,
+    required this.child,
+  });
+
+  final AccountState accountState;
+  final List<Asset> assets;
+  final List<StockPosition> stocks;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom + 130;
+    final report = FinancialHealthReport.fromEntries(
+      entries: accountState.entries,
+      year: accountState.selectedYear,
+      month: accountState.selectedMonth,
+      lastMonthExpense: accountState.lastMonthExpense,
+      lastMonthIncome: accountState.lastMonthIncome,
+      assets: assets,
+      stocks: stocks,
+    );
+
+    return ListView(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, bottomInset),
+      children: [
+        FinancialHealthDetailCard(report: report),
+        const SizedBox(height: 16),
+        child,
+      ],
+    );
+  }
+}
+
+class _Body extends StatelessWidget {
+  final SpendingPrediction prediction;
+  final List<AccountEntry> history;
+  final AccountState accountState;
+  final List<Asset> assets;
+  final List<StockPosition> stocks;
+  const _Body({
+    required this.prediction,
+    required this.history,
+    required this.accountState,
+    required this.assets,
+    required this.stocks,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).padding.bottom + 130;
+    final report = FinancialHealthReport.fromEntries(
+      entries: accountState.entries.isEmpty ? history : accountState.entries,
+      year: accountState.selectedYear,
+      month: accountState.selectedMonth,
+      lastMonthExpense: accountState.lastMonthExpense,
+      lastMonthIncome: accountState.lastMonthIncome,
+      assets: assets,
+      stocks: stocks,
+    );
 
     return RefreshIndicator(
       onRefresh: () async {},
       child: ListView(
         padding: EdgeInsets.fromLTRB(20, 20, 20, bottomInset),
         children: [
+          FinancialHealthDetailCard(report: report),
+          const SizedBox(height: 16),
           _InsightCard(insight: prediction.aiInsight),
           const SizedBox(height: 16),
           _OverviewCard(prediction: prediction),

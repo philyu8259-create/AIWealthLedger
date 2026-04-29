@@ -9,11 +9,13 @@ import '../../../../core/theme/app_colors.dart';
 class AiTypewriterMarkdown extends StatefulWidget {
   final String text;
   final Duration speed;
+  final bool enableHaptics;
 
   const AiTypewriterMarkdown({
     super.key,
     required this.text,
     this.speed = const Duration(milliseconds: 30),
+    this.enableHaptics = true,
   });
 
   @override
@@ -24,6 +26,7 @@ class _AiTypewriterMarkdownState extends State<AiTypewriterMarkdown> {
   String _displayedText = '';
   Timer? _timer;
   int _currentIndex = 0;
+  bool _isComplete = false;
 
   @override
   void initState() {
@@ -43,6 +46,7 @@ class _AiTypewriterMarkdownState extends State<AiTypewriterMarkdown> {
     _timer?.cancel();
     _displayedText = '';
     _currentIndex = 0;
+    _isComplete = false;
 
     if (widget.text.isEmpty) return;
 
@@ -59,10 +63,13 @@ class _AiTypewriterMarkdownState extends State<AiTypewriterMarkdown> {
         _currentIndex++;
 
         final lastChar = widget.text[_currentIndex - 1];
-        if (_currentIndex % 5 == 0 || lastChar == '\n') {
+        if (widget.enableHaptics &&
+            (_currentIndex % 10 == 0 ||
+                RegExp(r'[。.!?\n]').hasMatch(lastChar))) {
           HapticFeedback.lightImpact();
         }
       } else {
+        setState(() => _isComplete = true);
         timer.cancel();
       }
     });
@@ -77,6 +84,12 @@ class _AiTypewriterMarkdownState extends State<AiTypewriterMarkdown> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    if (!_isComplete) {
+      return Text(
+        _displayedText.isEmpty ? ' ' : '$_displayedText▌',
+        style: TextStyle(fontSize: 16, color: colors.textPrimary, height: 1.6),
+      );
+    }
 
     return MarkdownBody(
       data: _displayedText,

@@ -16,10 +16,23 @@ class AliyunSmsService {
         ),
       );
 
-  String get _accessKeyId =>
-      ConfigService.instance.env('ALIYUN_SMS_ACCESS_KEY_ID');
-  String get _accessKeySecret =>
-      ConfigService.instance.env('ALIYUN_SMS_ACCESS_KEY_SECRET');
+  String get _backendApi => ConfigService.instance.aliyunFCApi;
+  String get _accessKeyId {
+    final smsKey = ConfigService.instance.env('ALIYUN_SMS_ACCESS_KEY_ID');
+    return smsKey.isNotEmpty
+        ? smsKey
+        : ConfigService.instance.aliyunAccessKeyId;
+  }
+
+  String get _accessKeySecret {
+    final smsSecret = ConfigService.instance.env(
+      'ALIYUN_SMS_ACCESS_KEY_SECRET',
+    );
+    return smsSecret.isNotEmpty
+        ? smsSecret
+        : ConfigService.instance.aliyunAccessKeySecret;
+  }
+
   String get _signName {
     final v = ConfigService.instance.env('ALIYUN_SMS_SIGN_NAME');
     return v.isEmpty ? '速通互联验证码' : v;
@@ -33,7 +46,9 @@ class AliyunSmsService {
   /// 发送验证码
   /// 返回倒计时秒数，失败返回 -1
   Future<int> sendCode(String phoneNumber) async {
-    debugPrint('[AliyunSmsService] sendCode called, keyId=$_accessKeyId');
+    final backendSeconds = await _sendCodeViaBackend(phoneNumber);
+    if (backendSeconds > 0) return backendSeconds;
+
     if (_accessKeyId.isEmpty || _accessKeySecret.isEmpty) {
       debugPrint('[AliyunSmsService] AccessKey or Secret is empty');
       return -1;
@@ -68,27 +83,23 @@ class AliyunSmsService {
       );
       sortedParams['Signature'] = signature;
 
-      debugPrint('[AliyunSmsService] timestamp=$timestamp');
-
       // GET 请求，参数放 query string
       final response = await _dio.get(
         'https://dypnsapi.aliyuncs.com/',
         queryParameters: sortedParams,
       );
 
-      debugPrint('[AliyunSmsService] Response: ${response.data}');
-
       final result = response.data as Map<String, dynamic>;
       final code = result['Code'] as String?;
       final success = result['Success'] as bool?;
 
       if (code == 'OK' || success == true) {
-        final model = result['Model'] as Map<String, dynamic>?;
-        final verifyCode = model?['VerifyCode'] as String?;
-        debugPrint('[AliyunSmsService] VerifyCode: $verifyCode');
+        debugPrint('[AliyunSmsService] sendCode success');
         return 60;
       }
-      debugPrint('[AliyunSmsService] Send failed: $code - ${result['Message']}');
+      debugPrint(
+        '[AliyunSmsService] Send failed: $code - ${result['Message']}',
+      );
       return -1;
     } catch (e) {
       debugPrint('[AliyunSmsService] Exception: $e');
@@ -98,6 +109,9 @@ class AliyunSmsService {
 
   /// 验证验证码（调用阿里云 CheckSmsVerifyCode）
   Future<bool> verifyCode(String phoneNumber, String code) async {
+    final backendValid = await _verifyCodeViaBackend(phoneNumber, code);
+    if (backendValid) return true;
+
     if (_accessKeyId.isEmpty || _accessKeySecret.isEmpty) return false;
     try {
       final timestamp = _iso8601Utc();
@@ -130,21 +144,79 @@ class AliyunSmsService {
         queryParameters: sortedParams,
       );
 
-      debugPrint('[AliyunSmsService] verifyCode response: ${response.data}');
       final result = response.data as Map<String, dynamic>;
-      debugPrint('[AliyunSmsService] verifyCode result map: $result');
       final model = result['Model'] as Map<String, dynamic>?;
-      debugPrint('[AliyunSmsService] model: $model');
       final verifyResult = model?['VerifyResult'];
-      debugPrint(
-        '[AliyunSmsService] VerifyResult raw: $verifyResult (type: ${verifyResult.runtimeType})',
-      );
       final respCode = result['Code'] as String?;
+      debugPrint('[AliyunSmsService] verifyCode status=$respCode');
       return verifyResult == 'PASS' || respCode == 'OK';
     } catch (e) {
       debugPrint('[AliyunSmsService] verifyCode exception: $e');
       return false;
     }
+  }
+
+  Future<int> _sendCodeViaBackend(String phoneNumber) async {
+    final baseUrl = _backendApi.trim();
+    if (baseUrl.isEmpty) return -1;
+
+    try {
+      final response = await _dio.post(
+        '$baseUrl/sms/send',
+        data: jsonEncode({'phone': phoneNumber}),
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+      final result = _normalizeResponse(response.data);
+      final message = result['message']?.toString() ?? '';
+      final simulated = result['simulated'] == true;
+      if (response.statusCode == 200 &&
+          !simulated &&
+          message.toLowerCase().contains('sms sent')) {
+        debugPrint('[AliyunSmsService] backend sendCode success');
+        return 60;
+      }
+      debugPrint(
+        '[AliyunSmsService] backend sendCode unavailable: '
+        'status=${response.statusCode} simulated=$simulated message=$message',
+      );
+      return -1;
+    } catch (e) {
+      debugPrint('[AliyunSmsService] backend sendCode exception: $e');
+      return -1;
+    }
+  }
+
+  Future<bool> _verifyCodeViaBackend(String phoneNumber, String code) async {
+    final baseUrl = _backendApi.trim();
+    if (baseUrl.isEmpty) return false;
+
+    try {
+      final response = await _dio.post(
+        '$baseUrl/sms/verify',
+        data: jsonEncode({'phone': phoneNumber, 'code': code}),
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+      final result = _normalizeResponse(response.data);
+      final valid = result['valid'] == true;
+      debugPrint(
+        '[AliyunSmsService] backend verifyCode status=${response.statusCode} valid=$valid',
+      );
+      return response.statusCode == 200 && valid;
+    } catch (e) {
+      debugPrint('[AliyunSmsService] backend verifyCode exception: $e');
+      return false;
+    }
+  }
+
+  Map<String, dynamic> _normalizeResponse(dynamic data) {
+    if (data is Map<String, dynamic>) return data;
+    if (data is Map) return Map<String, dynamic>.from(data);
+    if (data is String && data.isNotEmpty) {
+      final parsed = jsonDecode(data);
+      if (parsed is Map<String, dynamic>) return parsed;
+      if (parsed is Map) return Map<String, dynamic>.from(parsed);
+    }
+    return <String, dynamic>{};
   }
 
   /// 生成 ISO 8601 UTC 时间字符串

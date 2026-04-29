@@ -92,12 +92,16 @@ void main() async {
 
 Future<void> _bootstrapVipAfterLaunch() async {
   try {
-    await getIt<VipService>().init();
+    final vipService = getIt<VipService>();
+    await vipService.init();
     debugPrint('[main] VipService init done');
     // 冷启动不再自动调 restorePurchases。
     // 原因：真机上曾出现 iOS 原生层 EXC_BAD_ACCESS，崩溃点紧贴 restorePurchases 调用。
     // 会员状态优先由云端档案恢复，手动“恢复购买”入口仍保留给用户主动触发。
-    await getIt<VipService>().syncFromCloud();
+    final synced = await vipService.syncFromCloud();
+    if (!synced || !vipService.isVip) {
+      await vipService.refreshFromLocalReceipt();
+    }
     debugPrint('[main] VipService syncFromCloud done');
   } catch (e) {
     debugPrint('[main] VipService init/restore error: $e');
@@ -106,7 +110,11 @@ Future<void> _bootstrapVipAfterLaunch() async {
 
 Future<void> _syncVipOnResume() async {
   try {
-    await getIt<VipService>().syncFromCloud();
+    final vipService = getIt<VipService>();
+    final synced = await vipService.syncFromCloud();
+    if (!synced || !vipService.isVip) {
+      await vipService.refreshFromLocalReceipt();
+    }
     debugPrint('[main] VipService syncFromCloud on resume done');
   } catch (e) {
     debugPrint('[main] VipService syncFromCloud on resume error: $e');

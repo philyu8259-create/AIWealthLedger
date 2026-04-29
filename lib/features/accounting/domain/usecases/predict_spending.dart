@@ -37,6 +37,7 @@ abstract class SpendingPredictionService {
   Future<Either<String, SpendingPrediction>> predictSpending({
     required List<AccountEntry> entries,
     required double currentMonthExpense,
+    String feature = 'spending_prediction',
   });
 }
 
@@ -53,6 +54,7 @@ class PredictSpending
     return _predictionService.predictSpending(
       entries: params.entries,
       currentMonthExpense: params.currentMonthExpense,
+      feature: params.feature,
     );
   }
 }
@@ -60,12 +62,14 @@ class PredictSpending
 class PredictSpendingParams extends Equatable {
   final List<AccountEntry> entries;
   final double currentMonthExpense;
+  final String feature;
 
   const PredictSpendingParams({
     required this.entries,
     required this.currentMonthExpense,
+    this.feature = 'spending_prediction',
   });
 
   @override
-  List<Object?> get props => [entries, currentMonthExpense];
+  List<Object?> get props => [entries, currentMonthExpense, feature];
 }
