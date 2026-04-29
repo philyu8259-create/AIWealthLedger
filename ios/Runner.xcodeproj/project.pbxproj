@@ -14,6 +14,7 @@
 		4A937C572F77B111009F757D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4A937C502F77B111009F757D /* Main.storyboard */; };
 		4A937C5E2F77B111009F757D /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A937C522F77B111009F757D /* SceneDelegate.swift */; };
 		4A937C6D2F77B111009F757D /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 4A937C6C2F77B111009F757D /* InfoPlist.strings */; };
+		5C4A9D8E2F8B4E7A9C1D2031 /* com.apple.uikit.inputalternatives.plist in Resources */ = {isa = PBXBuildFile; fileRef = 5C4A9D8D2F8B4E7A9C1D2031 /* com.apple.uikit.inputalternatives.plist */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		BD0677BDEAB83747F2EEA6AF /* .env in Resources */ = {isa = PBXBuildFile; fileRef = 97BFB9B7BABC6C4373C2D9CA /* .env */; };
@@ -63,6 +64,7 @@
 		4A937C522F77B111009F757D /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		4A937C6A2F77B111009F757D /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		4A937C6B2F77B111009F757D /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		5C4A9D8D2F8B4E7A9C1D2031 /* com.apple.uikit.inputalternatives.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = com.apple.uikit.inputalternatives.plist; sourceTree = "<group>"; };
 		6CC6CB5134FC1E3767DA08C6 /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
 		6E767EF18D01C26E6A98555F /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -137,6 +139,7 @@
 				4A937C4B2F77B111009F757D /* GeneratedPluginRegistrant.m */,
 				4A937C4C2F77B111009F757D /* Info.plist */,
 				4A937C6C2F77B111009F757D /* InfoPlist.strings */,
+				5C4A9D8D2F8B4E7A9C1D2031 /* com.apple.uikit.inputalternatives.plist */,
 				4A937C4E2F77B111009F757D /* LaunchScreen.storyboard */,
 				4A937C502F77B111009F757D /* Main.storyboard */,
 				4A937C512F77B111009F757D /* Runner-Bridging-Header.h */,
@@ -308,6 +311,7 @@
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				4A937C6D2F77B111009F757D /* InfoPlist.strings in Resources */,
+				5C4A9D8E2F8B4E7A9C1D2031 /* com.apple.uikit.inputalternatives.plist in Resources */,
 				4A937C562F77B111009F757D /* LaunchScreen.storyboard in Resources */,
 				4A937C572F77B111009F757D /* Main.storyboard in Resources */,
 				BD0677BDEAB83747F2EEA6AF /* .env in Resources */,
