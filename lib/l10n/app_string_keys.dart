@@ -316,6 +316,65 @@ class AppStringKeys {
       'settings.aiConsentWithdraw.title';
   static const settingsAiConsentWithdrawSubtitle =
       'settings.aiConsentWithdraw.subtitle';
+  static const settingsAutoBookkeepingTitle = 'settings.autoBookkeeping.title';
+  static const settingsAutoBookkeepingSubtitle =
+      'settings.autoBookkeeping.subtitle';
+  static const settingsAutoBookkeepingDialogTitle =
+      'settings.autoBookkeeping.dialogTitle';
+  static const settingsAutoBookkeepingDialogContent =
+      'settings.autoBookkeeping.dialogContent';
+  static const autoBookkeepingSetupTitle = 'autoBookkeeping.setup.title';
+  static const autoBookkeepingHeroTitle = 'autoBookkeeping.hero.title';
+  static const autoBookkeepingHeroSubtitle = 'autoBookkeeping.hero.subtitle';
+  static const autoBookkeepingTriggerSection =
+      'autoBookkeeping.trigger.section';
+  static const autoBookkeepingTriggerBackTap =
+      'autoBookkeeping.trigger.backTap';
+  static const autoBookkeepingTriggerAssistive =
+      'autoBookkeeping.trigger.assistive';
+  static const autoBookkeepingTriggerSiri = 'autoBookkeeping.trigger.siri';
+  static const autoBookkeepingShortcutSection =
+      'autoBookkeeping.shortcut.section';
+  static const autoBookkeepingShortcutStepScreenshot =
+      'autoBookkeeping.shortcut.stepScreenshot';
+  static const autoBookkeepingShortcutStepExtract =
+      'autoBookkeeping.shortcut.stepExtract';
+  static const autoBookkeepingShortcutStepRun =
+      'autoBookkeeping.shortcut.stepRun';
+  static const autoBookkeepingInstallSection =
+      'autoBookkeeping.install.section';
+  static const autoBookkeepingInstallCopy = 'autoBookkeeping.install.copy';
+  static const autoBookkeepingInstallButton = 'autoBookkeeping.install.button';
+  static const autoBookkeepingInstallBackTapNote =
+      'autoBookkeeping.install.backTapNote';
+  static const autoBookkeepingManualSection = 'autoBookkeeping.manual.section';
+  static const autoBookkeepingManualScreenshot =
+      'autoBookkeeping.manual.screenshot';
+  static const autoBookkeepingManualExtract = 'autoBookkeeping.manual.extract';
+  static const autoBookkeepingManualAction = 'autoBookkeeping.manual.action';
+  static const autoBookkeepingManualBillText =
+      'autoBookkeeping.manual.billText';
+  static const autoBookkeepingManualSave = 'autoBookkeeping.manual.save';
+  static const autoBookkeepingBackTapSection =
+      'autoBookkeeping.backTap.section';
+  static const autoBookkeepingBackTapCopy = 'autoBookkeeping.backTap.copy';
+  static const autoBookkeepingTroubleshootingSection =
+      'autoBookkeeping.troubleshooting.section';
+  static const autoBookkeepingTroubleshootingActionMissing =
+      'autoBookkeeping.troubleshooting.actionMissing';
+  static const autoBookkeepingTroubleshootingVariableMissing =
+      'autoBookkeeping.troubleshooting.variableMissing';
+  static const autoBookkeepingTroubleshootingSiri =
+      'autoBookkeeping.troubleshooting.siri';
+  static const autoBookkeepingOpenShortcutsFailed =
+      'autoBookkeeping.openShortcutsFailed';
+  static const autoBookkeepingPrivacySection =
+      'autoBookkeeping.privacy.section';
+  static const autoBookkeepingPrivacyCopy = 'autoBookkeeping.privacy.copy';
+  static const autoBookkeepingTestSection = 'autoBookkeeping.test.section';
+  static const autoBookkeepingTestCopy = 'autoBookkeeping.test.copy';
+  static const autoBookkeepingTestButton = 'autoBookkeeping.test.button';
+  static const autoBookkeepingTestExample = 'autoBookkeeping.test.example';
   static const settingsLogoutTitle = 'settings.logout.title';
   static const settingsLogoutSubtitle = 'settings.logout.subtitle';
   static const settingsLogoutDialogTitle = 'settings.logout.dialogTitle';

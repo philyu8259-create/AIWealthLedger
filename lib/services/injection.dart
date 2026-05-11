@@ -32,6 +32,7 @@ import '../features/accounting/presentation/bloc/asset_bloc.dart';
 import '../features/accounting/presentation/bloc/custom_category/custom_category_bloc.dart';
 import 'aliyun_asr_service.dart';
 import 'aliyun_sms_service.dart';
+import 'auto_bookkeeping_shortcut_service.dart';
 import 'baidu_ocr_service.dart';
 import 'cloud_service.dart';
 import 'gemini_input_parser_service.dart';
@@ -96,6 +97,9 @@ Future<void> configureDependencies() async {
   );
   getIt.registerLazySingleton<AIPrivacyConsentService>(
     () => AIPrivacyConsentService(getIt<SharedPreferences>()),
+  );
+  getIt.registerLazySingleton<AutoBookkeepingShortcutService>(
+    () => AutoBookkeepingShortcutService(),
   );
   getIt.registerLazySingleton<IntlAuthService>(
     () => IntlAuthService(getIt<SharedPreferences>()),

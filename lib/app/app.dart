@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../core/theme/app_colors.dart';
 import '../l10n/app_string_keys.dart';
 import '../l10n/app_strings.dart';
@@ -11,12 +13,54 @@ import '../features/accounting/presentation/bloc/account_bloc.dart';
 import '../features/accounting/presentation/bloc/custom_category/custom_category_bloc.dart';
 import '../features/accounting/presentation/bloc/custom_category/custom_category_event.dart';
 import '../services/app_profile_service.dart';
+import '../services/auto_bookkeeping_shortcut_service.dart';
 import '../services/injection.dart';
 import '../services/theme_mode_service.dart';
 import 'router.dart';
 
-class AIAccountingApp extends StatelessWidget {
+class AIAccountingApp extends StatefulWidget {
   const AIAccountingApp({super.key});
+
+  @override
+  State<AIAccountingApp> createState() => _AIAccountingAppState();
+}
+
+class _AIAccountingAppState extends State<AIAccountingApp> {
+  StreamSubscription<String>? _shortcutSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    final shortcutService = getIt<AutoBookkeepingShortcutService>();
+    shortcutService.start();
+    _shortcutSubscription = shortcutService.textRequests.listen(
+      _handleShortcutText,
+    );
+  }
+
+  @override
+  void dispose() {
+    _shortcutSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _handleShortcutText(String text) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final hasLoggedIn =
+          getIt<SharedPreferences>().getBool('has_logged_in') ?? false;
+      if (!hasLoggedIn) return;
+
+      final currentPath = appRouter.routeInformationProvider.value.uri.path;
+      if (currentPath.startsWith('/home')) {
+        deliverHomeShortcutText(text);
+        return;
+      }
+
+      queueHomeShortcutTextAfterNavigation(text);
+      appRouter.go('/home');
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

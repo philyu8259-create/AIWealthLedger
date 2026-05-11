@@ -1,6 +1,6 @@
 # App Icon Visual Dictionary
 
-适用项目：AI Wealth Ledger / AI 记账鸭
+适用项目：AI Wealth Tracker / AI财富记账本
 
 ## 目标
 

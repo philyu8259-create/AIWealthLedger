@@ -325,6 +325,53 @@ class AppStrings {
       'settings.customCategories.subtitle': '管理支出和收入分类',
       'settings.aiConsentWithdraw.title': '撤回 AI 功能授权',
       'settings.aiConsentWithdraw.subtitle': '清除 OCR 和语音的隐私授权记录',
+      'settings.autoBookkeeping.title': '自动记账',
+      'settings.autoBookkeeping.subtitle': '通过快捷指令、Siri 或轻点背面触发',
+      'settings.autoBookkeeping.dialogTitle': '自动记账快捷指令',
+      'settings.autoBookkeeping.dialogContent':
+          '在快捷指令 App 中创建流程：截屏 -> 从图像提取文本 -> 运行“AI Auto Bookkeeping”。之后可绑定到轻点背面、辅助触控或 Siri。',
+      'autoBookkeeping.setup.title': '自动记账',
+      'autoBookkeeping.hero.title': '把付款页面变成一笔账单',
+      'autoBookkeeping.hero.subtitle': '付款后主动触发快捷指令，AI 会读取当前截图文字并带你确认保存。',
+      'autoBookkeeping.trigger.section': '触发方式',
+      'autoBookkeeping.trigger.backTap': '轻点背面',
+      'autoBookkeeping.trigger.assistive': '辅助触控',
+      'autoBookkeeping.trigger.siri': 'Siri 语音',
+      'autoBookkeeping.shortcut.section': '快捷指令流程',
+      'autoBookkeeping.shortcut.stepScreenshot': '截取当前屏幕',
+      'autoBookkeeping.shortcut.stepExtract': '从图像提取文字',
+      'autoBookkeeping.shortcut.stepRun': '运行 AI Auto Bookkeeping 并传入文本',
+      'autoBookkeeping.install.section': '快速安装',
+      'autoBookkeeping.install.copy':
+          '点下方按钮打开预设快捷指令，选择“添加快捷指令”。iOS 仍会要求你确认系统权限；如果导入失败，可按下面的手动步骤设置。',
+      'autoBookkeeping.install.button': '安装快捷指令',
+      'autoBookkeeping.install.backTapNote':
+          '安装后还需要完成一次系统设置：设置 > 辅助功能 > 触控 > 轻点背面，把轻点两下或三下绑定到 AI Auto Bookkeeping。',
+      'autoBookkeeping.manual.section': '手动设置步骤',
+      'autoBookkeeping.manual.screenshot': '添加“截屏”动作，作为付款页文字识别的来源。',
+      'autoBookkeeping.manual.extract': '添加“从图像提取文本”，输入选择上一步的截屏。',
+      'autoBookkeeping.manual.action': '添加本 App 的“AI Auto Bookkeeping”动作。',
+      'autoBookkeeping.manual.billText':
+          '点 Bill Text 输入框，选择变量，把它设置为上一步的“提取的文本”。成功后 Bill Text 后面会显示蓝色变量块。',
+      'autoBookkeeping.manual.save': '保存快捷指令，命名为“AI 自动记账”或“自动记账”。',
+      'autoBookkeeping.backTap.section': '绑定轻点背面',
+      'autoBookkeeping.backTap.copy':
+          '打开 iPhone 设置 > 辅助功能 > 触控 > 轻点背面 > 轻点两下或轻点三下，然后选择刚创建的自动记账快捷指令。',
+      'autoBookkeeping.troubleshooting.section': '常见卡点',
+      'autoBookkeeping.troubleshooting.actionMissing':
+          '找不到 AI Auto Bookkeeping：先打开一次本 App，再回到快捷指令 App 搜索。',
+      'autoBookkeeping.troubleshooting.variableMissing':
+          '找不到提取的文本：点 Bill Text 后选择“选择变量”，再点上一步“从图像提取文本”的输出变量。',
+      'autoBookkeeping.troubleshooting.siri':
+          'Siri 不识别：把快捷指令改成更独特的名字，例如“AI 自动记账”。',
+      'autoBookkeeping.openShortcutsFailed': '无法打开快捷指令 App: {error}',
+      'autoBookkeeping.privacy.section': '隐私边界',
+      'autoBookkeeping.privacy.copy':
+          '不会后台读取微信、支付宝、短信或通知。只有你主动触发快捷指令时，当前截图文字才会进入 AI 解析。',
+      'autoBookkeeping.test.section': '测试解析',
+      'autoBookkeeping.test.copy': '先用示例文字跑一次，确认 AI 解析链路正常。',
+      'autoBookkeeping.test.button': '用示例测试',
+      'autoBookkeeping.test.example': '星巴克 36元 咖啡',
       'settings.logout.title': '退出登录',
       'settings.logout.subtitle': '清除当前账号登录态并返回欢迎页',
       'settings.logout.dialogTitle': '退出登录',
@@ -821,6 +868,62 @@ class AppStrings {
       'settings.aiConsentWithdraw.title': 'Withdraw AI authorization',
       'settings.aiConsentWithdraw.subtitle':
           'Clear OCR and voice privacy consent records',
+      'settings.autoBookkeeping.title': 'Auto bookkeeping',
+      'settings.autoBookkeeping.subtitle':
+          'Trigger with Shortcuts, Siri, or Back Tap',
+      'settings.autoBookkeeping.dialogTitle': 'Auto bookkeeping shortcut',
+      'settings.autoBookkeeping.dialogContent':
+          'In the Shortcuts app, create this flow: Take Screenshot -> Extract Text from Image -> Run "AI Auto Bookkeeping". Then bind it to Back Tap, AssistiveTouch, or Siri.',
+      'autoBookkeeping.setup.title': 'Auto bookkeeping',
+      'autoBookkeeping.hero.title': 'Turn a payment screen into an entry',
+      'autoBookkeeping.hero.subtitle':
+          'After paying, trigger a shortcut yourself. AI reads the current screenshot text and lets you confirm the entry.',
+      'autoBookkeeping.trigger.section': 'Trigger options',
+      'autoBookkeeping.trigger.backTap': 'Back Tap',
+      'autoBookkeeping.trigger.assistive': 'AssistiveTouch',
+      'autoBookkeeping.trigger.siri': 'Siri voice',
+      'autoBookkeeping.shortcut.section': 'Shortcut flow',
+      'autoBookkeeping.shortcut.stepScreenshot': 'Take Screenshot',
+      'autoBookkeeping.shortcut.stepExtract': 'Extract Text from Image',
+      'autoBookkeeping.shortcut.stepRun':
+          'Run AI Auto Bookkeeping with the extracted text',
+      'autoBookkeeping.install.section': 'Quick setup',
+      'autoBookkeeping.install.copy':
+          'Tap the button below to open the prepared shortcut, then choose Add Shortcut. iOS still asks you to confirm system permissions; if import fails, use the manual steps below.',
+      'autoBookkeeping.install.button': 'Install shortcut',
+      'autoBookkeeping.install.backTapNote':
+          'After installing, finish one iOS setting: Settings > Accessibility > Touch > Back Tap, then bind Double Tap or Triple Tap to AI Auto Bookkeeping.',
+      'autoBookkeeping.manual.section': 'Manual setup steps',
+      'autoBookkeeping.manual.screenshot':
+          'Add the Take Screenshot action as the source for payment-screen text.',
+      'autoBookkeeping.manual.extract':
+          'Add Extract Text from Image, and set its input to the screenshot from the previous step.',
+      'autoBookkeeping.manual.action':
+          'Add this app action: AI Auto Bookkeeping.',
+      'autoBookkeeping.manual.billText':
+          'Tap the Bill Text field, choose a variable, and set it to the previous step’s Extracted Text. When it works, Bill Text shows a blue variable token.',
+      'autoBookkeeping.manual.save':
+          'Save the shortcut with a memorable name, such as Auto Bookkeeping.',
+      'autoBookkeeping.backTap.section': 'Bind Back Tap',
+      'autoBookkeeping.backTap.copy':
+          'Open iPhone Settings > Accessibility > Touch > Back Tap > Double Tap or Triple Tap, then choose the shortcut you just created.',
+      'autoBookkeeping.troubleshooting.section': 'Common snags',
+      'autoBookkeeping.troubleshooting.actionMissing':
+          'Cannot find AI Auto Bookkeeping: open this app once, then return to Shortcuts and search again.',
+      'autoBookkeeping.troubleshooting.variableMissing':
+          'Cannot find Extracted Text: tap Bill Text, choose Select Variable, then tap the output from Extract Text from Image.',
+      'autoBookkeeping.troubleshooting.siri':
+          'Siri misses the phrase: rename the shortcut to something more distinctive.',
+      'autoBookkeeping.openShortcutsFailed':
+          'Could not open Shortcuts: {error}',
+      'autoBookkeeping.privacy.section': 'Privacy boundary',
+      'autoBookkeeping.privacy.copy':
+          'The app does not read WeChat, Alipay, messages, or notifications in the background. Text enters AI parsing only when you trigger the shortcut.',
+      'autoBookkeeping.test.section': 'Test parsing',
+      'autoBookkeeping.test.copy':
+          'Run sample text once to confirm the AI parsing path is ready.',
+      'autoBookkeeping.test.button': 'Test with sample',
+      'autoBookkeeping.test.example': 'Starbucks 36 coffee',
       'settings.logout.title': 'Sign out',
       'settings.logout.subtitle':
           'Clear the current session and return to the welcome screen',

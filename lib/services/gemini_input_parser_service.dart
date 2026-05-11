@@ -220,7 +220,11 @@ Format:
         _hasReceiptIdentity(input)) {
       return _LocalParseDecision(
         results: results,
-        confidence: 0.86,
+        // A single total is useful as a fallback, but not enough to skip the
+        // model. OCR can collapse itemized receipts into a blob where local
+        // row extraction misses visible items, so Gemini should get a chance
+        // to split/correct it.
+        confidence: 0.78,
         reason: 'single_receipt_total',
       );
     }

@@ -11,6 +11,7 @@ import '../l10n/app_string_keys.dart';
 import '../l10n/app_strings.dart';
 import '../core/theme/app_colors.dart';
 import '../features/accounting/presentation/pages/home_page.dart';
+import '../features/accounting/presentation/pages/auto_bookkeeping_page.dart';
 import '../features/accounting/presentation/pages/transactions_page.dart';
 import '../features/accounting/presentation/pages/reports_page.dart';
 import '../features/accounting/presentation/pages/settings_page.dart';
@@ -29,9 +30,11 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 final homeAiTrigger = ValueNotifier<int>(0);
 final homeQuickAddTrigger = ValueNotifier<int>(0);
 final homeOcrHudTrigger = ValueNotifier<int>(0);
+final homeShortcutTextTrigger = ValueNotifier<int>(0);
 bool _pendingHomeAiOpen = false;
 bool _pendingHomeQuickAddOpen = false;
 bool _pendingHomeOcrHudOpen = false;
+String? _pendingHomeShortcutText;
 
 void queueHomeAiOpenAfterNavigation() {
   _pendingHomeAiOpen = true;
@@ -61,6 +64,23 @@ bool consumePendingHomeOcrHudOpen() {
   if (!_pendingHomeOcrHudOpen) return false;
   _pendingHomeOcrHudOpen = false;
   return true;
+}
+
+void queueHomeShortcutTextAfterNavigation(String text) {
+  final trimmed = text.trim();
+  if (trimmed.isEmpty) return;
+  _pendingHomeShortcutText = trimmed;
+}
+
+void deliverHomeShortcutText(String text) {
+  queueHomeShortcutTextAfterNavigation(text);
+  homeShortcutTextTrigger.value++;
+}
+
+String? consumePendingHomeShortcutText() {
+  final text = _pendingHomeShortcutText;
+  _pendingHomeShortcutText = null;
+  return text;
 }
 
 void clearPendingHomeOverlayRequests() {
@@ -127,6 +147,10 @@ final appRouter = GoRouter(
               const NoTransitionPage(child: SettingsPage()),
         ),
         GoRoute(
+          path: '/auto_bookkeeping',
+          builder: (context, state) => const AutoBookkeepingPage(),
+        ),
+        GoRoute(
           path: '/asset',
           builder: (context, state) => AssetManagementPage(),
         ),
@@ -184,8 +208,14 @@ class _SplashPageState extends State<_SplashPage> {
           queueHomeOcrHudOpenAfterNavigation();
         }
       }
+      final uiTestInitialRoute = prefs.getString('ui_test_initial_route');
+      if (uiTestInitialRoute != null) {
+        await prefs.remove('ui_test_initial_route');
+      }
       final targetRoute = hasLoggedIn
-          ? (_screenshotTargetRoute.startsWith('/')
+          ? (uiTestInitialRoute?.startsWith('/') == true
+                ? uiTestInitialRoute!
+                : _screenshotTargetRoute.startsWith('/')
                 ? _screenshotTargetRoute
                 : '/home')
           : '/welcome';

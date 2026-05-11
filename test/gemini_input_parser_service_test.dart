@@ -200,6 +200,33 @@ Thank you for shopping!
         ),
       ]);
     });
+
+    test(
+      'uses Gemini when local OCR parsing only finds a single total',
+      () async {
+        final dio = Dio();
+        final adapter = _CountingAdapter(
+          responseJson:
+              '{"candidates":[{"content":{"parts":[{"text":"{\\"transactions\\":[{\\"amount\\":2.50,\\"category\\":\\"shopping\\",\\"note\\":\\"Apples\\",\\"type\\":\\"expense\\"},{\\"amount\\":3.00,\\"category\\":\\"shopping\\",\\"note\\":\\"Milk\\",\\"type\\":\\"expense\\"},{\\"amount\\":4.00,\\"category\\":\\"shopping\\",\\"note\\":\\"Bread\\",\\"type\\":\\"expense\\"}]}"}]}}]}',
+        );
+        dio.httpClientAdapter = adapter;
+        final service = GeminiInputParserService(
+          dio: dio,
+          forceConfiguredForTesting: true,
+        );
+
+        final results = await service.parseInput('''
+Shopping Receipt Store: FreshMart Date: 2024.10.05 Apples 3 \$2.50 Milk 1 \$3.00 Bread 2 \$4.00 Subtotal: \$9.50 Tax: \$0.76 Total: \$10.26 Thank you for shopping!
+''');
+
+        expect(adapter.requestCount, 1);
+        expect(results, hasLength(3));
+        expect(
+          results.map((e) => e.note),
+          containsAll(['Apples', 'Milk', 'Bread']),
+        );
+      },
+    );
   });
 }
 

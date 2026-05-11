@@ -1,6 +1,6 @@
 # App Icon Prompt Pack
 
-适用项目：AI Wealth Ledger / AI 记账鸭
+适用项目：AI Wealth Tracker / AI财富记账本
 
 本文件用于直接交给 Midjourney、Figma AI、设计师或其他图像生成流程。
 

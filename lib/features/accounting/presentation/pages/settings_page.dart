@@ -228,6 +228,14 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                       onTap: () => _showWithdrawAIConsentDialog(context),
                     ),
+                    _SettingTile(
+                      icon: Icons.auto_awesome_motion_outlined,
+                      title: t.text(AppStringKeys.settingsAutoBookkeepingTitle),
+                      subtitle: t.text(
+                        AppStringKeys.settingsAutoBookkeepingSubtitle,
+                      ),
+                      onTap: () => context.push('/auto_bookkeeping'),
+                    ),
                     if (_isLoggedIn)
                       _SettingTile(
                         icon: Icons.logout_rounded,

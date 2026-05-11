@@ -55,6 +55,9 @@ memory/
 tmp/
 tmp*/
 dist/
+.playwright-cli/
+artifacts/
+output/
 screen*.png
 revert_recent_bills.png
 asset_card_deeper.png

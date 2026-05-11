@@ -6,6 +6,7 @@ import UIKit
 @objc class AppDelegate: FlutterAppDelegate, SKRequestDelegate {
     private var authChannel: FlutterMethodChannel?
     private var receiptChannel: FlutterMethodChannel?
+    private var autoBookkeepingChannel: FlutterMethodChannel?
     private var receiptRefreshRequest: SKReceiptRefreshRequest?
     private var pendingReceiptResult: FlutterResult?
 
@@ -13,6 +14,7 @@ import UIKit
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
+        configureUITestLaunchState()
         GeneratedPluginRegistrant.register(with: self)
 
         if let registrar = self.registrar(forPlugin: "AliyunAuthChannel") {
@@ -26,6 +28,11 @@ import UIKit
                 binaryMessenger: registrar.messenger()
             )
 
+            autoBookkeepingChannel = FlutterMethodChannel(
+                name: "com.aiaccounting/auto_bookkeeping",
+                binaryMessenger: registrar.messenger()
+            )
+
             authChannel?.setMethodCallHandler { [weak self] call, result in
                 self?.handleMethodCall(call: call, result: result)
             }
@@ -33,9 +40,31 @@ import UIKit
             receiptChannel?.setMethodCallHandler { [weak self] call, result in
                 self?.handleReceiptMethodCall(call: call, result: result)
             }
+
+            autoBookkeepingChannel?.setMethodCallHandler { [weak self] call, result in
+                self?.handleAutoBookkeepingMethodCall(call: call, result: result)
+            }
+
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(handleAutoBookkeepingTextSaved(_:)),
+                name: AutoBookkeepingShortcutStore.notificationName,
+                object: nil
+            )
         }
 
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+    }
+
+    private func configureUITestLaunchState() {
+        guard ProcessInfo.processInfo.arguments.contains("--ui-testing-auto-bookkeeping") else {
+            return
+        }
+
+        let defaults = UserDefaults.standard
+        defaults.set(true, forKey: "flutter.has_logged_in")
+        defaults.set("/auto_bookkeeping", forKey: "flutter.ui_test_initial_route")
+        defaults.synchronize()
     }
 
     private func handleMethodCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -71,6 +100,24 @@ import UIKit
         default:
             result(FlutterMethodNotImplemented)
         }
+    }
+
+    private func handleAutoBookkeepingMethodCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        switch call.method {
+        case "consumePendingText":
+            result(AutoBookkeepingShortcutStore.consumePendingText())
+        default:
+            result(FlutterMethodNotImplemented)
+        }
+    }
+
+    @objc private func handleAutoBookkeepingTextSaved(_ notification: Notification) {
+        guard let text = AutoBookkeepingShortcutStore.consumePendingText()
+            ?? notification.userInfo?["text"] as? String else {
+            return
+        }
+
+        autoBookkeepingChannel?.invokeMethod("recordText", arguments: text)
     }
 
     private func loadLocalReceiptData() -> String? {

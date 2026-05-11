@@ -279,6 +279,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     homeAiTrigger.addListener(_onAiTriggered);
     homeQuickAddTrigger.addListener(_onQuickAddTriggered);
     homeOcrHudTrigger.addListener(_onOcrHudTriggered);
+    homeShortcutTextTrigger.addListener(_onShortcutTextTriggered);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (consumePendingHomeAiOpen()) {
@@ -290,6 +291,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       if (consumePendingHomeOcrHudOpen()) {
         homeOcrHudTrigger.value++;
       }
+      _consumeShortcutTextIfAvailable();
     });
   }
 
@@ -329,6 +331,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         ).text(AppStringKeys.homeScannerHudSubtitle),
       ),
     );
+  }
+
+  void _onShortcutTextTriggered() {
+    if (!mounted) return;
+    _consumeShortcutTextIfAvailable();
+  }
+
+  void _consumeShortcutTextIfAvailable() {
+    final text = consumePendingHomeShortcutText();
+    if (text == null || text.isEmpty) return;
+    _textController.text = text;
+    _textController.selection = TextSelection.collapsed(offset: text.length);
+    _submitText(text);
   }
 
   Widget _buildMockReceiptPreview() {
@@ -420,6 +435,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     homeAiTrigger.removeListener(_onAiTriggered);
     homeQuickAddTrigger.removeListener(_onQuickAddTriggered);
     homeOcrHudTrigger.removeListener(_onOcrHudTriggered);
+    homeShortcutTextTrigger.removeListener(_onShortcutTextTriggered);
     WidgetsBinding.instance.removeObserver(this);
     _textController.dispose();
     super.dispose();
