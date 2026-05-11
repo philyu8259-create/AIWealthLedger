@@ -128,6 +128,7 @@ class AppStringKeys {
   static const homeRecentEntriesEmptyTitle = 'home.recentEntries.emptyTitle';
   static const homeRecentEntriesEmptySubtitle =
       'home.recentEntries.emptySubtitle';
+  static const homeStartFirstRecord = 'home.startFirstRecord';
   static const homePrivacyAgree = 'home.privacyAgree';
   static const reportsTitle = 'reports.title';
   static const reportsMonthBill = 'reports.monthBill';
@@ -407,6 +408,8 @@ class AppStringKeys {
   static const settingsBackupSubtitle = 'settings.backup.subtitle';
   static const settingsExportTitle = 'settings.export.title';
   static const settingsExportSubtitle = 'settings.export.subtitle';
+  static const settingsFunnelTitle = 'settings.funnel.title';
+  static const settingsFunnelSubtitle = 'settings.funnel.subtitle';
   static const settingsPrivacyTitle = 'settings.privacy.title';
   static const settingsTermsTitle = 'settings.terms.title';
   static const settingsRateTitle = 'settings.rate.title';
@@ -434,6 +437,22 @@ class AppStringKeys {
   static const settingsExportRangeCustom = 'settings.export.range.custom';
   static const settingsExportRangeSelected = 'settings.export.range.selected';
   static const settingsExportConfirm = 'settings.export.confirm';
+  static const funnelSheetTitle = 'funnel.sheet.title';
+  static const funnelAttributionSection = 'funnel.attribution.section';
+  static const funnelStatus = 'funnel.status';
+  static const funnelCountry = 'funnel.country';
+  static const funnelCampaign = 'funnel.campaign';
+  static const funnelAdGroup = 'funnel.adGroup';
+  static const funnelKeyword = 'funnel.keyword';
+  static const funnelTokenReady = 'funnel.token.ready';
+  static const funnelTokenMissing = 'funnel.token.missing';
+  static const funnelRefreshAttribution = 'funnel.refreshAttribution';
+  static const funnelExportCsv = 'funnel.exportCsv';
+  static const funnelExportSubject = 'funnel.export.subject';
+  static const funnelRecentEvents = 'funnel.recentEvents';
+  static const funnelNoEvents = 'funnel.noEvents';
+  static const funnelConversion = 'funnel.conversion';
+  static const funnelAppleAdsNote = 'funnel.appleAds.note';
   static const settingsOpenPrivacyFailed = 'settings.openPrivacyFailed';
   static const settingsOpenTermsFailed = 'settings.openTermsFailed';
   static const settingsOpenLinkFailed = 'settings.openLinkFailed';

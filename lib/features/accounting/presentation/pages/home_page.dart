@@ -1717,9 +1717,39 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                   AppStringKeys
                                                       .homeRecentEntriesEmptySubtitle,
                                                 ),
+                                                textAlign: TextAlign.center,
                                                 style: TextStyle(
                                                   color: colors.textSecondary,
                                                   fontSize: 13,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 16),
+                                              FilledButton.icon(
+                                                onPressed: () {
+                                                  unawaited(
+                                                    getIt<
+                                                          FunnelAnalyticsService
+                                                        >()
+                                                        .track(
+                                                          'first_record_cta_tapped',
+                                                          properties: {
+                                                            'surface':
+                                                                'home_empty_state',
+                                                          },
+                                                        ),
+                                                  );
+                                                  showHomeAddEntrySheet(
+                                                    context,
+                                                  );
+                                                },
+                                                icon: const Icon(
+                                                  Icons.add_rounded,
+                                                ),
+                                                label: Text(
+                                                  AppStrings.of(context).text(
+                                                    AppStringKeys
+                                                        .homeStartFirstRecord,
+                                                  ),
                                                 ),
                                               ),
                                             ],

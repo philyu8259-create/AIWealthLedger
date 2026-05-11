@@ -295,6 +295,12 @@ class _SettingsPageState extends State<SettingsPage> {
                       subtitle: t.text(AppStringKeys.settingsExportSubtitle),
                       onTap: () => _exportData(context),
                     ),
+                    _SettingTile(
+                      icon: Icons.query_stats_rounded,
+                      title: t.text(AppStringKeys.settingsFunnelTitle),
+                      subtitle: t.text(AppStringKeys.settingsFunnelSubtitle),
+                      onTap: () => _openFunnelDiagnostics(context),
+                    ),
 
                     _SectionDivider(),
                     _SectionHeader(t.text(AppStringKeys.settingsAbout)),
@@ -632,6 +638,17 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       );
     }
+  }
+
+  void _openFunnelDiagnostics(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => const _FunnelDiagnosticsSheet(),
+    );
   }
 
   /// 解析日期，支持 int (millisecondsSinceEpoch) 或 String (ISO 8601)
@@ -1070,6 +1087,429 @@ class _SettingsPageState extends State<SettingsPage> {
           ],
         );
       },
+    );
+  }
+}
+
+class _FunnelDiagnosticsSheet extends StatefulWidget {
+  const _FunnelDiagnosticsSheet();
+
+  @override
+  State<_FunnelDiagnosticsSheet> createState() =>
+      _FunnelDiagnosticsSheetState();
+}
+
+class _FunnelDiagnosticsSheetState extends State<_FunnelDiagnosticsSheet> {
+  bool _refreshingAttribution = false;
+  bool _exporting = false;
+
+  FunnelAnalyticsService get _service => getIt<FunnelAnalyticsService>();
+
+  Future<void> _refreshAttribution() async {
+    setState(() => _refreshingAttribution = true);
+    await _service.refreshAttributionContext();
+    if (mounted) setState(() => _refreshingAttribution = false);
+  }
+
+  Future<void> _exportCsv() async {
+    final t = AppStrings.of(context);
+    setState(() => _exporting = true);
+    try {
+      await _service.track('funnel_csv_exported');
+      final dir = await getTemporaryDirectory();
+      final file = File(
+        '${dir.path}/ai_wealth_tracker_funnel_${DateTime.now().millisecondsSinceEpoch}.csv',
+      );
+      await file.writeAsString(_service.exportCsv(), encoding: utf8);
+      await Share.shareXFiles([
+        XFile(file.path, mimeType: 'text/csv'),
+      ], subject: t.text(AppStringKeys.funnelExportSubject));
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    final summary = _service.funnelSummary();
+    final source = _service.sourceSummary();
+    final events = _service.recentEvents().reversed.take(12).toList();
+
+    return SafeArea(
+      top: false,
+      child: FractionallySizedBox(
+        heightFactor: 0.88,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colors.textSecondary.withValues(alpha: 0.24),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      t.text(AppStringKeys.funnelSheetTitle),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: ListView(
+                  children: [
+                    _FunnelAttributionCard(
+                      source: source,
+                      tokenReady: _service.attributionToken != null,
+                      refreshing: _refreshingAttribution,
+                      onRefresh: _refreshAttribution,
+                    ),
+                    const SizedBox(height: 12),
+                    for (final step in summary)
+                      _FunnelStepRow(step: step, t: t, colors: colors),
+                    const SizedBox(height: 12),
+                    Text(
+                      t.text(AppStringKeys.funnelRecentEvents),
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (events.isEmpty)
+                      Text(
+                        t.text(AppStringKeys.funnelNoEvents),
+                        style: TextStyle(color: colors.textSecondary),
+                      )
+                    else
+                      for (final event in events)
+                        _FunnelEventRow(event: event, colors: colors),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _exporting ? null : _exportCsv,
+                  icon: _exporting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.ios_share_rounded),
+                  label: Text(t.text(AppStringKeys.funnelExportCsv)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FunnelAttributionCard extends StatelessWidget {
+  const _FunnelAttributionCard({
+    required this.source,
+    required this.tokenReady,
+    required this.refreshing,
+    required this.onRefresh,
+  });
+
+  final Map<String, String> source;
+  final bool tokenReady;
+  final bool refreshing;
+  final VoidCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    final rows = [
+      (
+        label: t.text(AppStringKeys.funnelStatus),
+        value: source['apple_ads_attribution_status'] ?? '-',
+      ),
+      (
+        label: t.text(AppStringKeys.funnelCountry),
+        value:
+            source['ad_country_or_region'] ?? source['locale_country'] ?? '-',
+      ),
+      (
+        label: t.text(AppStringKeys.funnelCampaign),
+        value: source['campaign_id'] ?? '-',
+      ),
+      (
+        label: t.text(AppStringKeys.funnelAdGroup),
+        value: source['ad_group_id'] ?? '-',
+      ),
+      (
+        label: t.text(AppStringKeys.funnelKeyword),
+        value: source['keyword_id'] ?? '-',
+      ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colors.textSecondary.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.ads_click_rounded, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  t.text(AppStringKeys.funnelAttributionSection),
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            tokenReady
+                ? t.text(AppStringKeys.funnelTokenReady)
+                : t.text(AppStringKeys.funnelTokenMissing),
+            style: TextStyle(color: colors.textSecondary, fontSize: 12),
+          ),
+          const SizedBox(height: 10),
+          for (final row in rows)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 112,
+                    child: Text(
+                      row.label,
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      row.value,
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: 10),
+          Text(
+            t.text(AppStringKeys.funnelAppleAdsNote),
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontSize: 12,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: refreshing ? null : onRefresh,
+              icon: refreshing
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh_rounded),
+              label: Text(t.text(AppStringKeys.funnelRefreshAttribution)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FunnelStepRow extends StatelessWidget {
+  const _FunnelStepRow({
+    required this.step,
+    required this.t,
+    required this.colors,
+  });
+
+  final FunnelStepSummary step;
+  final AppStrings t;
+  final AppColorsExtension colors;
+
+  @override
+  Widget build(BuildContext context) {
+    final rate = step.conversionFromPrevious == null
+        ? null
+        : '${(step.conversionFromPrevious! * 100).clamp(0, 999).toStringAsFixed(0)}%';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: colors.cardBackground,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              '${step.count}',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  step.label,
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (rate != null)
+                  Text(
+                    t.text(
+                      AppStringKeys.funnelConversion,
+                      params: {'rate': rate},
+                    ),
+                    style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                  ),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: 112,
+            child: Text(
+              step.eventName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: TextStyle(color: colors.textSecondary, fontSize: 11),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FunnelEventRow extends StatelessWidget {
+  const _FunnelEventRow({required this.event, required this.colors});
+
+  final Map<String, Object?> event;
+  final AppColorsExtension colors;
+
+  @override
+  Widget build(BuildContext context) {
+    final timestamp = DateTime.tryParse('${event['timestamp'] ?? ''}');
+    final timeText = timestamp == null
+        ? ''
+        : DateFormat('MM-dd HH:mm').format(timestamp);
+    final properties = event['properties'] is Map
+        ? Map<String, Object?>.from(event['properties']! as Map)
+        : <String, Object?>{};
+    final sourceText = [
+      properties['locale_country'],
+      properties['keyword_id'] == null
+          ? null
+          : 'kw ${properties['keyword_id']}',
+      properties['campaign_id'] == null
+          ? null
+          : 'camp ${properties['campaign_id']}',
+    ].whereType<Object>().join(' · ');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.cardBackground.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.textSecondary.withValues(alpha: 0.08)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${event['name'] ?? ''}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+                if (sourceText.isNotEmpty)
+                  Text(
+                    sourceText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: colors.textSecondary, fontSize: 11),
+                  ),
+              ],
+            ),
+          ),
+          Text(
+            timeText,
+            style: TextStyle(color: colors.textSecondary, fontSize: 11),
+          ),
+        ],
+      ),
     );
   }
 }

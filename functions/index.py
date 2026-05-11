@@ -39,6 +39,7 @@ APP_STORE_ROOT_CERT_PEM = os.environ.get('APP_STORE_ROOT_CERT_PEM', '')
 APP_STORE_REQUIRE_TRUSTED_JWS = os.environ.get('APP_STORE_REQUIRE_TRUSTED_JWS', 'false').lower() == 'true'
 APP_STORE_PRODUCTION_API = 'https://api.storekit.itunes.apple.com'
 APP_STORE_SANDBOX_API = 'https://api.storekit-sandbox.itunes.apple.com'
+APPLE_ADSERVICES_ATTRIBUTION_URL = 'https://api-adservices.apple.com/api/v1/'
 
 # ─── OTS 配置（SDK v5.4.1）──────────────
 OTS_INSTANCE_NAME = os.environ.get('OTS_INSTANCE_NAME', 'ai-accountant-cu')
@@ -86,6 +87,29 @@ def _default_country_for_exchange(exchange):
     if 'NASDAQ' in normalized or 'NYSE' in normalized or normalized == 'US':
         return 'US'
     return 'CN'
+
+
+def _fetch_apple_ads_attribution(token):
+    token = str(token or '').strip()
+    if not token:
+        return {'success': False, 'error': 'Missing attribution token'}
+
+    req = urllib.request.Request(
+        APPLE_ADSERVICES_ATTRIBUTION_URL,
+        data=token.encode('utf-8'),
+        headers={'Content-Type': 'text/plain'},
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            raw = resp.read().decode('utf-8')
+            payload = json.loads(raw) if raw else {}
+            return {'success': True, 'payload': payload}
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode('utf-8', errors='replace')
+        return {'success': False, 'status': e.code, 'error': detail or e.reason}
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
 
 
 def _normalize_asset_payload(data, asset_id=None):
@@ -1448,6 +1472,17 @@ class Handler(BaseHTTPRequestHandler):
                 self._respond(200, {'success': True, 'authToken': result['authToken']})
             else:
                 self._respond(200, {'success': False, 'error': result.get('error', 'Unknown error')})
+
+        elif self.path == '/ads/attribution':
+            length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(length).decode('utf-8')
+            data = json.loads(body) if body else {}
+            token = data.get('token', '').strip()
+            result = _fetch_apple_ads_attribution(token)
+            if result.get('success'):
+                self._respond(200, result)
+            else:
+                self._respond(200, result)
 
         elif self.path == '/auth/verify':
             # 通过 maskToken 换取真实手机号

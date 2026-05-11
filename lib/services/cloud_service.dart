@@ -224,6 +224,22 @@ class CloudService {
     }
   }
 
+  Future<Map<String, dynamic>?> fetchAppleAdsAttribution(String token) async {
+    if (!isConfigured || token.trim().isEmpty) return null;
+    try {
+      final result = await _request(
+        'POST',
+        '/ads/attribution',
+        body: {'token': token},
+      );
+      final payload = result?['payload'];
+      if (payload is Map<String, dynamic>) return payload;
+    } catch (e) {
+      debugPrint('[CloudService] fetchAppleAdsAttribution error: $e');
+    }
+    return null;
+  }
+
   Future<Map<String, dynamic>?> updateEntry(AccountEntry entry) async {
     if (!isConfigured) return null;
     final phone = _phone;

@@ -1,3 +1,4 @@
+import AdServices
 import Flutter
 import StoreKit
 import UIKit
@@ -7,6 +8,7 @@ import UIKit
     private var authChannel: FlutterMethodChannel?
     private var receiptChannel: FlutterMethodChannel?
     private var autoBookkeepingChannel: FlutterMethodChannel?
+    private var attributionChannel: FlutterMethodChannel?
     private var receiptRefreshRequest: SKReceiptRefreshRequest?
     private var pendingReceiptResult: FlutterResult?
 
@@ -33,6 +35,11 @@ import UIKit
                 binaryMessenger: registrar.messenger()
             )
 
+            attributionChannel = FlutterMethodChannel(
+                name: "com.aiaccounting/apple_ads_attribution",
+                binaryMessenger: registrar.messenger()
+            )
+
             authChannel?.setMethodCallHandler { [weak self] call, result in
                 self?.handleMethodCall(call: call, result: result)
             }
@@ -43,6 +50,10 @@ import UIKit
 
             autoBookkeepingChannel?.setMethodCallHandler { [weak self] call, result in
                 self?.handleAutoBookkeepingMethodCall(call: call, result: result)
+            }
+
+            attributionChannel?.setMethodCallHandler { [weak self] call, result in
+                self?.handleAttributionMethodCall(call: call, result: result)
             }
 
             NotificationCenter.default.addObserver(
@@ -106,6 +117,25 @@ import UIKit
         switch call.method {
         case "consumePendingText":
             result(AutoBookkeepingShortcutStore.consumePendingText())
+        default:
+            result(FlutterMethodNotImplemented)
+        }
+    }
+
+    private func handleAttributionMethodCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        switch call.method {
+        case "getAttributionToken":
+            do {
+                result(try AAAttribution.attributionToken())
+            } catch {
+                result(
+                    FlutterError(
+                        code: "ATTRIBUTION_TOKEN_FAILED",
+                        message: error.localizedDescription,
+                        details: nil
+                    )
+                )
+            }
         default:
             result(FlutterMethodNotImplemented)
         }

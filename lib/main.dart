@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'app/app.dart';
 import 'services/app_migration_service.dart';
+import 'services/cloud_service.dart';
 import 'services/config_service.dart';
 import 'services/demo_data_seeder.dart';
 import 'services/funnel_analytics_service.dart';
@@ -57,7 +58,9 @@ void main() async {
   try {
     await configureDependencies();
     debugPrint('[main] Dependencies configured');
-    await getIt<FunnelAnalyticsService>().trackAppOpen();
+    final funnelAnalytics = getIt<FunnelAnalyticsService>();
+    unawaited(_refreshAppleAdsAttribution(funnelAnalytics));
+    await funnelAnalytics.trackAppOpen();
 
     _vipLifecycleListener ??= AppLifecycleListener(
       onResume: () {
@@ -90,6 +93,18 @@ void main() async {
 
   // 会员恢复与云端同步改为首帧后后台进行，避免冷启动卡在 app logo 页面。
   unawaited(_bootstrapVipAfterLaunch());
+}
+
+Future<void> _refreshAppleAdsAttribution(
+  FunnelAnalyticsService funnelAnalytics,
+) async {
+  await funnelAnalytics.refreshAttributionContext();
+  final token = funnelAnalytics.attributionToken;
+  if (token == null || token.isEmpty) return;
+
+  final payload = await getIt<CloudService>().fetchAppleAdsAttribution(token);
+  if (payload == null || payload.isEmpty) return;
+  await funnelAnalytics.saveAttributionPayload(payload);
 }
 
 Future<void> _bootstrapVipAfterLaunch() async {
