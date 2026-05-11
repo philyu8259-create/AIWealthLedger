@@ -25,6 +25,7 @@ import '../../../../services/quick_chip_service.dart';
 import '../../../../services/cloud_service.dart';
 import '../../../../services/avatar_service.dart';
 import '../../../../services/demo_data_seeder.dart';
+import '../../../../services/funnel_analytics_service.dart';
 import '../../../../services/theme_mode_service.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/entities/custom_category/custom_category.dart';
@@ -2307,6 +2308,12 @@ class _VipBanner extends StatelessWidget {
   }
 
   void _showVipPurchaseSheet(BuildContext context) {
+    unawaited(
+      getIt<FunnelAnalyticsService>().track(
+        'paywall_opened',
+        properties: {'source': 'settings_vip_banner'},
+      ),
+    );
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -2342,7 +2349,23 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
   @override
   void initState() {
     super.initState();
+    unawaited(
+      getIt<FunnelAnalyticsService>().track(
+        'paywall_viewed',
+        properties: {'surface': 'vip_sheet'},
+      ),
+    );
     _loadProducts();
+  }
+
+  void _selectPlan(VipType type) {
+    setState(() => _selectedType = type);
+    unawaited(
+      getIt<FunnelAnalyticsService>().track(
+        'subscription_plan_selected',
+        properties: {'plan': type.name},
+      ),
+    );
   }
 
   Future<void> _loadProducts() async {
@@ -2478,6 +2501,8 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                     ),
                   ),
                   const SizedBox(height: 8),
+                  _VipBenefitList(t: t, colors: colors),
+                  const SizedBox(height: 16),
                   if (isVip) ...[
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -2528,8 +2553,7 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                     period: t.text(AppStringKeys.vipMonthlyPeriod),
                     icon: '📅',
                     isSelected: _selectedType == VipType.monthly,
-                    onTap: () =>
-                        setState(() => _selectedType = VipType.monthly),
+                    onTap: () => _selectPlan(VipType.monthly),
                   ),
                   const SizedBox(height: 8),
                   _VipOptionTile(
@@ -2541,7 +2565,7 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                     ),
                     icon: '🎁',
                     isSelected: _selectedType == VipType.yearly,
-                    onTap: () => setState(() => _selectedType = VipType.yearly),
+                    onTap: () => _selectPlan(VipType.yearly),
                     badge: t.text(AppStringKeys.vipRecommended),
                   ),
                   const SizedBox(height: 20),
@@ -2568,11 +2592,25 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                           : () async {
                               setState(() => _isLoading = true);
                               try {
+                                unawaited(
+                                  getIt<FunnelAnalyticsService>().track(
+                                    'subscription_cta_tapped',
+                                    properties: {'plan': _selectedType.name},
+                                  ),
+                                );
                                 final previousType = vipService.vipType;
                                 final previousExpire = vipService.expireDate;
                                 final started = _selectedType == VipType.monthly
                                     ? await vipService.purchaseMonthly()
                                     : await vipService.purchaseYearly();
+                                unawaited(
+                                  getIt<FunnelAnalyticsService>().track(
+                                    started
+                                        ? 'subscription_checkout_started'
+                                        : 'subscription_checkout_unavailable',
+                                    properties: {'plan': _selectedType.name},
+                                  ),
+                                );
                                 if (!started && context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -2717,6 +2755,63 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _VipBenefitList extends StatelessWidget {
+  const _VipBenefitList({required this.t, required this.colors});
+
+  final AppStrings t;
+  final AppColorsExtension colors;
+
+  @override
+  Widget build(BuildContext context) {
+    final benefits = [
+      t.text(AppStringKeys.vipBenefitAiReport),
+      t.text(AppStringKeys.vipBenefitBudgetWarning),
+      t.text(AppStringKeys.vipBenefitUnlimited),
+      t.text(AppStringKeys.vipBenefitAssets),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF4A47D8).withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF4A47D8).withValues(alpha: 0.12),
+        ),
+      ),
+      child: Column(
+        children: [
+          for (final benefit in benefits)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    size: 18,
+                    color: Color(0xFF4A47D8),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      benefit,
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 13,
+                        height: 1.3,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }

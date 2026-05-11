@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/entities.dart';
 import 'package:uuid/uuid.dart';
+import '../../../../services/funnel_analytics_service.dart';
 import '../../../../services/vip_service.dart';
 import '../../../../services/ai/input_parser_service.dart';
 import '../../domain/repositories/account_entry_repository.dart';
@@ -29,6 +30,7 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
   final InputParserService inputParserService;
   final VipService vipService;
   final AccountEntryRepository repository;
+  final FunnelAnalyticsService? analyticsService;
   final Uuid _uuid = const Uuid();
 
   static const int freeTierLimit = 30;
@@ -40,6 +42,7 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     required this.inputParserService,
     required this.vipService,
     required this.repository,
+    this.analyticsService,
   }) : super(AccountState.initial()) {
     debugPrint('[Bloc] AccountBloc constructed');
 
@@ -75,7 +78,9 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
 
   void _onVipServiceChanged() {
     // VipService 的 VIP 状态发生变化（购买完成），重新加载当月数据刷新 UI
-    debugPrint('[Bloc] _onVipServiceChanged fired! Refreshing current month...');
+    debugPrint(
+      '[Bloc] _onVipServiceChanged fired! Refreshing current month...',
+    );
     add(LoadCurrentMonthEntries());
   }
 
@@ -116,7 +121,9 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     LoadEntriesByMonth event,
     Emitter<AccountState> emit,
   ) async {
-    debugPrint('[Bloc] _onLoadEntriesByMonth called: ${event.year}-${event.month}');
+    debugPrint(
+      '[Bloc] _onLoadEntriesByMonth called: ${event.year}-${event.month}',
+    );
     emit(state.copyWith(status: AccountStatus.loading));
 
     // 加载 VIP 状态
@@ -277,6 +284,10 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
           totalEntryCount: total + 1,
         ),
       );
+      await analyticsService?.trackFirstRecordCreated(
+        source: 'manual_entry',
+        totalEntryCount: total + 1,
+      );
     }
   }
 
@@ -320,6 +331,10 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
         isAiPanelVisible: false,
         totalEntryCount: total + event.entries.length,
       ),
+    );
+    await analyticsService?.trackFirstRecordCreated(
+      source: 'batch_entry',
+      totalEntryCount: total + event.entries.length,
     );
     debugPrint(
       '[Bloc] _onAddMultipleEntries done, final total=${total + event.entries.length}',

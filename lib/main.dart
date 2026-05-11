@@ -7,6 +7,7 @@ import 'app/app.dart';
 import 'services/app_migration_service.dart';
 import 'services/config_service.dart';
 import 'services/demo_data_seeder.dart';
+import 'services/funnel_analytics_service.dart';
 import 'services/injection.dart';
 import 'services/vip_service.dart';
 
@@ -56,6 +57,7 @@ void main() async {
   try {
     await configureDependencies();
     debugPrint('[main] Dependencies configured');
+    await getIt<FunnelAnalyticsService>().trackAppOpen();
 
     _vipLifecycleListener ??= AppLifecycleListener(
       onResume: () {

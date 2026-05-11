@@ -9,6 +9,9 @@ class AppStringKeys {
   static const navSettings = 'nav.settings';
   static const welcomeTitle = 'welcome.title';
   static const welcomeSubtitle = 'welcome.subtitle';
+  static const welcomeValueVoice = 'welcome.value.voice';
+  static const welcomeValueReceipt = 'welcome.value.receipt';
+  static const welcomeValueReview = 'welcome.value.review';
   static const welcomeGuestLogin = 'welcome.guestLogin';
   static const welcomePhoneLogin = 'welcome.phoneLogin';
   static const welcomeAgreementPrefix = 'welcome.agreementPrefix';
@@ -488,6 +491,10 @@ class AppStringKeys {
   static const vipExpireAt = 'vip.expireAt';
   static const vipExpireUntil = 'vip.expireUntil';
   static const vipUnlockFeatures = 'vip.unlockFeatures';
+  static const vipBenefitAiReport = 'vip.benefit.aiReport';
+  static const vipBenefitBudgetWarning = 'vip.benefit.budgetWarning';
+  static const vipBenefitUnlimited = 'vip.benefit.unlimited';
+  static const vipBenefitAssets = 'vip.benefit.assets';
   static const vipManage = 'vip.manage';
   static const vipOpen = 'vip.open';
   static const vipSelectPlan = 'vip.selectPlan';

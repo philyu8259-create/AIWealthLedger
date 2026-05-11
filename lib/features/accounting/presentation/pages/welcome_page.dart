@@ -10,6 +10,7 @@ import '../../../../l10n/app_string_keys.dart';
 import '../../../../l10n/app_strings.dart';
 import '../../../../services/app_profile_service.dart';
 import '../../../../services/demo_data_seeder.dart';
+import '../../../../services/funnel_analytics_service.dart';
 import '../../../../services/injection.dart';
 import '../../../../services/intl_auth_service.dart';
 
@@ -23,6 +24,17 @@ class WelcomePage extends StatefulWidget {
 class _WelcomePageState extends State<WelcomePage> {
   Timer? _demoPressTimer;
   bool _loggingInDemo = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(
+      getIt<FunnelAnalyticsService>().track(
+        'onboarding_viewed',
+        properties: {'surface': 'welcome'},
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -106,6 +118,32 @@ class _WelcomePageState extends State<WelcomePage> {
                             color: Colors.grey.shade600,
                             height: 1.5,
                           ),
+                        ),
+                        SizedBox(height: compact ? 16 : 18),
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _ValueProofPill(
+                              icon: Icons.mic_none_rounded,
+                              label: strings.text(
+                                AppStringKeys.welcomeValueVoice,
+                              ),
+                            ),
+                            _ValueProofPill(
+                              icon: Icons.receipt_long_rounded,
+                              label: strings.text(
+                                AppStringKeys.welcomeValueReceipt,
+                              ),
+                            ),
+                            _ValueProofPill(
+                              icon: Icons.insights_rounded,
+                              label: strings.text(
+                                AppStringKeys.welcomeValueReview,
+                              ),
+                            ),
+                          ],
                         ),
                         SizedBox(height: compact ? 28 : 40),
                         if (usesPhoneAuth) ...[
@@ -289,6 +327,12 @@ class _WelcomePageState extends State<WelcomePage> {
       }
 
       if (!mounted) return;
+      unawaited(
+        getIt<FunnelAnalyticsService>().track(
+          'onboarding_completed',
+          properties: {'method': 'demo'},
+        ),
+      );
       context.go('/home');
     } catch (e) {
       if (!mounted) return;
@@ -320,6 +364,12 @@ class _WelcomePageState extends State<WelcomePage> {
     await prefs.remove('logged_in_display_name');
     await getIt<AppProfileService>().lockCurrentMode();
     if (!context.mounted) return;
+    unawaited(
+      getIt<FunnelAnalyticsService>().track(
+        'onboarding_completed',
+        properties: {'method': 'guest'},
+      ),
+    );
     context.go('/home');
   }
 
@@ -332,6 +382,12 @@ class _WelcomePageState extends State<WelcomePage> {
     try {
       await getIt<IntlAuthService>().signInWithGoogle();
       if (!context.mounted) return;
+      unawaited(
+        getIt<FunnelAnalyticsService>().track(
+          'onboarding_completed',
+          properties: {'method': 'google'},
+        ),
+      );
       context.go('/home');
     } catch (e) {
       if (!context.mounted) return;
@@ -354,6 +410,12 @@ class _WelcomePageState extends State<WelcomePage> {
     try {
       await getIt<IntlAuthService>().signInWithApple();
       if (!context.mounted) return;
+      unawaited(
+        getIt<FunnelAnalyticsService>().track(
+          'onboarding_completed',
+          properties: {'method': 'apple'},
+        ),
+      );
       context.go('/home');
     } catch (e) {
       if (!context.mounted) return;
@@ -400,6 +462,42 @@ class _WelcomePageState extends State<WelcomePage> {
         content: Text(
           AppStrings.of(context).text(AppStringKeys.welcomeOpenTermsFailed),
         ),
+      ),
+    );
+  }
+}
+
+class _ValueProofPill extends StatelessWidget {
+  const _ValueProofPill({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFF4A47D8).withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: const Color(0xFF4A47D8).withValues(alpha: 0.14),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: const Color(0xFF4A47D8)),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF4A47D8),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }

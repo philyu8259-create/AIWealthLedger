@@ -29,6 +29,7 @@ import '../../../../services/ai/receipt_ocr_service.dart';
 import '../../../../services/ai_privacy_consent_service.dart';
 import '../../../../services/app_profile_service.dart';
 import '../../../../services/config_service.dart';
+import '../../../../services/funnel_analytics_service.dart';
 import '../../../../services/quick_chip_service.dart';
 import '../../../../services/injection.dart';
 import '../../../../services/stock_service.dart';
@@ -160,6 +161,12 @@ String _homeMonthShortLabel(int year, int month) {
 }
 
 Future<void> showHomeAddEntrySheet(BuildContext context) async {
+  unawaited(
+    getIt<FunnelAnalyticsService>().track(
+      'record_sheet_opened',
+      properties: {'surface': 'home'},
+    ),
+  );
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,

@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'config_service.dart';
 import 'cloud_service.dart';
+import 'funnel_analytics_service.dart';
 
 enum VipType { none, monthly, yearly }
 
@@ -47,8 +48,10 @@ class VipService extends ChangeNotifier {
   int _lastSnapshotExpireMs = 0;
   bool _lastSnapshotIsVip = false;
 
-  VipService(this._prefs);
+  VipService(this._prefs, [FunnelAnalyticsService? analyticsService])
+    : _analyticsService = analyticsService ?? FunnelAnalyticsService(_prefs);
 
+  final FunnelAnalyticsService _analyticsService;
   String? get _currentPhone {
     final phone = _prefs.getString('logged_in_phone')?.trim();
     if (phone == null || phone.isEmpty) return null;
@@ -218,14 +221,26 @@ class VipService extends ChangeNotifier {
       if (p.status == PurchaseStatus.purchased) {
         debugPrint('[VipService] stream received purchased: ${p.productID}');
         await _processPurchase(p);
+        await _analyticsService.track(
+          'subscription_purchased',
+          properties: {'product_id': p.productID},
+        );
         debugPrint('[VipService] calling notifyListeners...');
         notifyListeners(); // 通知 UI 刷新 VIP 状态
       } else if (p.status == PurchaseStatus.restored) {
         debugPrint('[VipService] stream received restored: ${p.productID}');
         await _processPurchase(p);
+        await _analyticsService.track(
+          'subscription_restored',
+          properties: {'product_id': p.productID},
+        );
         notifyListeners();
       } else {
         debugPrint('[VipService] ⚠️  忽略 status=${p.status}');
+        await _analyticsService.track(
+          'subscription_purchase_status',
+          properties: {'product_id': p.productID, 'status': p.status.name},
+        );
       }
     }
     debugPrint('[VipService] ========================================');
@@ -456,6 +471,14 @@ class VipService extends ChangeNotifier {
       debugPrint(
         '[VipService] 商品详情: id=${product.id}, title=${product.title}, price=${product.price}, currencyCode=${product.currencyCode}, rawPrice=${product.rawPrice}',
       );
+      await _analyticsService.track(
+        'subscription_purchase_requested',
+        properties: {
+          'product_id': productId,
+          'plan': type.name,
+          'price': product.price,
+        },
+      );
 
       debugPrint('[VipService] 📱 即将调用 buyNonConsumable，应该弹出 Apple 付款窗口...');
       final appAccountToken = _appAccountToken;
@@ -469,6 +492,12 @@ class VipService extends ChangeNotifier {
         ),
       );
       debugPrint('[VipService] buyNonConsumable 返回结果: $result');
+      await _analyticsService.track(
+        result
+            ? 'subscription_purchase_started'
+            : 'subscription_purchase_not_started',
+        properties: {'product_id': productId, 'plan': type.name},
+      );
       if (result) {
         unawaited(_refreshEntitlementAfterPurchaseStart(appAccountToken));
       }

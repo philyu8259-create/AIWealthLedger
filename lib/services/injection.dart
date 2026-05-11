@@ -39,6 +39,7 @@ import 'gemini_input_parser_service.dart';
 import 'gemini_spending_prediction_service.dart';
 import 'google_vision_receipt_ocr_service.dart';
 import 'intl_auth_service.dart';
+import 'funnel_analytics_service.dart';
 import 'qwen_service.dart';
 import 'qwen_spending_prediction_service.dart';
 import 'sms_service.dart';
@@ -104,6 +105,9 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<IntlAuthService>(
     () => IntlAuthService(getIt<SharedPreferences>()),
   );
+  getIt.registerLazySingleton<FunnelAnalyticsService>(
+    () => FunnelAnalyticsService(getIt<SharedPreferences>()),
+  );
 
   // CloudService 在未配置时会自动降级为空操作实现，因此始终注册，
   // 避免依赖方在本地预览/离线模式下触发 GetIt runtime error。
@@ -135,7 +139,10 @@ Future<void> configureDependencies() async {
   );
   getIt.registerLazySingleton(() => SmsService());
   getIt.registerLazySingleton(() => AliyunSmsService());
-  getIt.registerLazySingleton(() => VipService(getIt<SharedPreferences>()));
+  getIt.registerLazySingleton(
+    () =>
+        VipService(getIt<SharedPreferences>(), getIt<FunnelAnalyticsService>()),
+  );
   getIt.registerLazySingleton(() => AvatarService(getIt<SharedPreferences>()));
   getIt.registerLazySingleton(() => StockService(getIt<SharedPreferences>()));
   getIt.registerLazySingleton<ICustomCategoryDataSource>(
@@ -167,6 +174,7 @@ Future<void> configureDependencies() async {
       inputParserService: getIt<InputParserService>(),
       vipService: getIt<VipService>(),
       repository: getIt<AccountEntryRepository>(),
+      analyticsService: getIt<FunnelAnalyticsService>(),
     ),
   );
   getIt.registerFactory(
