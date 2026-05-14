@@ -1,7 +1,7 @@
 name: ai_accounting_app
 description: "AI Wealth Tracker - dual-mode AI expense tracking"
 publish_to: 'none'
-version: 1.4.0+4
+version: 1.4.1+1
 
 environment:
   sdk: ^3.11.3
