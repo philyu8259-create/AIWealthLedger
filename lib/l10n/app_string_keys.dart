@@ -180,6 +180,10 @@ class AppStringKeys {
   static const transactionsFilterAll = 'transactions.filter.all';
   static const transactionsFilterExpense = 'transactions.filter.expense';
   static const transactionsFilterIncome = 'transactions.filter.income';
+  static const transactionsSummaryNet = 'transactions.summary.net';
+  static const transactionsSummaryExpense = 'transactions.summary.expense';
+  static const transactionsSummaryIncome = 'transactions.summary.income';
+  static const transactionsSummaryEntries = 'transactions.summary.entries';
   static const transactionsDeleteTitle = 'transactions.delete.title';
   static const transactionsDeleteContent = 'transactions.delete.content';
   static const transactionsToday = 'transactions.today';

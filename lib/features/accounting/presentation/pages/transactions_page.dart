@@ -64,10 +64,9 @@ class _TransactionsPageState extends State<TransactionsPage> {
     );
   }
 
-  List<AccountEntry> _filteredEntries(AccountState state) {
+  List<AccountEntry> _scopeEntries(AccountState state) {
     List<AccountEntry> entries = state.entries;
 
-    // 按日筛选
     if (state.selectedDay != null) {
       entries = entries.where((e) {
         return e.date.year == state.selectedDay!.year &&
@@ -75,6 +74,12 @@ class _TransactionsPageState extends State<TransactionsPage> {
             e.date.day == state.selectedDay!.day;
       }).toList();
     }
+
+    return entries;
+  }
+
+  List<AccountEntry> _filteredEntries(AccountState state) {
+    final entries = _scopeEntries(state);
 
     switch (_filter) {
       case 'expense':
@@ -119,6 +124,15 @@ class _TransactionsPageState extends State<TransactionsPage> {
     );
   }
 
+  String _filterLabel(BuildContext context, String filter) {
+    final t = AppStrings.of(context);
+    return switch (filter) {
+      'expense' => t.text(AppStringKeys.transactionsFilterExpense),
+      'income' => t.text(AppStringKeys.transactionsFilterIncome),
+      _ => t.text(AppStringKeys.transactionsFilterAll),
+    };
+  }
+
   Future<void> _showMonthPicker(
     BuildContext context,
     AccountState state,
@@ -142,54 +156,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
     final t = AppStrings.of(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: PremiumPageAppBar(
-        title: t.text(AppStringKeys.transactionsTitle),
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (v) => setState(() => _filter = v),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _filter == 'expense'
-                        ? t.text(AppStringKeys.reportsExpense)
-                        : _filter == 'income'
-                        ? t.text(AppStringKeys.reportsIncome)
-                        : t.text(AppStringKeys.transactionsFilterAll),
-                    style: const TextStyle(fontSize: 14, color: Colors.white),
-                  ),
-                  const Icon(
-                    Icons.arrow_drop_down,
-                    size: 20,
-                    color: Colors.white,
-                  ),
-                ],
-              ),
-            ),
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                value: 'all',
-                child: Text(t.text(AppStringKeys.transactionsFilterAll)),
-              ),
-              PopupMenuItem(
-                value: 'expense',
-                child: Text(t.text(AppStringKeys.reportsExpense)),
-              ),
-              PopupMenuItem(
-                value: 'income',
-                child: Text(t.text(AppStringKeys.reportsIncome)),
-              ),
-            ],
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
+      appBar: PremiumPageAppBar(title: t.text(AppStringKeys.transactionsTitle)),
       body: TexturedScaffoldBackground(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -208,9 +175,20 @@ class _TransactionsPageState extends State<TransactionsPage> {
                   padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                   child: BlocBuilder<AccountBloc, AccountState>(
                     builder: (context, state) {
+                      final scopeEntries = _scopeEntries(state);
                       return Column(
                         children: [
                           _buildMonthSelector(state),
+                          _MonthSnapshotCard(
+                            entries: scopeEntries,
+                            formatMoney: _formatMoney,
+                          ),
+                          _FilterSegmentedControl(
+                            selected: _filter,
+                            labelFor: (filter) => _filterLabel(context, filter),
+                            onChanged: (filter) =>
+                                setState(() => _filter = filter),
+                          ),
                           Expanded(child: _buildBody(state)),
                         ],
                       );
@@ -226,6 +204,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
   }
 
   Widget _buildBody(AccountState state) {
+    final t = AppStrings.of(context);
     if (state.status == AccountStatus.loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -234,7 +213,15 @@ class _TransactionsPageState extends State<TransactionsPage> {
     final entries = _filteredEntries(state);
 
     if (entries.isEmpty) {
-      return const _EmptyState();
+      final hasEntriesInScope = _scopeEntries(state).isNotEmpty;
+      return _EmptyState(
+        title: hasEntriesInScope
+            ? t.text(
+                AppStringKeys.transactionsEmptyFiltered,
+                params: {'filter': _filterLabel(context, _filter)},
+              )
+            : null,
+      );
     }
 
     // Group by date
@@ -246,7 +233,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
     final sortedDates = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
     return ListView.builder(
-      padding: EdgeInsets.fromLTRB(0, 16, 0, bottomInset),
+      padding: EdgeInsets.fromLTRB(0, 14, 0, bottomInset),
       itemCount: sortedDates.length,
       itemBuilder: (context, index) {
         final date = sortedDates[index];
@@ -303,6 +290,249 @@ class _TransactionsPageState extends State<TransactionsPage> {
   }
 }
 
+class _MonthSnapshotCard extends StatelessWidget {
+  const _MonthSnapshotCard({required this.entries, required this.formatMoney});
+
+  final List<AccountEntry> entries;
+  final String Function(num amount) formatMoney;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppStrings.of(context);
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    final income = entries
+        .where((e) => e.type == EntryType.income)
+        .fold<double>(0, (sum, e) => sum + e.amount);
+    final expense = entries
+        .where((e) => e.type == EntryType.expense)
+        .fold<double>(0, (sum, e) => sum + e.amount);
+    final net = income - expense;
+    final netColor = net >= 0 ? AppColors.marketDown : AppColors.marketUp;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: PremiumSurfaceCard(
+        radius: 24,
+        padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        t.text(AppStringKeys.transactionsSummaryNet),
+                        style: TextStyle(
+                          color: colors.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '${net >= 0 ? '+' : '-'}${formatMoney(net.abs())}',
+                          style: TextStyle(
+                            color: netColor,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                    ),
+                  ),
+                  child: Text(
+                    t.text(
+                      AppStringKeys.transactionsSummaryEntries,
+                      params: {'count': entries.length.toString()},
+                    ),
+                    style: const TextStyle(
+                      color: AppColors.primaryDark,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _SnapshotMetric(
+                    label: t.text(AppStringKeys.transactionsSummaryExpense),
+                    value: formatMoney(expense),
+                    color: AppColors.marketUp,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _SnapshotMetric(
+                    label: t.text(AppStringKeys.transactionsSummaryIncome),
+                    value: formatMoney(income),
+                    color: AppColors.marketDown,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SnapshotMetric extends StatelessWidget {
+  const _SnapshotMetric({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    return Container(
+      constraints: const BoxConstraints(minHeight: 64),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: colors.secondaryBackground.withValues(alpha: 0.58),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: colors.subtleBorder.withValues(alpha: 0.70)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 5),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterSegmentedControl extends StatelessWidget {
+  const _FilterSegmentedControl({
+    required this.selected,
+    required this.labelFor,
+    required this.onChanged,
+  });
+
+  final String selected;
+  final String Function(String filter) labelFor;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    const filters = ['all', 'expense', 'income'];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 2),
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: isDark
+              ? colors.secondaryBackground.withValues(alpha: 0.92)
+              : Colors.white.withValues(alpha: 0.76),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDark
+                ? colors.subtleBorder
+                : AppColors.primary.withValues(alpha: 0.10),
+          ),
+          boxShadow: isDark ? null : colors.softShadow,
+        ),
+        child: Row(
+          children: filters.map((filter) {
+            final isSelected = selected == filter;
+            return Expanded(
+              child: PressFeedback(
+                onTap: () => onChanged(filter),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.primary : Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: isSelected && !isDark
+                        ? [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.20),
+                              blurRadius: 16,
+                              offset: const Offset(0, 8),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Text(
+                    labelFor(filter),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : colors.textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+}
+
 /// 日期分组组件（带吸顶效果）
 class _DateGroup extends StatelessWidget {
   final DateTime date;
@@ -338,49 +568,49 @@ class _DateGroup extends StatelessWidget {
     final colors = Theme.of(context).extension<AppColorsExtension>()!;
 
     return Container(
-      margin: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: colors.cardBackground,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(color: colors.subtleBorder),
         boxShadow: colors.softShadow,
       ),
       child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-          child: _DateHeader(
-            dateText: _formatDate(date),
-            dayExpense: dayExpense,
-            dayIncome: dayIncome,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 12),
+            child: _DateHeader(
+              dateText: _formatDate(date),
+              dayExpense: dayExpense,
+              dayIncome: dayIncome,
+            ),
           ),
-        ),
-        Divider(
-          height: 1,
-          color: colors.subtleBorder.withValues(alpha: 0.5),
-          indent: 20,
-          endIndent: 20,
-        ),
-        ...List.generate(entries.length, (index) {
-          final entry = entries[index];
-          final isLast = index == entries.length - 1;
+          Divider(
+            height: 1,
+            color: colors.subtleBorder.withValues(alpha: 0.46),
+            indent: 18,
+            endIndent: 18,
+          ),
+          ...List.generate(entries.length, (index) {
+            final entry = entries[index];
+            final isLast = index == entries.length - 1;
 
-          return Column(
-            children: [
-              _EntryTile(entry: entry, onDelete: () => onDelete(entry)),
-              if (!isLast)
-                Divider(
-                  height: 1,
-                  color: colors.subtleBorder.withValues(alpha: 0.5),
-                  indent: 78,
-                  endIndent: 20,
-                ),
-            ],
-          );
-        }),
-      ],
+            return Column(
+              children: [
+                _EntryTile(entry: entry, onDelete: () => onDelete(entry)),
+                if (!isLast)
+                  Divider(
+                    height: 1,
+                    color: colors.subtleBorder.withValues(alpha: 0.42),
+                    indent: 76,
+                    endIndent: 18,
+                  ),
+              ],
+            );
+          }),
+        ],
       ),
     );
   }
@@ -546,12 +776,12 @@ class _EntryTileState extends State<_EntryTile> {
       },
       child: Container(
         color: Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         child: Row(
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 46,
+              height: 46,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -565,9 +795,12 @@ class _EntryTileState extends State<_EntryTile> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: catColor.withValues(alpha: 0.14)),
               ),
-              child: Text(cat?.icon ?? '📦', style: const TextStyle(fontSize: 24)),
+              child: Text(
+                cat?.icon ?? '📦',
+                style: const TextStyle(fontSize: 24),
+              ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -608,9 +841,9 @@ class _EntryTileState extends State<_EntryTile> {
                 ],
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
               decoration: BoxDecoration(
                 color: widget.entry.type == EntryType.income
                     ? AppColors.marketDownSoft.withValues(alpha: 0.92)
@@ -992,7 +1225,9 @@ class _EntryTileState extends State<_EntryTile> {
 
 /// 空状态组件
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  const _EmptyState({this.title});
+
+  final String? title;
 
   @override
   Widget build(BuildContext context) {
@@ -1031,7 +1266,7 @@ class _EmptyState extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                t.text(AppStringKeys.transactionsEmptyTitle),
+                title ?? t.text(AppStringKeys.transactionsEmptyTitle),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
