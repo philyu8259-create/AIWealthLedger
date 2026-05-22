@@ -12,6 +12,11 @@ class AppStringKeys {
   static const welcomeValueVoice = 'welcome.value.voice';
   static const welcomeValueReceipt = 'welcome.value.receipt';
   static const welcomeValueReview = 'welcome.value.review';
+  static const welcomeGoalPrompt = 'welcome.goal.prompt';
+  static const welcomeGoalDaily = 'welcome.goal.daily';
+  static const welcomeGoalBudget = 'welcome.goal.budget';
+  static const welcomeGoalAssets = 'welcome.goal.assets';
+  static const welcomeGoalTrend = 'welcome.goal.trend';
   static const welcomeGuestLogin = 'welcome.guestLogin';
   static const welcomePhoneLogin = 'welcome.phoneLogin';
   static const welcomeAgreementPrefix = 'welcome.agreementPrefix';
@@ -99,6 +104,25 @@ class AppStringKeys {
   static const homeAssetsBadge = 'home.assetsBadge';
   static const homeStocksSummaryHidden = 'home.stocksSummaryHidden';
   static const homeStocksSummaryVisible = 'home.stocksSummaryVisible';
+  static const homeQuickCaptureTitle = 'home.quickCapture.title';
+  static const homeQuickCaptureSubtitleDaily =
+      'home.quickCapture.subtitle.daily';
+  static const homeQuickCaptureSubtitleBudget =
+      'home.quickCapture.subtitle.budget';
+  static const homeQuickCaptureSubtitleAssets =
+      'home.quickCapture.subtitle.assets';
+  static const homeQuickCaptureSubtitleTrend =
+      'home.quickCapture.subtitle.trend';
+  static const homeQuickCaptureHint = 'home.quickCapture.hint';
+  static const homeQuickCaptureSubmit = 'home.quickCapture.submit';
+  static const homeQuickCapturePhoto = 'home.quickCapture.photo';
+  static const homeQuickCaptureVoice = 'home.quickCapture.voice';
+  static const homeQuickCaptureManual = 'home.quickCapture.manual';
+  static const homeActivationEmptyTitle = 'home.activation.emptyTitle';
+  static const homeActivationEmptySubtitle = 'home.activation.emptySubtitle';
+  static const homeActivationProgressTitle = 'home.activation.progressTitle';
+  static const homeActivationProgressSubtitle =
+      'home.activation.progressSubtitle';
   static const homeAiLedgerTitle = 'home.aiLedgerTitle';
   static const homeAiLedgerSubtitle = 'home.aiLedgerSubtitle';
   static const homeAiInputPlaceholder = 'home.aiInputPlaceholder';

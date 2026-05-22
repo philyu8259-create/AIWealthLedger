@@ -226,6 +226,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   static const _assetPrivacyHiddenKey = 'home_asset_privacy_hidden_v1';
+  static const _onboardingGoalKey = 'onboarding_primary_goal_v1';
 
   final _textController = TextEditingController();
   final _uuid = const Uuid();
@@ -235,6 +236,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _isListening = false;
   bool _speechAvailable = false;
   bool _speechInitialized = false;
+  late String _selectedGoal;
 
   bool _ensureAiReady() {
     if (_homeAiReady()) return true;
@@ -278,6 +280,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    _selectedGoal =
+        getIt<SharedPreferences>().getString(_onboardingGoalKey) ?? 'daily';
     WidgetsBinding.instance.addObserver(this);
     _bloc = context.read<CustomCategoryBloc>();
     _assetSummaryFuture = _loadAssetSummary();
@@ -993,6 +997,37 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     return groups;
   }
 
+  String _quickCaptureSubtitle(AppStrings t) {
+    switch (_selectedGoal) {
+      case 'budget':
+        return t.text(AppStringKeys.homeQuickCaptureSubtitleBudget);
+      case 'assets':
+        return t.text(AppStringKeys.homeQuickCaptureSubtitleAssets);
+      case 'trend':
+        return t.text(AppStringKeys.homeQuickCaptureSubtitleTrend);
+      case 'daily':
+      default:
+        return t.text(AppStringKeys.homeQuickCaptureSubtitleDaily);
+    }
+  }
+
+  String _activationTitle(AppStrings t, AccountState state) {
+    if (state.entries.isEmpty) {
+      return t.text(AppStringKeys.homeActivationEmptyTitle);
+    }
+    return t.text(
+      AppStringKeys.homeActivationProgressTitle,
+      params: {'count': state.entries.length.toString()},
+    );
+  }
+
+  String _activationSubtitle(AppStrings t, AccountState state) {
+    if (state.entries.isEmpty) {
+      return t.text(AppStringKeys.homeActivationEmptySubtitle);
+    }
+    return t.text(AppStringKeys.homeActivationProgressSubtitle);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColorsExtension>()!;
@@ -1260,6 +1295,63 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     lastMonthIncome: state.lastMonthIncome,
                                   ),
                                   onTap: () => context.go('/analysis'),
+                                ),
+                              ),
+
+                              SliverToBoxAdapter(
+                                child: _HomeQuickCaptureCard(
+                                  controller: _textController,
+                                  title: t.text(
+                                    AppStringKeys.homeQuickCaptureTitle,
+                                  ),
+                                  subtitle: _quickCaptureSubtitle(t),
+                                  insightTitle: _activationTitle(t, state),
+                                  insightSubtitle: _activationSubtitle(
+                                    t,
+                                    state,
+                                  ),
+                                  isListening: _isListening,
+                                  onSubmit: () {
+                                    final text = _textController.text.trim();
+                                    unawaited(
+                                      getIt<FunnelAnalyticsService>().track(
+                                        'quick_capture_submitted',
+                                        properties: {'surface': 'home_inline'},
+                                      ),
+                                    );
+                                    _submitText(text);
+                                  },
+                                  onVoice: () {
+                                    unawaited(
+                                      getIt<FunnelAnalyticsService>().track(
+                                        'quick_capture_voice_tapped',
+                                        properties: {'surface': 'home_inline'},
+                                      ),
+                                    );
+                                    if (_isListening) {
+                                      unawaited(_stopListening());
+                                    } else {
+                                      unawaited(_startListening());
+                                    }
+                                  },
+                                  onPhoto: () {
+                                    unawaited(
+                                      getIt<FunnelAnalyticsService>().track(
+                                        'quick_capture_photo_tapped',
+                                        properties: {'surface': 'home_inline'},
+                                      ),
+                                    );
+                                    _pickImageForOCR(ImageSource.camera);
+                                  },
+                                  onManual: () {
+                                    unawaited(
+                                      getIt<FunnelAnalyticsService>().track(
+                                        'quick_capture_manual_tapped',
+                                        properties: {'surface': 'home_inline'},
+                                      ),
+                                    );
+                                    showHomeAddEntrySheet(context);
+                                  },
                                 ),
                               ),
 
@@ -1885,6 +1977,268 @@ class _HomeAssetSummary {
   final double totalAssetChangeAmount;
   final double? totalAssetChangePercent;
   final double? stockProfitPercent;
+}
+
+class _HomeQuickCaptureCard extends StatelessWidget {
+  const _HomeQuickCaptureCard({
+    required this.controller,
+    required this.title,
+    required this.subtitle,
+    required this.insightTitle,
+    required this.insightSubtitle,
+    required this.isListening,
+    required this.onSubmit,
+    required this.onVoice,
+    required this.onPhoto,
+    required this.onManual,
+  });
+
+  final TextEditingController controller;
+  final String title;
+  final String subtitle;
+  final String insightTitle;
+  final String insightSubtitle;
+  final bool isListening;
+  final VoidCallback onSubmit;
+  final VoidCallback onVoice;
+  final VoidCallback onPhoto;
+  final VoidCallback onManual;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    final t = AppStrings.of(context);
+    final compact = MediaQuery.of(context).size.width < 360;
+
+    return PremiumSurfaceCard(
+      margin: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      padding: EdgeInsets.fromLTRB(16, compact ? 14 : 16, 16, 16),
+      radius: 22,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.auto_awesome_rounded,
+                  color: AppColors.primary,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: compact ? 16 : 17,
+                        fontWeight: FontWeight.w700,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.35,
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            decoration: BoxDecoration(
+              color: colors.secondaryBackground,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: colors.subtleBorder),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    minLines: 1,
+                    maxLines: 2,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => onSubmit(),
+                    decoration: InputDecoration(
+                      hintText: t.text(AppStringKeys.homeQuickCaptureHint),
+                      hintStyle: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 13,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+                    ),
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: IconButton.filled(
+                    onPressed: onSubmit,
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      fixedSize: const Size(38, 38),
+                    ),
+                    tooltip: t.text(AppStringKeys.homeQuickCaptureSubmit),
+                    icon: const Icon(Icons.arrow_upward_rounded, size: 20),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _QuickCaptureAction(
+                  icon: isListening
+                      ? Icons.graphic_eq_rounded
+                      : Icons.mic_none_rounded,
+                  label: isListening
+                      ? t.text(AppStringKeys.homeVoiceListeningLabel)
+                      : t.text(AppStringKeys.homeQuickCaptureVoice),
+                  onTap: onVoice,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _QuickCaptureAction(
+                  icon: Icons.receipt_long_rounded,
+                  label: t.text(AppStringKeys.homeQuickCapturePhoto),
+                  onTap: onPhoto,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _QuickCaptureAction(
+                  icon: Icons.edit_note_rounded,
+                  label: t.text(AppStringKeys.homeQuickCaptureManual),
+                  onTap: onManual,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.055),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.08),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.lightbulb_outline_rounded,
+                  color: AppColors.primary,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        insightTitle,
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          height: 1.28,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        insightSubtitle,
+                        style: TextStyle(
+                          color: colors.textSecondary,
+                          fontSize: 12,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickCaptureAction extends StatelessWidget {
+  const _QuickCaptureAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    return PressFeedback(
+      onTap: onTap,
+      child: Container(
+        height: 42,
+        decoration: BoxDecoration(
+          color: colors.background.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: colors.subtleBorder),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 17, color: AppColors.primary),
+            const SizedBox(width: 5),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ── 记一笔：选择金额和类目 ─────────────────────────────────────

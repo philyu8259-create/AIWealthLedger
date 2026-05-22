@@ -22,12 +22,16 @@ class WelcomePage extends StatefulWidget {
 }
 
 class _WelcomePageState extends State<WelcomePage> {
+  static const _goalKey = 'onboarding_primary_goal_v1';
+
   Timer? _demoPressTimer;
   bool _loggingInDemo = false;
+  String _selectedGoal = 'daily';
 
   @override
   void initState() {
     super.initState();
+    unawaited(_loadSelectedGoal());
     unawaited(
       getIt<FunnelAnalyticsService>().track(
         'onboarding_viewed',
@@ -40,6 +44,30 @@ class _WelcomePageState extends State<WelcomePage> {
   void dispose() {
     _cancelDemoPress();
     super.dispose();
+  }
+
+  Future<void> _loadSelectedGoal() async {
+    final prefs = await SharedPreferences.getInstance();
+    final goal = prefs.getString(_goalKey);
+    if (!mounted || goal == null || goal.isEmpty) return;
+    setState(() => _selectedGoal = goal);
+  }
+
+  Future<void> _setSelectedGoal(String goal) async {
+    setState(() => _selectedGoal = goal);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_goalKey, goal);
+    unawaited(
+      getIt<FunnelAnalyticsService>().track(
+        'onboarding_goal_selected',
+        properties: {'goal': goal},
+      ),
+    );
+  }
+
+  Future<void> _persistSelectedGoal() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_goalKey, _selectedGoal);
   }
 
   @override
@@ -145,7 +173,55 @@ class _WelcomePageState extends State<WelcomePage> {
                             ),
                           ],
                         ),
-                        SizedBox(height: compact ? 28 : 40),
+                        SizedBox(height: compact ? 18 : 24),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            strings.text(AppStringKeys.welcomeGoalPrompt),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _GoalChoiceChip(
+                              label: strings.text(
+                                AppStringKeys.welcomeGoalDaily,
+                              ),
+                              selected: _selectedGoal == 'daily',
+                              onTap: () => _setSelectedGoal('daily'),
+                            ),
+                            _GoalChoiceChip(
+                              label: strings.text(
+                                AppStringKeys.welcomeGoalBudget,
+                              ),
+                              selected: _selectedGoal == 'budget',
+                              onTap: () => _setSelectedGoal('budget'),
+                            ),
+                            _GoalChoiceChip(
+                              label: strings.text(
+                                AppStringKeys.welcomeGoalAssets,
+                              ),
+                              selected: _selectedGoal == 'assets',
+                              onTap: () => _setSelectedGoal('assets'),
+                            ),
+                            _GoalChoiceChip(
+                              label: strings.text(
+                                AppStringKeys.welcomeGoalTrend,
+                              ),
+                              selected: _selectedGoal == 'trend',
+                              onTap: () => _setSelectedGoal('trend'),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: compact ? 24 : 32),
                         if (usesPhoneAuth) ...[
                           SizedBox(
                             width: double.infinity,
@@ -307,6 +383,7 @@ class _WelcomePageState extends State<WelcomePage> {
 
     setState(() => _loggingInDemo = true);
     try {
+      await _persistSelectedGoal();
       final authProviders = getIt<AppProfileService>()
           .currentProfile
           .capabilityProfile
@@ -357,6 +434,7 @@ class _WelcomePageState extends State<WelcomePage> {
 
   Future<void> _guestLogin(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_goalKey, _selectedGoal);
     await prefs.setBool('has_logged_in', true);
     await prefs.remove('logged_in_phone');
     await prefs.remove('logged_in_email');
@@ -380,6 +458,7 @@ class _WelcomePageState extends State<WelcomePage> {
 
   Future<void> _signInWithGoogle(BuildContext context) async {
     try {
+      await _persistSelectedGoal();
       await getIt<IntlAuthService>().signInWithGoogle();
       if (!context.mounted) return;
       unawaited(
@@ -408,6 +487,7 @@ class _WelcomePageState extends State<WelcomePage> {
 
   Future<void> _signInWithApple(BuildContext context) async {
     try {
+      await _persistSelectedGoal();
       await getIt<IntlAuthService>().signInWithApple();
       if (!context.mounted) return;
       unawaited(
@@ -499,6 +579,38 @@ class _ValueProofPill extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _GoalChoiceChip extends StatelessWidget {
+  const _GoalChoiceChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = const Color(0xFF4A47D8);
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onTap(),
+      showCheckmark: false,
+      labelStyle: TextStyle(
+        color: selected ? Colors.white : primary,
+        fontWeight: FontWeight.w700,
+        fontSize: 12,
+      ),
+      selectedColor: primary,
+      backgroundColor: primary.withValues(alpha: 0.06),
+      side: BorderSide(color: primary.withValues(alpha: selected ? 0.0 : 0.16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
     );
   }
 }
