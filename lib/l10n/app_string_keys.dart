@@ -125,6 +125,10 @@ class AppStringKeys {
   static const homeActivationProgressTitle = 'home.activation.progressTitle';
   static const homeActivationProgressSubtitle =
       'home.activation.progressSubtitle';
+  static const homeSubscriptionNudgeTitle = 'home.subscriptionNudge.title';
+  static const homeSubscriptionNudgeSubtitle =
+      'home.subscriptionNudge.subtitle';
+  static const homeSubscriptionNudgeAction = 'home.subscriptionNudge.action';
   static const homeAiLedgerTitle = 'home.aiLedgerTitle';
   static const homeAiLedgerSubtitle = 'home.aiLedgerSubtitle';
   static const homeAiInputPlaceholder = 'home.aiInputPlaceholder';
@@ -242,6 +246,14 @@ class AppStringKeys {
   static const assetsEmptyOtherSubtitle = 'assets.emptyOther.subtitle';
   static const assetsConfigSection = 'assets.configSection';
   static const assetsTotalAssets = 'assets.totalAssets';
+  static const assetsOverviewInsight = 'assets.overview.insight';
+  static const assetsCashBucket = 'assets.bucket.cash';
+  static const assetsInvestmentBucket = 'assets.bucket.investment';
+  static const assetsDebtBucket = 'assets.bucket.debt';
+  static const assetsOtherBucket = 'assets.bucket.other';
+  static const assetsMonthChange = 'assets.monthChange';
+  static const assetsLargestSource = 'assets.largestSource';
+  static const assetsStocksSecondarySection = 'assets.stocksSecondarySection';
   static const assetsStockProfitLabel = 'assets.stockProfitLabel';
   static const assetsStockProfit = 'assets.stockProfit';
   static const assetsStockProfitEmpty = 'assets.stockProfitEmpty';

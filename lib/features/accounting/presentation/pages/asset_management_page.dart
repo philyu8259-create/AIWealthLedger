@@ -71,13 +71,6 @@ Color _marketChangeColor(num? value) {
   );
 }
 
-Color _marketChangeBgColor(num? value) {
-  return AppColors.marketChangeSoftColor(
-    value: value,
-    useUsSemantics: _isUsStockScope(),
-  );
-}
-
 bool _usesOnDemandStockSearch() {
   return getIt<StockService>().usesOnDemandSearch;
 }
@@ -513,6 +506,26 @@ class _AssetManagementPageState extends State<AssetManagementPage>
 
   double get _totalAssets => _stockMarketValue + _otherAssetsTotal;
 
+  double get _cashAssetsTotal => _assets
+      .where(
+        (asset) =>
+            asset.type == AssetType.cash ||
+            asset.type == AssetType.bank ||
+            asset.type == AssetType.alipay ||
+            asset.type == AssetType.wechat,
+      )
+      .fold(0.0, (sum, item) => sum + item.balance);
+
+  double get _investmentAssetsTotal =>
+      _stockMarketValue +
+      _assets
+          .where((asset) => asset.type == AssetType.fund)
+          .fold(0.0, (sum, item) => sum + item.balance);
+
+  double get _otherBucketTotal => _assets
+      .where((asset) => asset.type == AssetType.other)
+      .fold(0.0, (sum, item) => sum + item.balance);
+
   double get _stockProfitAmount =>
       _stocks.fold(0.0, (sum, item) => sum + (item.profitAmount ?? 0));
 
@@ -586,6 +599,10 @@ class _AssetManagementPageState extends State<AssetManagementPage>
                       children: [
                         _AssetSummaryCard(
                           totalAssets: _totalAssets,
+                          cashAssetsTotal: _cashAssetsTotal,
+                          investmentAssetsTotal: _investmentAssetsTotal,
+                          debtTotal: 0,
+                          otherBucketTotal: _otherBucketTotal,
                           stockMarketValue: _stockMarketValue,
                           otherAssetsTotal: _otherAssetsTotal,
                           stockRatio: _totalAssets <= 0
@@ -597,7 +614,9 @@ class _AssetManagementPageState extends State<AssetManagementPage>
                         ),
                         const SizedBox(height: 16),
                         _SectionHeader(
-                          title: t.text(AppStringKeys.assetsStocksSection),
+                          title: t.text(
+                            AppStringKeys.assetsStocksSecondarySection,
+                          ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -708,6 +727,10 @@ class _AssetManagementPageState extends State<AssetManagementPage>
 class _AssetSummaryCard extends StatelessWidget {
   const _AssetSummaryCard({
     required this.totalAssets,
+    required this.cashAssetsTotal,
+    required this.investmentAssetsTotal,
+    required this.debtTotal,
+    required this.otherBucketTotal,
     required this.stockMarketValue,
     required this.otherAssetsTotal,
     required this.stockRatio,
@@ -717,6 +740,10 @@ class _AssetSummaryCard extends StatelessWidget {
   });
 
   final double totalAssets;
+  final double cashAssetsTotal;
+  final double investmentAssetsTotal;
+  final double debtTotal;
+  final double otherBucketTotal;
   final double stockMarketValue;
   final double otherAssetsTotal;
   final double stockRatio;
@@ -727,8 +754,18 @@ class _AssetSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
-    final profitColor = _marketChangeBgColor(stockProfitAmount);
-    final profitTextColor = _marketChangeColor(stockProfitAmount);
+    final monthChangeText =
+        '${stockProfitAmount >= 0 ? '+' : ''}${_profileMoney(stockProfitAmount.abs())}';
+    final buckets = <(String, double)>[
+      (t.text(AppStringKeys.assetsCashBucket), cashAssetsTotal),
+      (t.text(AppStringKeys.assetsInvestmentBucket), investmentAssetsTotal),
+      (t.text(AppStringKeys.assetsDebtBucket), debtTotal),
+      (t.text(AppStringKeys.assetsOtherBucket), otherBucketTotal),
+    ];
+    buckets.sort((a, b) => b.$2.compareTo(a.$2));
+    final largest = buckets.first.$2 > 0
+        ? buckets.first.$1
+        : t.text(AppStringKeys.assetsTotalAssets);
 
     return Column(
       children: [
@@ -746,54 +783,52 @@ class _AssetSummaryCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
+              Text(
+                t.text(
+                  AppStringKeys.assetsOverviewInsight,
+                  params: {'source': largest, 'change': monthChangeText},
                 ),
-                decoration: BoxDecoration(
-                  color: profitColor,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  stockProfitPercent == null
-                      ? t.text(AppStringKeys.assetsStockProfitEmpty)
-                      : t.text(
-                          AppStringKeys.assetsStockProfit,
-                          params: {
-                            'amount':
-                                '${stockProfitAmount >= 0 ? '+' : ''}${_profileMoney(stockProfitAmount.abs())}',
-                            'percent':
-                                '${stockProfitPercent!.toStringAsFixed(2)}%',
-                          },
-                        ),
-                  style: TextStyle(
-                    color: profitTextColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
+                style: TextStyle(
+                  color: Theme.of(
+                    context,
+                  ).extension<AppColorsExtension>()!.textSecondary,
+                  fontSize: 13,
+                  height: 1.4,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 16),
-              Row(
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
                 children: [
-                  Expanded(
-                    child: _SummaryMiniCard(
-                      title: t.text(AppStringKeys.assetsStockMarketValue),
-                      value: _profileMoney(stockMarketValue),
-                      subtitle: t.text(
-                        AppStringKeys.assetsHoldingCount,
-                        params: {'count': '$stockCount'},
-                      ),
-                    ),
+                  _SummaryMiniCard(
+                    title: t.text(AppStringKeys.assetsCashBucket),
+                    value: _profileMoney(cashAssetsTotal),
+                    subtitle: t.text(AppStringKeys.assetsLargestSource),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _SummaryMiniCard(
-                      title: t.text(AppStringKeys.assetsOtherAssets),
-                      value: _profileMoney(otherAssetsTotal),
-                      subtitle: t.text(AppStringKeys.assetsOtherAssetsSubtitle),
-                    ),
+                  _SummaryMiniCard(
+                    title: t.text(AppStringKeys.assetsInvestmentBucket),
+                    value: _profileMoney(investmentAssetsTotal),
+                    subtitle: stockCount == 0
+                        ? t.text(AppStringKeys.assetsOtherAssetsSubtitle)
+                        : t.text(
+                            AppStringKeys.assetsHoldingCount,
+                            params: {'count': '$stockCount'},
+                          ),
+                  ),
+                  _SummaryMiniCard(
+                    title: t.text(AppStringKeys.assetsMonthChange),
+                    value: monthChangeText,
+                    subtitle: stockProfitPercent == null
+                        ? t.text(AppStringKeys.assetsStockProfitEmpty)
+                        : '${stockProfitPercent! >= 0 ? '+' : ''}${stockProfitPercent!.toStringAsFixed(2)}%',
+                    valueColor: _marketChangeColor(stockProfitAmount),
+                  ),
+                  _SummaryMiniCard(
+                    title: t.text(AppStringKeys.assetsOtherBucket),
+                    value: _profileMoney(otherBucketTotal),
+                    subtitle: t.text(AppStringKeys.assetsDebtBucket),
                   ),
                 ],
               ),
@@ -810,16 +845,19 @@ class _SummaryMiniCard extends StatelessWidget {
     required this.title,
     required this.value,
     required this.subtitle,
+    this.valueColor,
   });
 
   final String title;
   final String value;
   final String subtitle;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColorsExtension>()!;
     return Container(
+      width: 146,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.38),
@@ -837,7 +875,7 @@ class _SummaryMiniCard extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              color: colors.textPrimary,
+              color: valueColor ?? colors.textPrimary,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),

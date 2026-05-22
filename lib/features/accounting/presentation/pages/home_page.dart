@@ -27,12 +27,15 @@ import '../../../../l10n/app_strings.dart';
 import '../../../../services/ai/input_parser_service.dart';
 import '../../../../services/ai/receipt_ocr_service.dart';
 import '../../../../services/ai_privacy_consent_service.dart';
+import '../../../../services/activation_insight_service.dart';
 import '../../../../services/app_profile_service.dart';
 import '../../../../services/config_service.dart';
 import '../../../../services/funnel_analytics_service.dart';
 import '../../../../services/quick_chip_service.dart';
+import '../../../../services/retention_prompt_service.dart';
 import '../../../../services/injection.dart';
 import '../../../../services/stock_service.dart';
+import '../../../../services/vip_service.dart';
 import '../../../../app/router.dart';
 import '../widgets/press_feedback.dart';
 import '../widgets/ai_bottom_sheet.dart';
@@ -738,8 +741,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   ) async {
     final messenger = ScaffoldMessenger.of(context);
     final t = AppStrings.of(context);
+    final localeLanguageCode = Localizations.localeOf(context).languageCode;
     try {
       final bloc = context.read<AccountBloc>();
+      final existingEntries = List<AccountEntry>.of(bloc.state.entries);
       final now = DateTime.now();
       final entries = results
           .map(
@@ -786,6 +791,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
       if (saved.isNotEmpty) {
         bloc.add(AddMultipleAccountEntries(saved));
+        final insight = ActivationInsightService.build(
+          existingEntries: existingEntries,
+          savedEntries: saved,
+          now: now,
+          localeLanguageCode: localeLanguageCode,
+          categoryName: (id) => _homeCategoryName(id, id),
+        );
         messenger.showSnackBar(
           SnackBar(
             behavior: SnackBarBehavior.floating,
@@ -795,15 +807,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  t.text(
-                    AppStringKeys.homeSavedInsightTitle,
-                    params: {'count': saved.length.toString()},
-                  ),
+                  insight.title,
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  t.text(AppStringKeys.homeSavedInsightSubtitle),
+                  insight.subtitle,
                   style: const TextStyle(fontSize: 12, height: 1.25),
                 ),
               ],
@@ -1364,6 +1373,24 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       ),
                                     );
                                     showHomeAddEntrySheet(context);
+                                  },
+                                ),
+                              ),
+
+                              SliverToBoxAdapter(
+                                child: _HomeRetentionStack(
+                                  entries: state.entries,
+                                  onOpenReport: () => context.go('/analysis'),
+                                  onOpenPremium: () {
+                                    unawaited(
+                                      getIt<FunnelAnalyticsService>().track(
+                                        'paywall_opened',
+                                        properties: {
+                                          'source': 'home_delayed_value_nudge',
+                                        },
+                                      ),
+                                    );
+                                    context.go('/settings');
                                   },
                                 ),
                               ),
@@ -2247,6 +2274,168 @@ class _QuickCaptureAction extends StatelessWidget {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeRetentionStack extends StatelessWidget {
+  const _HomeRetentionStack({
+    required this.entries,
+    required this.onOpenReport,
+    required this.onOpenPremium,
+  });
+
+  final List<AccountEntry> entries;
+  final VoidCallback onOpenReport;
+  final VoidCallback onOpenPremium;
+
+  @override
+  Widget build(BuildContext context) {
+    final prompt = RetentionPromptService.build(
+      entries: entries,
+      now: DateTime.now(),
+      localeLanguageCode: Localizations.localeOf(context).languageCode,
+    );
+    final showPremium = entries.length >= 3 && !getIt<VipService>().isVip;
+
+    if (prompt == null && !showPremium) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+      child: Column(
+        children: [
+          if (prompt != null)
+            _HomePromptCard(
+              icon: _retentionIcon(prompt.kind),
+              title: prompt.title,
+              subtitle: prompt.subtitle,
+              onTap: onOpenReport,
+            ),
+          if (prompt != null && showPremium) const SizedBox(height: 10),
+          if (showPremium)
+            _HomePromptCard(
+              icon: Icons.workspace_premium_rounded,
+              title: AppStrings.of(
+                context,
+              ).text(AppStringKeys.homeSubscriptionNudgeTitle),
+              subtitle: AppStrings.of(
+                context,
+              ).text(AppStringKeys.homeSubscriptionNudgeSubtitle),
+              action: AppStrings.of(
+                context,
+              ).text(AppStringKeys.homeSubscriptionNudgeAction),
+              onTap: onOpenPremium,
+            ),
+        ],
+      ),
+    );
+  }
+
+  static IconData _retentionIcon(RetentionPromptKind kind) {
+    switch (kind) {
+      case RetentionPromptKind.eveningCatchup:
+        return Icons.nights_stay_outlined;
+      case RetentionPromptKind.threeDayReport:
+        return Icons.insights_rounded;
+      case RetentionPromptKind.weeklySummary:
+        return Icons.calendar_month_rounded;
+    }
+  }
+}
+
+class _HomePromptCard extends StatelessWidget {
+  const _HomePromptCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.action,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String? action;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    return PressFeedback(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: colors.cardBackground.withValues(alpha: 0.90),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.07)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.025),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: AppColors.primary, size: 19),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      height: 1.25,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: colors.textSecondary,
+                      fontSize: 12,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (action == null)
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 15,
+                color: colors.textSecondary,
+              )
+            else
+              Text(
+                action!,
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
           ],
         ),
       ),
@@ -3744,6 +3933,131 @@ class _AiConfirmSheetState extends State<_AiConfirmSheet> {
     setState(() => _results.removeAt(index));
   }
 
+  Future<void> _edit(int index) async {
+    final original = _results[index];
+    final amountController = TextEditingController(
+      text: original.amount.toStringAsFixed(2),
+    );
+    final noteController = TextEditingController(text: original.note);
+    var category = original.category;
+    var type = original.type;
+    final categories = [
+      ...CategoryDef.expenseCategories.map((c) => (def: c, type: 'expense')),
+      ...CategoryDef.incomeCategories.map((c) => (def: c, type: 'income')),
+    ];
+    if (!categories.any((item) => item.def.id == category)) {
+      category = 'other';
+      type = 'expense';
+    }
+
+    final updated = await showDialog<ParsedResult>(
+      context: context,
+      builder: (dialogContext) {
+        final colors = Theme.of(dialogContext).extension<AppColorsExtension>()!;
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              backgroundColor: colors.cardBackground,
+              title: Text(
+                AppStrings.of(
+                  dialogContext,
+                ).text(AppStringKeys.homeAiResultsTitle),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: amountController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: AppStrings.of(
+                        dialogContext,
+                      ).text(AppStringKeys.homeAmountLabel),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: category,
+                    decoration: InputDecoration(
+                      labelText: AppStrings.of(
+                        dialogContext,
+                      ).text(AppStringKeys.transactionsSelectCategory),
+                    ),
+                    items: [
+                      for (final item in categories)
+                        DropdownMenuItem(
+                          value: item.def.id,
+                          child: Text(
+                            '${item.def.icon} ${_homeCategoryName(item.def.id, item.def.name)}',
+                          ),
+                        ),
+                    ],
+                    onChanged: (value) {
+                      if (value == null) return;
+                      final found = categories.firstWhere(
+                        (item) => item.def.id == value,
+                      );
+                      setDialogState(() {
+                        category = found.def.id;
+                        type = found.type;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: noteController,
+                    decoration: InputDecoration(
+                      labelText: AppStrings.of(
+                        dialogContext,
+                      ).text(AppStringKeys.transactionsNoteLabel),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text(
+                    AppStrings.of(
+                      dialogContext,
+                    ).text(AppStringKeys.commonCancel),
+                  ),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final amount = double.tryParse(
+                      amountController.text.trim(),
+                    );
+                    if (amount == null || amount <= 0) return;
+                    Navigator.pop(
+                      dialogContext,
+                      ParsedResult(
+                        amount: amount,
+                        category: category,
+                        note: noteController.text.trim(),
+                        type: type,
+                      ),
+                    );
+                  },
+                  child: Text(
+                    AppStrings.of(dialogContext).text(AppStringKeys.homeDone),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    amountController.dispose();
+    noteController.dispose();
+    if (updated == null || !mounted) return;
+    setState(() => _results[index] = updated);
+  }
+
   void _confirm() async {
     if (_results.isEmpty) {
       Navigator.pop(context);
@@ -3906,6 +4220,18 @@ class _AiConfirmSheetState extends State<_AiConfirmSheet> {
                         ),
                       ),
                       const SizedBox(width: 8),
+                      PressFeedback(
+                        onTap: () => _edit(i),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          child: Icon(
+                            Icons.edit_note_rounded,
+                            size: 24,
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 2),
                       PressFeedback(
                         onTap: () => _delete(i),
                         child: Container(
