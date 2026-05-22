@@ -592,9 +592,59 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     );
   }
 
+  Future<void> _showReceiptSourceSheet() async {
+    final t = AppStrings.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        final colors = Theme.of(sheetContext).extension<AppColorsExtension>()!;
+        return SafeArea(
+          child: Container(
+            margin: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: colors.cardBackground,
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: colors.softShadow,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.photo_camera_rounded),
+                  title: Text(t.text(AppStringKeys.homeTakePhoto)),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _pickImageForOCR(ImageSource.camera);
+                  },
+                ),
+                Divider(height: 1, color: colors.subtleBorder),
+                ListTile(
+                  leading: const Icon(Icons.photo_library_rounded),
+                  title: Text(t.text(AppStringKeys.homeChooseFromLibrary)),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _pickImageForOCR(ImageSource.gallery);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _pickImageForOCR(ImageSource source) async {
     if (!_ensureOcrFlowReady()) return;
     final t = AppStrings.of(context);
+    final picker = ImagePicker();
+    if (!picker.supportsImageSource(source)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t.text(AppStringKeys.homeNoImage))),
+      );
+      return;
+    }
 
     final consent = getIt<AIPrivacyConsentService>();
     if (!consent.hasOcrConsent) {
@@ -619,7 +669,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       if (!mounted) return;
     }
 
-    final picker = ImagePicker();
     try {
       final image = await picker.pickImage(
         source: source,
@@ -791,6 +840,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
       if (saved.isNotEmpty) {
         bloc.add(AddMultipleAccountEntries(saved));
+        _textController.clear();
         final insight = ActivationInsightService.build(
           existingEntries: existingEntries,
           savedEntries: saved,
@@ -827,7 +877,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           ),
         );
       }
-      _textController.clear();
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(
@@ -971,7 +1020,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(sheetCtx).viewInsets.bottom,
         ),
-        child: _AiConfirmSheet(results: results),
+        child: _AiConfirmSheet(
+          results: results,
+          onConfirm: (confirmed) =>
+              _confirmAndSave(confirmed, EntryType.expense),
+        ),
       ),
     );
   }
@@ -1363,7 +1416,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                         properties: {'surface': 'home_inline'},
                                       ),
                                     );
-                                    _pickImageForOCR(ImageSource.camera);
+                                    unawaited(_showReceiptSourceSheet());
                                   },
                                   onManual: () {
                                     unawaited(
@@ -2248,33 +2301,37 @@ class _QuickCaptureAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColorsExtension>()!;
-    return PressFeedback(
-      onTap: onTap,
-      child: Container(
-        height: 42,
-        decoration: BoxDecoration(
-          color: colors.background.withValues(alpha: 0.72),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: colors.subtleBorder),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 17, color: AppColors.primary),
-            const SizedBox(width: 5),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: colors.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
+    return Semantics(
+      button: true,
+      child: PressFeedback(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          height: 42,
+          decoration: BoxDecoration(
+            color: colors.background.withValues(alpha: 0.72),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: colors.subtleBorder),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 17, color: AppColors.primary),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -3914,7 +3971,8 @@ class _QuickChipEditorPageState extends State<_QuickChipEditorPage> {
 
 class _AiConfirmSheet extends StatefulWidget {
   final List<ParsedResult> results;
-  const _AiConfirmSheet({required this.results});
+  final Future<void> Function(List<ParsedResult> results) onConfirm;
+  const _AiConfirmSheet({required this.results, required this.onConfirm});
 
   @override
   State<_AiConfirmSheet> createState() => _AiConfirmSheetState();
@@ -4063,65 +4121,9 @@ class _AiConfirmSheetState extends State<_AiConfirmSheet> {
       Navigator.pop(context);
       return;
     }
-    final bloc = context.read<AccountBloc>();
-    final now = DateTime.now();
-    final messenger = ScaffoldMessenger.of(context);
-
-    // 等待所有账单添加完成
-    final futures = <Future>[];
-    for (final r in _results) {
-      final entry = AccountEntry(
-        id: const Uuid().v4(),
-        amount: r.amount,
-        type: r.type == 'income' ? EntryType.income : EntryType.expense,
-        category: r.category,
-        description: r.note,
-        date: now,
-        createdAt: now,
-        originalCurrency: _homeBaseCurrency(),
-        baseCurrency: _homeBaseCurrency(),
-        locale: _homeLocale().toLanguageTag(),
-        countryCode: _homeCountryCode(),
-        syncStatus: SyncStatus.pending,
-      );
-      futures.add(_addEntryAndWait(bloc, entry));
-    }
-
-    await Future.wait(futures);
+    await widget.onConfirm(List<ParsedResult>.of(_results));
     if (!mounted) return;
-
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          AppStrings.of(context).text(
-            AppStringKeys.homeAddedEntries,
-            params: {'count': '${_results.length}'},
-          ),
-        ),
-        duration: const Duration(seconds: 1),
-      ),
-    );
     Navigator.pop(context);
-  }
-
-  Future<void> _addEntryAndWait(AccountBloc bloc, AccountEntry entry) async {
-    final completer = Completer<void>();
-    final subscription = bloc.stream.listen((state) {
-      // 检查这条记录是否已经被添加（通过检查 state.entries）
-      final exists = state.entries.any((e) => e.id == entry.id);
-      if (exists || state.status == AccountStatus.loaded) {
-        if (!completer.isCompleted) {
-          completer.complete();
-        }
-      }
-    });
-    bloc.add(AddAccountEntry(entry));
-    // 超时保护
-    await completer.future.timeout(
-      const Duration(seconds: 5),
-      onTimeout: () {},
-    );
-    subscription.cancel();
   }
 
   @override
