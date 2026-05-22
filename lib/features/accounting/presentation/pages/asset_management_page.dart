@@ -60,7 +60,7 @@ bool _isUsStockScope() {
       StockMarketScope.us;
 }
 
-bool _isUsStockProviderReady() {
+bool _isStockProviderReady() {
   return getIt<StockService>().isProviderReady;
 }
 
@@ -132,11 +132,13 @@ String _stockCacheText(AppStrings t, int? updatedAtMs) {
 
 String _stockSupportValue(AppStrings t) {
   if (_isUsStockScope()) {
-    return _isUsStockProviderReady()
+    return _isStockProviderReady()
         ? t.text(AppStringKeys.assetsConfigSupportValueUsFinnhub)
         : t.text(AppStringKeys.assetsConfigSupportValueUsPending);
   }
-  return t.text(AppStringKeys.assetsConfigSupportValue);
+  return _isStockProviderReady()
+      ? t.text(AppStringKeys.assetsConfigSupportValue)
+      : t.text(AppStringKeys.assetsConfigSupportValueCnPending);
 }
 
 String _stockAutoRefreshValue(AppStrings t) {
@@ -147,7 +149,7 @@ String _stockAutoRefreshValue(AppStrings t) {
 }
 
 String _stockFallbackValue(AppStrings t) {
-  if (_isUsStockScope() && !_isUsStockProviderReady()) {
+  if (_isUsStockScope() && !_isStockProviderReady()) {
     return t.text(AppStringKeys.assetsConfigFallbackValueUsPending);
   }
   return t.text(AppStringKeys.assetsConfigFallbackValue);
@@ -361,11 +363,24 @@ class _AssetManagementPageState extends State<AssetManagementPage>
 
   void _showStockProviderPendingDialog() {
     final t = AppStrings.of(context);
+    final isUsScope = _isUsStockScope();
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(t.text(AppStringKeys.assetsStockProviderPendingTitle)),
-        content: Text(t.text(AppStringKeys.assetsStockProviderPendingContent)),
+        title: Text(
+          t.text(
+            isUsScope
+                ? AppStringKeys.assetsStockProviderPendingTitle
+                : AppStringKeys.assetsCnStockProviderPendingTitle,
+          ),
+        ),
+        content: Text(
+          t.text(
+            isUsScope
+                ? AppStringKeys.assetsStockProviderPendingContent
+                : AppStringKeys.assetsCnStockProviderPendingContent,
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -899,15 +914,37 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        if (trailing != null) ...[trailing!],
-      ],
+    final titleText = Text(
+      title,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    );
+
+    if (trailing == null) return titleText;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 430) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              titleText,
+              const SizedBox(height: 10),
+              Align(alignment: Alignment.centerRight, child: trailing!),
+            ],
+          );
+        }
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Flexible(child: titleText),
+            const SizedBox(width: 12),
+            trailing!,
+          ],
+        );
+      },
     );
   }
 }

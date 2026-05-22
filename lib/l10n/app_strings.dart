@@ -302,6 +302,7 @@ class AppStrings {
       'assets.config.manualThrottleValue': '单用户最短 3 秒',
       'assets.config.support': '当前支持',
       'assets.config.supportValue': '仅沪深 A 股',
+      'assets.config.supportValueCnPending': '沪深 A 股（当前构建未配置智兔行情与搜索）',
       'assets.config.supportValueUsPending': '美股（当前构建未配置行情与搜索）',
       'assets.config.supportValueUsFinnhub': '美股（Finnhub 行情与搜索）',
       'assets.config.fallback': '行情失败兜底',
@@ -311,6 +312,9 @@ class AppStrings {
       'assets.config.loadHint': '账户资产加载提示：{error}',
       'assets.stockProviderPending.title': '美股功能暂不可用',
       'assets.stockProviderPending.content': '当前构建未配置美股搜索与行情服务，暂不能新增或刷新股票持仓。',
+      'assets.cnStockProviderPending.title': 'A 股功能暂不可用',
+      'assets.cnStockProviderPending.content':
+          '当前构建未配置智兔 A 股搜索与行情服务，暂不能新增或刷新 A 股持仓。',
       'assets.searchNoResults': '没有找到匹配的股票',
       'assets.searchFailed': '股票搜索失败，请稍后重试',
       'assets.selectStockFirst': '请先选择股票',
@@ -899,6 +903,8 @@ class AppStrings {
       'assets.config.manualThrottleValue': 'Minimum 3 seconds per user',
       'assets.config.support': 'Currently supported',
       'assets.config.supportValue': 'Mainland China A-shares only',
+      'assets.config.supportValueCnPending':
+          'Mainland China A-shares (Zhitu quotes and search not configured)',
       'assets.config.supportValueUsPending':
           'US stocks (quotes and search unavailable in this build)',
       'assets.config.supportValueUsFinnhub':
@@ -914,6 +920,9 @@ class AppStrings {
       'assets.stockProviderPending.title': 'US stock feature unavailable',
       'assets.stockProviderPending.content':
           'This build does not have US stock quote and search services configured, so adding or refreshing stock positions is temporarily unavailable.',
+      'assets.cnStockProviderPending.title': 'A-share feature unavailable',
+      'assets.cnStockProviderPending.content':
+          'This build does not have Zhitu A-share quote and search services configured, so adding or refreshing A-share positions is temporarily unavailable.',
       'assets.searchNoResults': 'No matching stocks found',
       'assets.searchFailed': 'Stock search failed. Please try again later',
       'assets.selectStockFirst': 'Please select a stock first',

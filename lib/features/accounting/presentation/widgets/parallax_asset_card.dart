@@ -4,6 +4,8 @@ import 'package:sensors_plus/sensors_plus.dart';
 
 import '../../../../core/formatters/app_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_string_keys.dart';
+import '../../../../l10n/app_strings.dart';
 import '../../../../services/app_profile_service.dart';
 import '../../../../services/injection.dart';
 import 'ai_sparkles_icon.dart';
@@ -55,6 +57,11 @@ class _ParallaxAssetCardState extends State<ParallaxAssetCard> {
     final textSecondary = Theme.of(context).brightness == Brightness.dark
         ? colors.textSecondary
         : Colors.white54;
+    final t = AppStrings.of(context);
+    final label = t.text(AppStringKeys.assetsTotalAssets);
+    final displayLabel = Localizations.localeOf(context).languageCode == 'zh'
+        ? label
+        : label.toUpperCase();
 
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: 1),
@@ -130,7 +137,7 @@ class _ParallaxAssetCardState extends State<ParallaxAssetCard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'TOTAL ASSETS',
+                        displayLabel,
                         style: TextStyle(
                           color: textSecondary,
                           fontSize: 13,

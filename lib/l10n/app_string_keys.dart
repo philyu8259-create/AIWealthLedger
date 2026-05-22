@@ -287,6 +287,8 @@ class AppStringKeys {
       'assets.config.manualThrottleValue';
   static const assetsConfigSupport = 'assets.config.support';
   static const assetsConfigSupportValue = 'assets.config.supportValue';
+  static const assetsConfigSupportValueCnPending =
+      'assets.config.supportValueCnPending';
   static const assetsConfigSupportValueUsPending =
       'assets.config.supportValueUsPending';
   static const assetsConfigSupportValueUsFinnhub =
@@ -302,6 +304,10 @@ class AppStringKeys {
       'assets.stockProviderPending.title';
   static const assetsStockProviderPendingContent =
       'assets.stockProviderPending.content';
+  static const assetsCnStockProviderPendingTitle =
+      'assets.cnStockProviderPending.title';
+  static const assetsCnStockProviderPendingContent =
+      'assets.cnStockProviderPending.content';
   static const assetsSearchNoResults = 'assets.searchNoResults';
   static const assetsSearchFailed = 'assets.searchFailed';
   static const assetsSelectStockFirst = 'assets.selectStockFirst';
