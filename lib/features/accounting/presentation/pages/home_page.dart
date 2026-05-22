@@ -1086,6 +1086,24 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
+  String _quickCaptureTitle(AppStrings t, AccountState state) {
+    if (state.entries.isEmpty) {
+      return t.text(AppStringKeys.homeQuickCaptureTitle);
+    }
+
+    final now = DateTime.now();
+    final hasEntryToday = state.entries.any(
+      (entry) =>
+          entry.date.year == now.year &&
+          entry.date.month == now.month &&
+          entry.date.day == now.day,
+    );
+    if (!hasEntryToday && now.hour >= 18) {
+      return t.text(AppStringKeys.homeQuickCaptureTitleCatchup);
+    }
+    return t.text(AppStringKeys.homeQuickCaptureTitleActive);
+  }
+
   String _activationTitle(AppStrings t, AccountState state) {
     if (state.entries.isEmpty) {
       return t.text(AppStringKeys.homeActivationEmptyTitle);
@@ -1376,9 +1394,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               SliverToBoxAdapter(
                                 child: _HomeQuickCaptureCard(
                                   controller: _textController,
-                                  title: t.text(
-                                    AppStringKeys.homeQuickCaptureTitle,
-                                  ),
+                                  title: _quickCaptureTitle(t, state),
                                   subtitle: _quickCaptureSubtitle(t),
                                   insightTitle: _activationTitle(t, state),
                                   insightSubtitle: _activationSubtitle(

@@ -28,5 +28,29 @@ void main() {
       expect(en.text(AppStringKeys.homeAssetsTitle), 'Assets overview');
       expect(en.text(AppStringKeys.homeAssetsBadge), 'Change signals');
     });
+
+    test('quick capture copy has new-user and returning-user titles', () {
+      final zh = AppStrings.forLocale(const Locale('zh'));
+      final en = AppStrings.forLocale(const Locale('en'));
+
+      expect(zh.text(AppStringKeys.homeQuickCaptureTitle), contains('先记一笔'));
+      expect(
+        zh.text(AppStringKeys.homeQuickCaptureTitleActive),
+        contains('继续记录'),
+      );
+      expect(
+        zh.text(AppStringKeys.homeQuickCaptureTitleCatchup),
+        contains('今天'),
+      );
+      expect(en.text(AppStringKeys.homeQuickCaptureTitle), contains('Log'));
+      expect(
+        en.text(AppStringKeys.homeQuickCaptureTitleActive),
+        contains('Keep logging'),
+      );
+      expect(
+        en.text(AppStringKeys.homeQuickCaptureTitleCatchup),
+        contains('today'),
+      );
+    });
   });
 }

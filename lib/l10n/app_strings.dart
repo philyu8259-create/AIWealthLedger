@@ -136,6 +136,8 @@ class AppStrings {
       'home.stocksSummaryHidden': '含股票 {count} 只 · 变化 ••••••',
       'home.stocksSummaryVisible': '含股票 {count} 只 · 变化 {percent}',
       'home.quickCapture.title': '先记一笔，马上看到反馈',
+      'home.quickCapture.title.active': '继续记录，保持本月画像清晰',
+      'home.quickCapture.title.catchup': '今天还有账单要补吗？',
       'home.quickCapture.subtitle.daily': '记录一句话，我会整理金额、类目和日期。',
       'home.quickCapture.subtitle.budget': '先记今天的支出，预算风险会更准。',
       'home.quickCapture.subtitle.assets': '先记现金流，再看资产变化更清楚。',
@@ -706,6 +708,8 @@ class AppStrings {
       'home.stocksSummaryHidden': '{count} stocks included · Change ••••••',
       'home.stocksSummaryVisible': '{count} stocks included · Change {percent}',
       'home.quickCapture.title': 'Log once, get feedback right away',
+      'home.quickCapture.title.active': 'Keep logging to sharpen this month',
+      'home.quickCapture.title.catchup': 'Any spending left to add today?',
       'home.quickCapture.subtitle.daily':
           'Write one sentence and we organize amount, category, and date.',
       'home.quickCapture.subtitle.budget':

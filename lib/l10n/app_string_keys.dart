@@ -107,6 +107,8 @@ class AppStringKeys {
   static const homeStocksSummaryHidden = 'home.stocksSummaryHidden';
   static const homeStocksSummaryVisible = 'home.stocksSummaryVisible';
   static const homeQuickCaptureTitle = 'home.quickCapture.title';
+  static const homeQuickCaptureTitleActive = 'home.quickCapture.title.active';
+  static const homeQuickCaptureTitleCatchup = 'home.quickCapture.title.catchup';
   static const homeQuickCaptureSubtitleDaily =
       'home.quickCapture.subtitle.daily';
   static const homeQuickCaptureSubtitleBudget =
