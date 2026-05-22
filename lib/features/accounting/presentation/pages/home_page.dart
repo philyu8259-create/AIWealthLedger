@@ -788,13 +788,26 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         bloc.add(AddMultipleAccountEntries(saved));
         messenger.showSnackBar(
           SnackBar(
-            content: Text(
-              t.text(
-                AppStringKeys.homeAddedEntries,
-                params: {'count': saved.length.toString()},
-              ),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  t.text(
+                    AppStringKeys.homeSavedInsightTitle,
+                    params: {'count': saved.length.toString()},
+                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  t.text(AppStringKeys.homeSavedInsightSubtitle),
+                  style: const TextStyle(fontSize: 12, height: 1.25),
+                ),
+              ],
             ),
-            duration: const Duration(seconds: 2),
           ),
         );
       } else {

@@ -94,6 +94,8 @@ class AppStringKeys {
   static const homeAiSetupRequired = 'home.aiSetupRequired';
   static const homeSaveFailed = 'home.saveFailed';
   static const homeAddedEntries = 'home.addedEntries';
+  static const homeSavedInsightTitle = 'home.savedInsight.title';
+  static const homeSavedInsightSubtitle = 'home.savedInsight.subtitle';
   static const homeSaveMissing = 'home.saveMissing';
   static const homeAmountLabel = 'home.amountLabel';
   static const homeInvalidAmount = 'home.invalidAmount';
