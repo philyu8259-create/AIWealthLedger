@@ -25,7 +25,6 @@ class AssetBloc extends Bloc<AssetEvent, AssetState> {
     on<AddAssetEvent>(_onAddAsset);
     on<UpdateAssetEvent>(_onUpdateAsset);
     on<DeleteAssetEvent>(_onDeleteAsset);
-    on<ClearAssetVipLimitDialog>(_onClearVipLimitDialog);
   }
 
   Future<void> _onLoadAssets(LoadAssets event, Emitter<AssetState> emit) async {
@@ -45,12 +44,6 @@ class AssetBloc extends Bloc<AssetEvent, AssetState> {
     AddAssetEvent event,
     Emitter<AssetState> emit,
   ) async {
-    // 会员已过期：禁止新增资产
-    if (vipService.hasExpiredEntitlement) {
-      emit(state.copyWith(showVipLimitDialog: true));
-      return;
-    }
-
     final result = await addAsset(
       name: event.name,
       type: event.type,
@@ -71,12 +64,6 @@ class AssetBloc extends Bloc<AssetEvent, AssetState> {
     UpdateAssetEvent event,
     Emitter<AssetState> emit,
   ) async {
-    // 会员已过期：禁止编辑资产
-    if (vipService.hasExpiredEntitlement) {
-      emit(state.copyWith(showVipLimitDialog: true));
-      return;
-    }
-
     final result = await updateAsset(event.asset);
 
     result.fold((error) => emit(state.copyWith(errorMessage: error)), (
@@ -99,12 +86,5 @@ class AssetBloc extends Bloc<AssetEvent, AssetState> {
       final assets = state.assets.where((a) => a.id != event.id).toList();
       emit(state.copyWith(assets: assets));
     });
-  }
-
-  void _onClearVipLimitDialog(
-    ClearAssetVipLimitDialog event,
-    Emitter<AssetState> emit,
-  ) {
-    emit(state.copyWith(showVipLimitDialog: false));
   }
 }

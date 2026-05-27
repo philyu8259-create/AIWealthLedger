@@ -50,4 +50,16 @@ void main() {
     await subscription.cancel();
     await service.dispose();
   });
+
+  test('consumePendingText ignores missing Android native channel', () async {
+    final service = AutoBookkeepingShortcutService(channel: channel);
+    final emitted = <String>[];
+    final subscription = service.textRequests.listen(emitted.add);
+
+    await service.consumePendingText();
+
+    expect(emitted, isEmpty);
+    await subscription.cancel();
+    await service.dispose();
+  });
 }

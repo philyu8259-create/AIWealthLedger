@@ -44,7 +44,3 @@ class DeleteAssetEvent extends AssetEvent {
   @override
   List<Object?> get props => [id];
 }
-
-class ClearAssetVipLimitDialog extends AssetEvent {
-  const ClearAssetVipLimitDialog();
-}

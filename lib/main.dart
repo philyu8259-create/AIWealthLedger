@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'app/app.dart';
 import 'services/app_migration_service.dart';
+import 'services/app_profile_service.dart';
 import 'services/cloud_service.dart';
 import 'services/config_service.dart';
 import 'services/demo_data_seeder.dart';
@@ -62,11 +63,13 @@ void main() async {
     unawaited(_refreshAppleAdsAttribution(funnelAnalytics));
     await funnelAnalytics.trackAppOpen();
 
-    _vipLifecycleListener ??= AppLifecycleListener(
-      onResume: () {
-        unawaited(_syncVipOnResume());
-      },
-    );
+    if (_subscriptionsEnabled) {
+      _vipLifecycleListener ??= AppLifecycleListener(
+        onResume: () {
+          unawaited(_syncVipOnResume());
+        },
+      );
+    }
   } catch (e, st) {
     debugPrint('[main] Dependency config error: $e\n$st');
   }
@@ -92,7 +95,20 @@ void main() async {
   runApp(const AIAccountingApp());
 
   // 会员恢复与云端同步改为首帧后后台进行，避免冷启动卡在 app logo 页面。
-  unawaited(_bootstrapVipAfterLaunch());
+  if (_subscriptionsEnabled) {
+    unawaited(_bootstrapVipAfterLaunch());
+  }
+}
+
+bool get _subscriptionsEnabled {
+  try {
+    return getIt<AppProfileService>()
+        .currentProfile
+        .capabilityProfile
+        .isEnabled('subscriptions');
+  } catch (_) {
+    return false;
+  }
 }
 
 Future<void> _refreshAppleAdsAttribution(

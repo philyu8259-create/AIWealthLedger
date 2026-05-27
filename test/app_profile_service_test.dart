@@ -42,7 +42,7 @@ void main() {
     );
 
     test(
-      'existing intl session without stored mode is inferred and locked',
+      'existing intl session without stored mode does not override app flavor',
       () async {
         final service = await createService({
           'has_logged_in': true,
@@ -52,9 +52,9 @@ void main() {
 
         await service.ensureInitialized(deviceLocale: const Locale('zh', 'CN'));
 
-        expect(service.flavor, AppFlavor.intl);
-        expect(service.currentLocale, const Locale('en', 'US'));
-        expect(service.currentBaseCurrency, 'USD');
+        expect(service.flavor, AppFlavor.cn);
+        expect(service.currentLocale, const Locale('zh', 'CN'));
+        expect(service.currentBaseCurrency, 'CNY');
         expect(service.isModeLocked, true);
       },
     );
@@ -76,6 +76,23 @@ void main() {
         expect(service.isModeLocked, true);
       },
     );
+
+    test('cn app only exposes Chinese supported locales', () async {
+      final service = await createService();
+
+      await service.ensureInitialized(deviceLocale: const Locale('zh', 'CN'));
+
+      expect(
+        service.supportedLocales,
+        everyElement(
+          isA<Locale>().having(
+            (locale) => locale.languageCode,
+            'language',
+            'zh',
+          ),
+        ),
+      );
+    });
 
     test(
       'explicit switch mode updates locale, currency, and lock state',
@@ -159,6 +176,12 @@ void main() {
         final service = await createService();
 
         await service.ensureInitialized(deviceLocale: testCase.locale);
+        if (service.flavor == AppFlavor.cn) {
+          await service.switchMode(
+            AppFlavor.intl,
+            deviceLocale: testCase.locale,
+          );
+        }
 
         expect(service.flavor, AppFlavor.intl);
         expect(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../../l10n/app_string_keys.dart';
 import '../../../../l10n/app_strings.dart';
@@ -10,7 +11,7 @@ const _sheetRadius = 30.0;
 void showAiBottomSheet({
   required BuildContext context,
   required TextEditingController textController,
-  required bool isListening,
+  required ValueListenable<bool> isListening,
   required Future<bool> Function() onStartListening,
   required Future<void> Function() onStopListening,
   required VoidCallback onPickCamera,
@@ -24,8 +25,9 @@ void showAiBottomSheet({
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (ctx) {
-      return StatefulBuilder(
-        builder: (ctx, setModalState) {
+      return ValueListenableBuilder<bool>(
+        valueListenable: isListening,
+        builder: (ctx, listening, _) {
           final mediaQuery = MediaQuery.of(ctx);
           final extraBottomOffset = mediaQuery.size.width >= 768 ? 96.0 : 0.0;
 
@@ -130,20 +132,29 @@ void showAiBottomSheet({
                             decoration: BoxDecoration(
                               color: const Color(0xFFF7F7FB),
                               borderRadius: BorderRadius.circular(18),
-                              border: Border.all(color: const Color(0xFFEDEDF7)),
+                              border: Border.all(
+                                color: const Color(0xFFEDEDF7),
+                              ),
                             ),
                             child: TextField(
                               controller: textController,
                               maxLines: 4,
                               minLines: 4,
                               decoration: InputDecoration(
-                                hintText: t.text(AppStringKeys.homeAiInputPlaceholder),
+                                hintText: t.text(
+                                  AppStringKeys.homeAiInputPlaceholder,
+                                ),
                                 hintStyle: const TextStyle(
                                   color: Color(0xFFB7B8C7),
                                   fontSize: 16,
                                   fontWeight: FontWeight.w400,
                                 ),
-                                contentPadding: EdgeInsets.fromLTRB(20, 16, 20, 16),
+                                contentPadding: EdgeInsets.fromLTRB(
+                                  20,
+                                  16,
+                                  20,
+                                  16,
+                                ),
                                 border: InputBorder.none,
                               ),
                             ),
@@ -161,7 +172,9 @@ void showAiBottomSheet({
                               ),
                               _aiActionButton(
                                 icon: Icons.image_outlined,
-                                label: t.text(AppStringKeys.homeChooseFromLibrary),
+                                label: t.text(
+                                  AppStringKeys.homeChooseFromLibrary,
+                                ),
                                 onTap: () {
                                   Navigator.pop(ctx);
                                   onPickGallery();
@@ -169,18 +182,13 @@ void showAiBottomSheet({
                               ),
                               Expanded(
                                 child: VoicePulseButton(
-                                  isListening: isListening,
+                                  isListening: listening,
                                   onTap: () async {
-                                    if (isListening) {
+                                    if (listening) {
                                       await onStopListening();
-                                      if (ctx.mounted) {
-                                        setModalState(() => isListening = false);
-                                      }
                                     } else {
                                       final started = await onStartListening();
-                                      if (started && ctx.mounted) {
-                                        setModalState(() => isListening = true);
-                                      }
+                                      if (!started) return;
                                     }
                                   },
                                 ),
@@ -216,7 +224,9 @@ void showAiBottomSheet({
                                   borderRadius: BorderRadius.circular(18),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFF7A35FF).withValues(alpha: 0.22),
+                                      color: const Color(
+                                        0xFF7A35FF,
+                                      ).withValues(alpha: 0.22),
                                       blurRadius: 12,
                                       offset: const Offset(0, 5),
                                     ),
@@ -233,7 +243,9 @@ void showAiBottomSheet({
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      t.text(AppStringKeys.homeStartAiRecognition),
+                                      t.text(
+                                        AppStringKeys.homeStartAiRecognition,
+                                      ),
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 15,

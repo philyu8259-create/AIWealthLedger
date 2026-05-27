@@ -22,90 +22,85 @@ class AppProfileService extends ChangeNotifier {
   static const _countryCodeKey = 'app_country_code';
   static const _baseCurrencyKey = 'app_base_currency';
 
-  AppFlavor get flavor => _storedMode ?? AppFlavorX.buildFlavor;
+  AppFlavor get flavor => _isExplicitBuildFlavor
+      ? _buildFlavor
+      : (_storedMode ?? AppFlavorX.buildFlavor);
+
+  bool get _isExplicitBuildFlavor => AppFlavorX.hasExplicitBuildFlavor;
+
+  AppFlavor get _buildFlavor => AppFlavorX.buildFlavor;
 
   bool get isModeLocked => _prefs.getBool(_modeLockedKey) ?? false;
 
-  List<Locale> get supportedLocales => const [
-    Locale('zh', 'CN'),
-    Locale('zh', 'TW'),
-    Locale('zh', 'HK'),
-    Locale('zh', 'MO'),
-    Locale('en', 'US'),
-    Locale('en', 'GB'),
-    Locale('en', 'AU'),
-    Locale('en', 'CA'),
-    Locale('en', 'NZ'),
-    Locale('en', 'IE'),
-    Locale('en', 'PH'),
-    Locale('en', 'SG'),
-    Locale('en', 'MY'),
-    Locale('en', 'IN'),
-    Locale('en', 'HK'),
-    Locale('en', 'ZA'),
-    Locale('en', 'AE'),
-    Locale('en', 'SA'),
-    Locale('ja', 'JP'),
-    Locale('ko', 'KR'),
-    Locale('id', 'ID'),
-    Locale('th', 'TH'),
-    Locale('tr', 'TR'),
-    Locale('vi', 'VN'),
-    Locale('de', 'DE'),
-    Locale('fr', 'FR'),
-    Locale('it', 'IT'),
-    Locale('es', 'ES'),
-    Locale('es', 'MX'),
-    Locale('nl', 'NL'),
-    Locale('pt', 'PT'),
-    Locale('pt', 'BR'),
-    Locale('pl', 'PL'),
-    Locale('sv', 'SE'),
-    Locale('da', 'DK'),
-    Locale('nb', 'NO'),
-    Locale('cs', 'CZ'),
-    Locale('hu', 'HU'),
-    Locale('ro', 'RO'),
-  ];
+  List<Locale> get supportedLocales => flavor == AppFlavor.cn
+      ? const [
+          Locale('zh', 'CN'),
+          Locale('zh', 'TW'),
+          Locale('zh', 'HK'),
+          Locale('zh', 'MO'),
+        ]
+      : const [
+          Locale('en', 'US'),
+          Locale('en', 'GB'),
+          Locale('en', 'AU'),
+          Locale('en', 'CA'),
+          Locale('en', 'NZ'),
+          Locale('en', 'IE'),
+          Locale('en', 'PH'),
+          Locale('en', 'SG'),
+          Locale('en', 'MY'),
+          Locale('en', 'IN'),
+          Locale('en', 'HK'),
+          Locale('en', 'ZA'),
+          Locale('en', 'AE'),
+          Locale('en', 'SA'),
+        ];
 
   Future<void> ensureInitialized({Locale? deviceLocale}) async {
     final previousStoredMode = _storedMode;
     final sessionExists = _hasExistingSession;
-    final inferredMode = AppFlavorX.hasExplicitBuildFlavor
-        ? AppFlavorX.buildFlavor
-        : _inferMode(deviceLocale);
-    final resolvedMode = _resolveEffectiveMode(
-      inferredMode: inferredMode,
-      sessionExists: sessionExists,
-    );
+    final inferredMode = _isExplicitBuildFlavor
+        ? _buildFlavor
+        : (_storedMode ?? AppFlavorX.buildFlavor);
+    final resolvedMode = _resolveEffectiveMode(inferredMode: inferredMode);
+    final effectiveMode = _isExplicitBuildFlavor ? _buildFlavor : resolvedMode;
+    final modeChangedByBuildFlavor = previousStoredMode != effectiveMode;
 
-    if (_prefs.getString(_modeKey) != resolvedMode.name) {
-      await _prefs.setString(_modeKey, resolvedMode.name);
+    if (_prefs.getString(_modeKey) != effectiveMode.name) {
+      await _prefs.setString(_modeKey, effectiveMode.name);
     }
     if (!_prefs.containsKey(_modeLockedKey)) {
-      await _prefs.setBool(_modeLockedKey, sessionExists);
+      await _prefs.setBool(
+        _modeLockedKey,
+        _isExplicitBuildFlavor || sessionExists,
+      );
     }
 
-    final fallback = _fallbackLocaleForFlavor(resolvedMode);
-    final resolvedDeviceLocale = _normalizeDeviceLocale(
-      deviceLocale,
-      fallback,
-      resolvedMode,
-    );
+    final fallback = _fallbackLocaleForFlavor(effectiveMode);
+    final resolvedDeviceLocale = _isExplicitBuildFlavor
+        ? fallback
+        : _normalizeDeviceLocale(deviceLocale, fallback, effectiveMode);
     final shouldSeedFlavorLocale =
+        !_isExplicitBuildFlavor &&
         previousStoredMode == null &&
         sessionExists &&
-        resolvedMode != inferredMode;
+        effectiveMode != inferredMode;
     final initialLocale = shouldSeedFlavorLocale
         ? fallback
         : resolvedDeviceLocale;
     final initialCountry = _countryCodeForProfile(
-      deviceLocale: shouldSeedFlavorLocale ? null : deviceLocale,
+      deviceLocale: _isExplicitBuildFlavor
+          ? null
+          : shouldSeedFlavorLocale
+          ? null
+          : deviceLocale,
       locale: initialLocale,
-      flavor: resolvedMode,
+      flavor: effectiveMode,
     );
     final initialCurrency = _defaultCurrencyForCountry(initialCountry);
-    final shouldSeedModeDefaults = previousStoredMode == null;
+    final shouldSeedModeDefaults =
+        previousStoredMode == null ||
+        (_isExplicitBuildFlavor && modeChangedByBuildFlavor);
 
     if (!_prefs.containsKey(_schemaVersionKey)) {
       await _prefs.setInt(_schemaVersionKey, schemaVersion);
@@ -130,21 +125,32 @@ class AppProfileService extends ChangeNotifier {
   }
 
   Future<void> switchMode(AppFlavor targetMode, {Locale? deviceLocale}) async {
-    final fallback = _fallbackLocaleForFlavor(targetMode);
+    final effectiveTargetMode = _isExplicitBuildFlavor
+        ? _buildFlavor
+        : targetMode;
+    if (_isExplicitBuildFlavor && effectiveTargetMode != targetMode) {
+      if (_prefs.getString(_modeKey) != effectiveTargetMode.name) {
+        await _prefs.setString(_modeKey, effectiveTargetMode.name);
+      }
+      await _prefs.setBool(_modeLockedKey, true);
+      return;
+    }
+
+    final fallback = _fallbackLocaleForFlavor(effectiveTargetMode);
     final resolvedDeviceLocale = _normalizeDeviceLocale(
       deviceLocale,
       fallback,
-      targetMode,
+      effectiveTargetMode,
     );
     final locale = resolvedDeviceLocale;
     final countryCode = _countryCodeForProfile(
       deviceLocale: deviceLocale,
       locale: locale,
-      flavor: targetMode,
+      flavor: effectiveTargetMode,
     );
     final baseCurrency = _defaultCurrencyForCountry(countryCode);
 
-    await _prefs.setString(_modeKey, targetMode.name);
+    await _prefs.setString(_modeKey, effectiveTargetMode.name);
     await _prefs.setBool(_modeLockedKey, true);
     await _prefs.setString(_localeKey, _toStorageLocale(locale));
     await _prefs.setString(_countryCodeKey, countryCode);
@@ -164,8 +170,7 @@ class AppProfileService extends ChangeNotifier {
     capabilityProfile: _buildCapabilityProfile(),
   );
 
-  String get appTitle =>
-      flavor == AppFlavor.cn ? 'AI财富记账本' : 'AI Wealth Tracker';
+  String get appTitle => flavor == AppFlavor.cn ? '财富记账本' : 'AI Wealth Tracker';
 
   String get privacyPolicyUrl => flavor == AppFlavor.intl
       ? 'https://philyu8259-create.github.io/ai-accounting-privacy/privacy_policy_en.html'
@@ -173,7 +178,7 @@ class AppProfileService extends ChangeNotifier {
 
   String get termsOfServiceUrl => flavor == AppFlavor.intl
       ? 'https://www.apple.com/legal/internet-services/itunes/'
-      : 'https://www.apple.com/legal/internet-services/itunes/cn/terms.html';
+      : 'https://philyu8259-create.github.io/ai-accounting-privacy/eula.html';
 
   LocaleProfile get currentLocaleProfile => currentProfile.localeProfile;
 
@@ -223,7 +228,7 @@ class AppProfileService extends ChangeNotifier {
   CapabilityProfile _buildCapabilityProfile() {
     if (flavor == AppFlavor.cn) {
       return const CapabilityProfile(
-        authProviders: [AuthProviderType.phoneSms, AuthProviderType.apple],
+        authProviders: [AuthProviderType.phoneSms],
         ocrProvider: OcrProviderType.legacyCnOcr,
         aiProvider: AiProviderType.legacyCnAi,
         stockMarketScope: StockMarketScope.cn,
@@ -232,16 +237,13 @@ class AppProfileService extends ChangeNotifier {
           'usStock': false,
           'fxSystem': true,
           'chinaWalletAssets': true,
+          'subscriptions': true,
         },
       );
     }
 
     return const CapabilityProfile(
-      authProviders: [
-        AuthProviderType.emailOtp,
-        AuthProviderType.google,
-        AuthProviderType.apple,
-      ],
+      authProviders: [AuthProviderType.google, AuthProviderType.apple],
       ocrProvider: OcrProviderType.googleVisionGemini,
       aiProvider: AiProviderType.gemini,
       stockMarketScope: StockMarketScope.us,
@@ -250,6 +252,7 @@ class AppProfileService extends ChangeNotifier {
         'usStock': true,
         'fxSystem': true,
         'chinaWalletAssets': false,
+        'subscriptions': true,
       },
     );
   }
@@ -382,6 +385,10 @@ class AppProfileService extends ChangeNotifier {
     required AppFlavor flavor,
   }) {
     final deviceCountry = (deviceLocale?.countryCode ?? '').toUpperCase();
+    final deviceLanguage = deviceLocale?.languageCode.toLowerCase() ?? '';
+    if (flavor == AppFlavor.cn && !deviceLanguage.startsWith('zh')) {
+      return (locale.countryCode ?? 'CN').toUpperCase();
+    }
     if (_hasCurrencyForCountry(deviceCountry)) return deviceCountry;
     return (locale.countryCode ?? (flavor == AppFlavor.cn ? 'CN' : 'US'))
         .toUpperCase();
@@ -402,43 +409,10 @@ class AppProfileService extends ChangeNotifier {
     return hasLoggedIn || accountKey.isNotEmpty || authProvider.isNotEmpty;
   }
 
-  AppFlavor _resolveEffectiveMode({
-    required AppFlavor inferredMode,
-    required bool sessionExists,
-  }) {
+  AppFlavor _resolveEffectiveMode({required AppFlavor inferredMode}) {
     final storedMode = _storedMode;
     if (storedMode != null) return storedMode;
-    return sessionExists
-        ? _inferModeFromStoredSession(inferredMode)
-        : inferredMode;
-  }
-
-  AppFlavor _inferMode(Locale? deviceLocale) {
-    if (deviceLocale == null) return AppFlavor.intl;
-    return deviceLocale.languageCode.toLowerCase().startsWith('zh')
-        ? AppFlavor.cn
-        : AppFlavor.intl;
-  }
-
-  AppFlavor _inferModeFromStoredSession(AppFlavor fallback) {
-    final provider = (_prefs.getString('logged_in_auth_provider') ?? '').trim();
-    switch (provider) {
-      case 'phone':
-        return AppFlavor.cn;
-      case 'google':
-      case 'apple':
-      case 'email':
-        return AppFlavor.intl;
-      case 'demo':
-        final email = (_prefs.getString('logged_in_email') ?? '')
-            .trim()
-            .toLowerCase();
-        if (email == 'demo@aimoneyledger.app') return AppFlavor.intl;
-        return AppFlavor.cn;
-      case 'guest':
-      default:
-        return fallback;
-    }
+    return inferredMode;
   }
 
   String _defaultCurrencyForCountry(String countryCode) {

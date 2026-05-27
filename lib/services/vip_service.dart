@@ -5,11 +5,84 @@ import 'package:flutter/services.dart';
 import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import '../app/app_flavor.dart';
 import 'config_service.dart';
 import 'cloud_service.dart';
 import 'funnel_analytics_service.dart';
 
-enum VipType { none, monthly, yearly }
+enum VipType { none, monthly, yearly, lifetime }
+
+enum VipStoreProvider { appStore, googlePlay, huawei }
+
+const String kVipMonthlyProductIdIos = 'com.phil.AIAccountant.mon';
+const String kVipYearlyProductIdIos = 'com.phil.AIAccountant.year';
+const String kVipMonthlyProductIdGooglePlay = 'ai_wealth_tracker_monthly';
+const String kVipYearlyProductIdGooglePlay = 'ai_wealth_tracker_yearly';
+const String kVipMonthlyProductIdHuawei = 'ai_wealth_tracker_monthly';
+const String kVipYearlyProductIdHuawei = 'ai_wealth_tracker_yearly';
+const String kVipLifetimeAdFreeProductIdHuawei =
+    'ai_wealth_tracker_lifetime_ad_free';
+
+VipStoreProvider resolveVipStoreProvider({
+  TargetPlatform? platform,
+  AppFlavor? flavor,
+}) {
+  final effectivePlatform = platform ?? defaultTargetPlatform;
+  if (effectivePlatform == TargetPlatform.iOS) return VipStoreProvider.appStore;
+  if (effectivePlatform == TargetPlatform.android) {
+    return (flavor ?? AppFlavorX.current) == AppFlavor.cn
+        ? VipStoreProvider.huawei
+        : VipStoreProvider.googlePlay;
+  }
+  return VipStoreProvider.appStore;
+}
+
+String resolveVipProductId({
+  required VipType type,
+  TargetPlatform? platform,
+  AppFlavor? flavor,
+}) {
+  final provider = resolveVipStoreProvider(platform: platform, flavor: flavor);
+  if (type == VipType.monthly) {
+    return switch (provider) {
+      VipStoreProvider.huawei => kVipMonthlyProductIdHuawei,
+      VipStoreProvider.googlePlay => kVipMonthlyProductIdGooglePlay,
+      VipStoreProvider.appStore => kVipMonthlyProductIdIos,
+    };
+  }
+  if (type == VipType.yearly) {
+    return switch (provider) {
+      VipStoreProvider.huawei => kVipYearlyProductIdHuawei,
+      VipStoreProvider.googlePlay => kVipYearlyProductIdGooglePlay,
+      VipStoreProvider.appStore => kVipYearlyProductIdIos,
+    };
+  }
+  if (type == VipType.lifetime) {
+    return kVipLifetimeAdFreeProductIdHuawei;
+  }
+  return resolveVipProductId(
+    type: VipType.monthly,
+    platform: platform,
+    flavor: flavor,
+  );
+}
+
+VipType? resolveVipProductIdFromPurchaseId(String productId) {
+  if (productId == kVipMonthlyProductIdIos ||
+      productId == kVipMonthlyProductIdGooglePlay ||
+      productId == kVipMonthlyProductIdHuawei) {
+    return VipType.monthly;
+  }
+  if (productId == kVipYearlyProductIdIos ||
+      productId == kVipYearlyProductIdGooglePlay ||
+      productId == kVipYearlyProductIdHuawei) {
+    return VipType.yearly;
+  }
+  if (productId == kVipLifetimeAdFreeProductIdHuawei) {
+    return VipType.lifetime;
+  }
+  return null;
+}
 
 bool shouldTreatAsExpiredEntitlement({
   required String? phone,
@@ -23,6 +96,37 @@ bool shouldTreatAsExpiredEntitlement({
   return (nowMs ?? DateTime.now().millisecondsSinceEpoch) > expireMs;
 }
 
+abstract class VipInAppPurchaseGateway {
+  Stream<List<PurchaseDetails>> get purchaseStream;
+  Future<ProductDetailsResponse> queryProductDetails(Set<String> identifiers);
+  Future<bool> buyNonConsumable({required PurchaseParam purchaseParam});
+  Future<void> restorePurchases({String? applicationUserName});
+  Future<void> completePurchase(PurchaseDetails purchase);
+}
+
+class _DefaultVipInAppPurchaseGateway implements VipInAppPurchaseGateway {
+  final InAppPurchase _iap = InAppPurchase.instance;
+
+  @override
+  Stream<List<PurchaseDetails>> get purchaseStream => _iap.purchaseStream;
+
+  @override
+  Future<ProductDetailsResponse> queryProductDetails(Set<String> identifiers) =>
+      _iap.queryProductDetails(identifiers);
+
+  @override
+  Future<bool> buyNonConsumable({required PurchaseParam purchaseParam}) =>
+      _iap.buyNonConsumable(purchaseParam: purchaseParam);
+
+  @override
+  Future<void> restorePurchases({String? applicationUserName}) =>
+      _iap.restorePurchases(applicationUserName: applicationUserName);
+
+  @override
+  Future<void> completePurchase(PurchaseDetails purchase) =>
+      _iap.completePurchase(purchase);
+}
+
 class VipService extends ChangeNotifier {
   static const _keyVipType = 'vip_type';
   static const _keyVipExpireMs = 'vip_expire_ms';
@@ -31,6 +135,9 @@ class VipService extends ChangeNotifier {
   static const _keyLastProcessedPurchaseSignature =
       'last_processed_purchase_signature';
   static const _keyLastReceiptData = 'last_receipt_data';
+  static const _keyLastReceiptSource = 'last_receipt_source';
+  static const _keyLastReceiptSignature = 'last_receipt_signature';
+  static const _keyLastProductId = 'last_product_id';
   static const _keyLastTransactionId = 'last_transaction_id';
   static const _keyLastOriginalTransactionId = 'last_original_transaction_id';
   static const _keyLastAppAccountToken = 'last_app_account_token';
@@ -39,7 +146,7 @@ class VipService extends ChangeNotifier {
   );
 
   final SharedPreferences _prefs;
-  final InAppPurchase _iap = InAppPurchase.instance;
+  final VipInAppPurchaseGateway _iap;
   StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
   Future<void> _purchaseProcessingQueue = Future.value();
   Timer? _expiryTimer;
@@ -48,8 +155,12 @@ class VipService extends ChangeNotifier {
   int _lastSnapshotExpireMs = 0;
   bool _lastSnapshotIsVip = false;
 
-  VipService(this._prefs, [FunnelAnalyticsService? analyticsService])
-    : _analyticsService = analyticsService ?? FunnelAnalyticsService(_prefs);
+  VipService(
+    this._prefs, [
+    FunnelAnalyticsService? analyticsService,
+    VipInAppPurchaseGateway? inAppPurchaseGateway,
+  ]) : _analyticsService = analyticsService ?? FunnelAnalyticsService(_prefs),
+       _iap = inAppPurchaseGateway ?? _DefaultVipInAppPurchaseGateway();
 
   final FunnelAnalyticsService _analyticsService;
   String? get _currentPhone {
@@ -67,7 +178,7 @@ class VipService extends ChangeNotifier {
     final phone = _currentPhone;
     if (phone == null || phone == 'DemoAccount') return null;
 
-    // Apple notifications can echo appAccountToken back to the backend. Use a
+    // Store notifications can echo appAccountToken back to the backend. Use a
     // deterministic UUID-shaped hash so the phone number itself never leaves us.
     final digest = sha256
         .convert(utf8.encode('ai_wealth_tracker:$phone'))
@@ -270,9 +381,7 @@ class VipService extends ChangeNotifier {
       return;
     }
 
-    VipType? type;
-    if (id == 'com.phil.AIAccountant.mon') type = VipType.monthly;
-    if (id == 'com.phil.AIAccountant.year') type = VipType.yearly;
+    final type = resolveVipProductIdFromPurchaseId(id);
 
     final transactionMs = _parseTransactionMs(p.transactionDate);
     final lastProcessedMs = _getScopedInt(_keyLastProcessedTransactionDate);
@@ -283,6 +392,17 @@ class VipService extends ChangeNotifier {
     if (receiptData.isNotEmpty) {
       await _setScopedString(_keyLastReceiptData, receiptData);
       debugPrint('[VipService] ✅ 缓存 receiptData，len=${receiptData.length}');
+    }
+    final receiptSource = p.verificationData.source;
+    final receiptSignature = p.verificationData.localVerificationData;
+    if (receiptSource.isNotEmpty) {
+      await _setScopedString(_keyLastReceiptSource, receiptSource);
+    }
+    if (receiptSignature.isNotEmpty) {
+      await _setScopedString(_keyLastReceiptSignature, receiptSignature);
+    }
+    if (id.isNotEmpty) {
+      await _setScopedString(_keyLastProductId, id);
     }
     final transactionId = p.purchaseID ?? '';
     final appAccountToken = _appAccountToken;
@@ -308,6 +428,7 @@ class VipService extends ChangeNotifier {
     final incomingTypeStr = switch (type) {
       VipType.monthly => 'monthly',
       VipType.yearly => 'yearly',
+      VipType.lifetime => 'lifetime',
       _ => null,
     };
 
@@ -317,6 +438,9 @@ class VipService extends ChangeNotifier {
       debugPrint('[VipService] ⏭️  跳过重复购买签名');
       await _refreshEntitlementAfterSkippedPurchase(
         receiptData: receiptData.isNotEmpty ? receiptData : null,
+        receiptSource: receiptSource.isNotEmpty ? receiptSource : null,
+        receiptSignature: receiptSignature.isNotEmpty ? receiptSignature : null,
+        productId: id.isNotEmpty ? id : null,
         transactionId: transactionId.isNotEmpty ? transactionId : null,
         appAccountToken: appAccountToken,
       );
@@ -337,6 +461,9 @@ class VipService extends ChangeNotifier {
       debugPrint('[VipService] ⏭️  跳过旧交易（已处理过）');
       await _refreshEntitlementAfterSkippedPurchase(
         receiptData: receiptData.isNotEmpty ? receiptData : null,
+        receiptSource: receiptSource.isNotEmpty ? receiptSource : null,
+        receiptSignature: receiptSignature.isNotEmpty ? receiptSignature : null,
+        productId: id.isNotEmpty ? id : null,
         transactionId: transactionId.isNotEmpty ? transactionId : null,
         appAccountToken: appAccountToken,
       );
@@ -364,20 +491,25 @@ class VipService extends ChangeNotifier {
       final transactionDate = transactionMs != null
           ? DateTime.fromMillisecondsSinceEpoch(transactionMs)
           : null;
+      final platformExpireDate = _parsePlatformExpirationDate(p);
       debugPrint(
-        '[VipService] ⚠️  即将调用 _activateVip($type, isRestore=${p.status == PurchaseStatus.restored}, transactionDate=$transactionDate)',
+        '[VipService] ⚠️  即将调用 _activateVip($type, isRestore=${p.status == PurchaseStatus.restored}, transactionDate=$transactionDate, platformExpireDate=$platformExpireDate)',
       );
       await _activateVip(
         type,
         transactionDate: transactionDate,
+        platformExpireDate: platformExpireDate,
         isRestore: p.status == PurchaseStatus.restored,
         receiptData: receiptData.isNotEmpty ? receiptData : null,
+        receiptSource: receiptSource.isNotEmpty ? receiptSource : null,
+        receiptSignature: receiptSignature.isNotEmpty ? receiptSignature : null,
+        productId: id.isNotEmpty ? id : null,
         transactionId: transactionId.isNotEmpty ? transactionId : null,
         appAccountToken: appAccountToken,
       );
 
       // restore 场景下，最终再强制以云端为准。
-      // 原因：StoreKit restored 可能先给出 TestFlight/sandbox 的本地日期，
+      // 原因：store restored 可能先给出 TestFlight/sandbox 的本地日期，
       // 即使后端已拒绝错误覆盖，本地也可能被 restore 临时写脏。
       if (isRestorePurchase) {
         try {
@@ -412,14 +544,12 @@ class VipService extends ChangeNotifier {
   bool get isLoggedIn =>
       _prefs.getString('logged_in_phone')?.isNotEmpty == true;
 
-  static const int touristLimit = 20;
-  static const int freeUserLimit = 50;
-
   VipType get vipType {
     _refreshSnapshot();
     final typeStr = _getScopedString(_keyVipType);
     if (typeStr == 'monthly') return VipType.monthly;
     if (typeStr == 'yearly') return VipType.yearly;
+    if (typeStr == 'lifetime') return VipType.lifetime;
     return VipType.none;
   }
 
@@ -430,17 +560,43 @@ class VipService extends ChangeNotifier {
     return DateTime.fromMillisecondsSinceEpoch(ms);
   }
 
+  bool get removesAds => isVip;
+
+  Future<ProductDetailsResponse> queryVipProductDetails() async {
+    if (resolveVipStoreProvider() == VipStoreProvider.huawei) {
+      return _iap.queryProductDetails({
+        resolveVipProductId(type: VipType.lifetime),
+      });
+    }
+    final ids = {
+      resolveVipProductId(type: VipType.monthly),
+      resolveVipProductId(type: VipType.yearly),
+    };
+    return _iap.queryProductDetails(ids);
+  }
+
   /// 购买月度会员
   Future<bool> purchaseMonthly() async {
-    return _purchase('com.phil.AIAccountant.mon', VipType.monthly);
+    return _purchase(
+      resolveVipProductId(type: VipType.monthly),
+      VipType.monthly,
+    );
   }
 
   /// 购买年度会员
   Future<bool> purchaseYearly() async {
-    return _purchase('com.phil.AIAccountant.year', VipType.yearly);
+    return _purchase(resolveVipProductId(type: VipType.yearly), VipType.yearly);
   }
 
-  /// 购买：发起支付后监听 Apple 返回结果
+  /// 购买终身去广告
+  Future<bool> purchaseLifetimeAdFree() async {
+    return _purchase(
+      resolveVipProductId(type: VipType.lifetime),
+      VipType.lifetime,
+    );
+  }
+
+  /// 购买：发起支付后监听平台返回结果
   /// buyNonConsumable 返回 true 只表示请求发出，购买结果通过 stream 异步通知
   Future<bool> _purchase(String productId, VipType type) async {
     try {
@@ -480,7 +636,7 @@ class VipService extends ChangeNotifier {
         },
       );
 
-      debugPrint('[VipService] 📱 即将调用 buyNonConsumable，应该弹出 Apple 付款窗口...');
+      debugPrint('[VipService] 📱 即将调用 buyNonConsumable，应该弹出平台支付窗口...');
       final appAccountToken = _appAccountToken;
       if (appAccountToken != null) {
         await _setScopedString(_keyLastAppAccountToken, appAccountToken);
@@ -514,13 +670,19 @@ class VipService extends ChangeNotifier {
 
   Future<void> _refreshEntitlementAfterSkippedPurchase({
     String? receiptData,
+    String? receiptSource,
+    String? receiptSignature,
+    String? productId,
     String? transactionId,
     String? appAccountToken,
   }) async {
     try {
-      debugPrint('[VipService] refresh skipped purchase from Apple receipt');
+      debugPrint('[VipService] refresh skipped purchase from platform receipt');
       await pushToCloud(
         receiptData: receiptData,
+        receiptSource: receiptSource,
+        receiptSignature: receiptSignature,
+        productId: productId,
         transactionId: transactionId,
         appAccountToken: appAccountToken,
       );
@@ -560,8 +722,12 @@ class VipService extends ChangeNotifier {
   Future<void> _activateVip(
     VipType type, {
     DateTime? transactionDate,
+    DateTime? platformExpireDate,
     bool isRestore = false,
     String? receiptData,
+    String? receiptSource,
+    String? receiptSignature,
+    String? productId,
     String? transactionId,
     String? originalTransactionId,
     String? appAccountToken,
@@ -572,6 +738,7 @@ class VipService extends ChangeNotifier {
     debugPrint('[VipService] type=$type');
     debugPrint('[VipService] now=$now');
     debugPrint('[VipService] transactionDate=$transactionDate');
+    debugPrint('[VipService] platformExpireDate=$platformExpireDate');
     debugPrint('[VipService] isRestore=$isRestore');
 
     final existingExpireMs = _getScopedInt(_keyVipExpireMs);
@@ -583,17 +750,23 @@ class VipService extends ChangeNotifier {
 
     late final DateTime expireDate;
 
-    if (isRestore) {
+    if (platformExpireDate != null) {
+      expireDate = platformExpireDate;
+      debugPrint('[VipService] 平台返回到期时间，直接采用：$expireDate');
+    } else if (type == VipType.lifetime) {
+      expireDate = _calculateExpireDate(type, transactionDate ?? now);
+      debugPrint('[VipService] 终身权益：采用远期有效期：$expireDate');
+    } else if (isRestore) {
       final restoredBaseDate = transactionDate ?? now;
       final restoredExpireDate = _calculateExpireDate(type, restoredBaseDate);
       debugPrint(
         '[VipService] 恢复购买：按交易时间恢复，restoredBaseDate=$restoredBaseDate → restoredExpireDate=$restoredExpireDate',
       );
 
-      // 热修：恢复购买时直接信任 Apple 返回的交易时间，
+      // 恢复购买时直接信任平台返回的交易时间，
       // 不再保留本地“更晚”的旧错误日期，避免把曾经错误算出来的到期日一直沿用。
       expireDate = restoredExpireDate;
-      debugPrint('[VipService] 恢复购买：直接采用 Apple 恢复出的到期时间：$expireDate');
+      debugPrint('[VipService] 恢复购买：直接采用平台恢复出的到期时间：$expireDate');
     } else {
       final DateTime baseDate;
       if (existingExpireDate != null && now.isBefore(existingExpireDate)) {
@@ -612,10 +785,12 @@ class VipService extends ChangeNotifier {
     final expireMs = expireDate.millisecondsSinceEpoch;
     debugPrint('[VipService] 最终到期时间=$expireDate, expireMs=$expireMs');
 
-    await _setScopedString(
-      _keyVipType,
-      type == VipType.monthly ? 'monthly' : 'yearly',
-    );
+    await _setScopedString(_keyVipType, switch (type) {
+      VipType.monthly => 'monthly',
+      VipType.yearly => 'yearly',
+      VipType.lifetime => 'lifetime',
+      VipType.none => '',
+    });
     await _setScopedInt(_keyVipExpireMs, expireMs);
 
     // 购买/恢复成功后尝试同步到云端（失败不阻塞）
@@ -623,6 +798,9 @@ class VipService extends ChangeNotifier {
     try {
       syncedToCloud = await pushToCloud(
         receiptData: receiptData,
+        receiptSource: receiptSource,
+        receiptSignature: receiptSignature,
+        productId: productId,
         transactionId: transactionId,
         originalTransactionId: originalTransactionId,
         appAccountToken: appAccountToken,
@@ -655,7 +833,32 @@ class VipService extends ChangeNotifier {
     return asDate?.millisecondsSinceEpoch;
   }
 
+  DateTime? _parsePlatformExpirationDate(PurchaseDetails purchase) {
+    if (purchase.verificationData.source != 'huawei_iap') return null;
+    try {
+      final raw = jsonDecode(purchase.verificationData.serverVerificationData);
+      if (raw is! Map<String, dynamic>) return null;
+      final expirationMs = raw['expirationDate'];
+      if (expirationMs is! int || expirationMs <= 0) return null;
+      return DateTime.fromMillisecondsSinceEpoch(expirationMs);
+    } catch (error) {
+      debugPrint('[VipService] parse Huawei expirationDate failed: $error');
+      return null;
+    }
+  }
+
+  String _storeProviderName() {
+    return switch (resolveVipStoreProvider()) {
+      VipStoreProvider.huawei => 'huawei',
+      VipStoreProvider.googlePlay => 'google_play',
+      VipStoreProvider.appStore => 'app_store',
+    };
+  }
+
   DateTime _calculateExpireDate(VipType type, DateTime baseDate) {
+    if (type == VipType.lifetime) {
+      return DateTime(2099, 12, 31, 23, 59, 59);
+    }
     if (type == VipType.monthly) {
       return DateTime(baseDate.year, baseDate.month + 1, baseDate.day);
     }
@@ -832,20 +1035,20 @@ class VipService extends ChangeNotifier {
     }
   }
 
-  /// 主动让后端用 App Store Server API 刷新一次订阅状态。
+  /// 与平台/服务端对账，完成后本地状态会以云端为准。
   ///
-  /// 这比单纯等待 Server Notification 更快，适合购买完成后的前台确认。
+  /// 与方法名保留 `AppStore` 历史兼容，该分支仅用于刷新本地缓存，不代表强绑定平台提供方。
   Future<bool> refreshFromAppStoreServer({String? transactionId}) async {
     if (!_hasVipContext) {
       debugPrint(
-        '[VipService] refreshFromAppStoreServer skipped: no real logged-in phone',
+        '[VipService] refreshFromStoreBackend skipped: no real logged-in phone',
       );
       return false;
     }
 
     if (!ConfigService.instance.isAliyunFCConfigured) {
       debugPrint(
-        '[VipService] refreshFromAppStoreServer skipped: cloud not configured',
+        '[VipService] refreshFromStoreBackend skipped: cloud not configured',
       );
       return false;
     }
@@ -878,9 +1081,9 @@ class VipService extends ChangeNotifier {
     }
   }
 
-  /// 用本机 App Store receipt 兜底刷新订阅状态。
+  /// 用本机平台凭据兜底刷新订阅状态。
   ///
-  /// 覆盖场景：付款成功后 App 被杀、purchaseStream 未完成处理，或 Apple
+  /// 覆盖场景：付款成功后 App 被杀、purchaseStream 未完成处理，或平台
   /// 通知先到但云端还没有完成用户映射。
   Future<bool> refreshFromLocalReceipt() async {
     if (!_hasVipContext) return false;
@@ -913,6 +1116,9 @@ class VipService extends ChangeNotifier {
   /// 如果云端返回 403（订阅已过期），清理本地并返回 false
   Future<bool> pushToCloud({
     String? receiptData,
+    String? receiptSource,
+    String? receiptSignature,
+    String? productId,
     String? transactionId,
     String? originalTransactionId,
     String? appAccountToken,
@@ -925,6 +1131,12 @@ class VipService extends ChangeNotifier {
       final localExpireMs = _getScopedInt(_keyVipExpireMs);
       final effectiveReceiptData =
           receiptData ?? _getScopedString(_keyLastReceiptData);
+      final effectiveReceiptSource =
+          receiptSource ?? _getScopedString(_keyLastReceiptSource);
+      final effectiveReceiptSignature =
+          receiptSignature ?? _getScopedString(_keyLastReceiptSignature);
+      final effectiveProductId =
+          productId ?? _getScopedString(_keyLastProductId);
       final effectiveTransactionId =
           transactionId ?? _getScopedString(_keyLastTransactionId);
       final effectiveOriginalTransactionId =
@@ -932,7 +1144,9 @@ class VipService extends ChangeNotifier {
           _getScopedString(_keyLastOriginalTransactionId);
       final effectiveAppAccountToken =
           appAccountToken ?? _getScopedString(_keyLastAppAccountToken);
-      final hasAppleEvidence =
+      // On Android, serverVerificationData may carry the Play purchase token.
+      // Play purchase token still needs backend-side verification.
+      final hasStoreEvidence =
           (effectiveReceiptData != null && effectiveReceiptData.isNotEmpty) ||
           (effectiveTransactionId != null &&
               effectiveTransactionId.isNotEmpty) ||
@@ -940,19 +1154,19 @@ class VipService extends ChangeNotifier {
               effectiveOriginalTransactionId.isNotEmpty);
 
       if (localType == null || localType.isEmpty || localExpireMs <= 0) {
-        if (!hasAppleEvidence) {
+        if (!hasStoreEvidence) {
           debugPrint('[VipService] pushToCloud: no valid local VIP to push');
           return false;
         }
         debugPrint(
-          '[VipService] pushToCloud: no local VIP, verifying Apple evidence',
+          '[VipService] pushToCloud: no local VIP, verifying store evidence',
         );
       }
 
       // 检查本地是否已过期（防止推广过期状态到云端）
       if (localExpireMs > 0 &&
           DateTime.now().millisecondsSinceEpoch > localExpireMs &&
-          !hasAppleEvidence) {
+          !hasStoreEvidence) {
         debugPrint(
           '[VipService] pushToCloud: local VIP already expired, clearing',
         );
@@ -964,6 +1178,10 @@ class VipService extends ChangeNotifier {
         vipType: localType ?? '',
         expireMs: localExpireMs,
         receiptData: effectiveReceiptData,
+        receiptSource: effectiveReceiptSource,
+        receiptSignature: effectiveReceiptSignature,
+        storeProvider: _storeProviderName(),
+        productId: effectiveProductId,
         transactionId: effectiveTransactionId,
         originalTransactionId: effectiveOriginalTransactionId,
         appAccountToken: effectiveAppAccountToken,
@@ -973,7 +1191,7 @@ class VipService extends ChangeNotifier {
         debugPrint(
           '[VipService] pushToCloud: success, keys=${result.keys.toList()}',
         );
-        // 云端同步后以云端为准（可能 Apple 返回了不同的 expire_ms）
+        // 云端同步后以云端为准（可能平台返回了不同的 expire_ms）
         final cloudType = result['vip_type'] as String?;
         final cloudExpireMs = result['vip_expire_ms'] as int?;
         final cloudVerifyStatus = result['vip_verify_status'] as String?;
@@ -1045,6 +1263,9 @@ class VipService extends ChangeNotifier {
     await _removeScopedKey(_keyLastProcessedTransactionDate);
     await _removeScopedKey(_keyLastProcessedPurchaseSignature);
     await _removeScopedKey(_keyLastReceiptData);
+    await _removeScopedKey(_keyLastReceiptSource);
+    await _removeScopedKey(_keyLastReceiptSignature);
+    await _removeScopedKey(_keyLastProductId);
     await _removeScopedKey(_keyLastTransactionId);
     await _removeScopedKey(_keyLastOriginalTransactionId);
     await _removeScopedKey(_keyLastAppAccountToken);
@@ -1070,6 +1291,11 @@ class VipService extends ChangeNotifier {
     await _prefs.remove(_keyVipType);
     await _prefs.remove(_keyVipExpireMs);
     await _prefs.remove(_keyLastProcessedTransactionDate);
+    await _prefs.remove(_keyLastProcessedPurchaseSignature);
+    await _prefs.remove(_keyLastReceiptData);
+    await _prefs.remove(_keyLastReceiptSource);
+    await _prefs.remove(_keyLastReceiptSignature);
+    await _prefs.remove(_keyLastProductId);
     await _prefs.remove(_keyLastTransactionId);
     await _prefs.remove(_keyLastOriginalTransactionId);
     await _prefs.remove(_keyLastAppAccountToken);
@@ -1087,6 +1313,11 @@ class VipService extends ChangeNotifier {
     final purchaseReceiptData =
         purchase.verificationData.serverVerificationData;
     return purchaseReceiptData;
+  }
+
+  @visibleForTesting
+  Future<String?> fetchIosAppStoreReceiptDataForTest() async {
+    return _fetchIosAppStoreReceiptData();
   }
 
   Future<String?> _fetchIosAppStoreReceiptData() async {

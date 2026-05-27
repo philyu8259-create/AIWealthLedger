@@ -26,8 +26,14 @@ class AutoBookkeepingShortcutService with WidgetsBindingObserver {
   }
 
   Future<void> consumePendingText() async {
-    final text = await _channel.invokeMethod<String>('consumePendingText');
-    _emitIfUseful(text);
+    try {
+      final text = await _channel.invokeMethod<String>('consumePendingText');
+      _emitIfUseful(text);
+    } on MissingPluginException {
+      // Android currently uses the in-app paste flow and does not implement the
+      // iOS shortcut channel. Treat the missing native method as "no pending
+      // text" so startup/resume stays quiet.
+    }
   }
 
   Future<void> dispose() async {

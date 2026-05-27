@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/gestures.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -33,6 +34,9 @@ class _IntlAuthPageState extends State<IntlAuthPage> {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final supportsAppleSignIn = supportsAppleSignInOnTargetPlatform(
+      defaultTargetPlatform,
+    );
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -58,12 +62,15 @@ class _IntlAuthPageState extends State<IntlAuthPage> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final compact = constraints.maxWidth < 360 || constraints.maxHeight < 720;
+            final compact =
+                constraints.maxWidth < 360 || constraints.maxHeight < 720;
             final isTablet = constraints.maxWidth >= 768;
             final horizontalPadding = isTablet
                 ? 40.0
                 : (constraints.maxWidth < 380 ? 20.0 : 28.0);
-            final maxContentWidth = isTablet ? 560.0 : (constraints.maxWidth > 520 ? 420.0 : constraints.maxWidth);
+            final maxContentWidth = isTablet
+                ? 560.0
+                : (constraints.maxWidth > 520 ? 420.0 : constraints.maxWidth);
             final heroSize = compact ? 64.0 : 72.0;
             final titleSize = compact ? 24.0 : 26.0;
 
@@ -73,7 +80,9 @@ class _IntlAuthPageState extends State<IntlAuthPage> {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: maxContentWidth),
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -83,8 +92,12 @@ class _IntlAuthPageState extends State<IntlAuthPage> {
                             children: [
                               GestureDetector(
                                 behavior: HitTestBehavior.opaque,
-                                onTapDown: _busy ? null : (_) => _startDemoPress(),
-                                onTapUp: _busy ? null : (_) => _cancelDemoPress(),
+                                onTapDown: _busy
+                                    ? null
+                                    : (_) => _startDemoPress(),
+                                onTapUp: _busy
+                                    ? null
+                                    : (_) => _cancelDemoPress(),
                                 onTapCancel: _busy ? null : _cancelDemoPress,
                                 child: Container(
                                   width: heroSize,
@@ -93,7 +106,9 @@ class _IntlAuthPageState extends State<IntlAuthPage> {
                                     borderRadius: BorderRadius.circular(20),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF4A47D8).withValues(alpha: 0.18),
+                                        color: const Color(
+                                          0xFF4A47D8,
+                                        ).withValues(alpha: 0.18),
                                         blurRadius: 18,
                                         offset: const Offset(0, 8),
                                       ),
@@ -123,7 +138,11 @@ class _IntlAuthPageState extends State<IntlAuthPage> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                t.text(AppStringKeys.intlAuthSubtitle),
+                                t.text(
+                                  supportsAppleSignIn
+                                      ? AppStringKeys.intlAuthSubtitle
+                                      : AppStringKeys.intlAuthSubtitleAndroid,
+                                ),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: compact ? 13 : 14,
@@ -140,44 +159,53 @@ class _IntlAuthPageState extends State<IntlAuthPage> {
                           loading: _loadingProvider == 'google',
                           onTap: _busy ? null : _signInWithGoogle,
                         ),
-                        const SizedBox(height: 12),
-                        _AuthButton(
-                          icon: Icons.apple,
-                          label: t.text(AppStringKeys.intlAuthApple),
-                          loading: _loadingProvider == 'apple',
-                          onTap: _busy ? null : _signInWithApple,
-                        ),
+                        if (supportsAppleSignIn) ...[
+                          const SizedBox(height: 12),
+                          _AuthButton(
+                            icon: Icons.apple,
+                            label: t.text(AppStringKeys.intlAuthApple),
+                            loading: _loadingProvider == 'apple',
+                            onTap: _busy ? null : _signInWithApple,
+                          ),
+                        ],
                         const SizedBox(height: 24),
                         Center(
                           child: Text.rich(
                             TextSpan(
                               children: [
                                 TextSpan(
-                                  text: t.text(AppStringKeys.phoneLoginAgreementPrefix),
+                                  text: t.text(
+                                    AppStringKeys.phoneLoginAgreementPrefix,
+                                  ),
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.grey.shade500,
                                   ),
                                 ),
                                 TextSpan(
-                                  text: ' ${t.text(AppStringKeys.settingsTermsTitle)} ',
+                                  text:
+                                      ' ${t.text(AppStringKeys.settingsTermsTitle)} ',
                                   style: const TextStyle(
                                     fontSize: 12,
                                     color: Color(0xFF4A47D8),
                                     fontWeight: FontWeight.w500,
                                   ),
                                   recognizer: TapGestureRecognizer()
-                                    ..onTap = () => _openTermsOfService(context),
+                                    ..onTap = () =>
+                                        _openTermsOfService(context),
                                 ),
                                 TextSpan(
-                                  text: t.text(AppStringKeys.phoneLoginAgreementAnd),
+                                  text: t.text(
+                                    AppStringKeys.phoneLoginAgreementAnd,
+                                  ),
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.grey.shade500,
                                   ),
                                 ),
                                 TextSpan(
-                                  text: ' ${t.text(AppStringKeys.settingsPrivacyTitle)}',
+                                  text:
+                                      ' ${t.text(AppStringKeys.settingsPrivacyTitle)}',
                                   style: const TextStyle(
                                     fontSize: 12,
                                     color: Color(0xFF4A47D8),
@@ -257,10 +285,7 @@ class _IntlAuthPageState extends State<IntlAuthPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            t.text(
-              AppStringKeys.intlAuthLoginFailed,
-              params: {'error': '$e'},
-            ),
+            t.text(AppStringKeys.intlAuthLoginFailed, params: {'error': '$e'}),
           ),
           backgroundColor: Colors.red.shade400,
         ),
@@ -282,7 +307,9 @@ class _IntlAuthPageState extends State<IntlAuthPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          AppStrings.of(context).text(AppStringKeys.phoneLoginOpenPrivacyFailed),
+          AppStrings.of(
+            context,
+          ).text(AppStringKeys.phoneLoginOpenPrivacyFailed),
         ),
       ),
     );
@@ -322,9 +349,7 @@ class _AuthButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = OutlinedButton.styleFrom(
       minimumSize: const Size.fromHeight(52),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
 
     final child = loading

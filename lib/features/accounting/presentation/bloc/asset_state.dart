@@ -7,13 +7,11 @@ class AssetState extends Equatable {
   final AssetStatus status;
   final List<Asset> assets;
   final String? errorMessage;
-  final bool showVipLimitDialog;
 
   const AssetState({
     this.status = AssetStatus.initial,
     this.assets = const [],
     this.errorMessage,
-    this.showVipLimitDialog = false,
   });
 
   factory AssetState.initial() => const AssetState();
@@ -26,16 +24,14 @@ class AssetState extends Equatable {
     AssetStatus? status,
     List<Asset>? assets,
     String? errorMessage,
-    bool? showVipLimitDialog,
   }) {
     return AssetState(
       status: status ?? this.status,
       assets: assets ?? this.assets,
       errorMessage: errorMessage,
-      showVipLimitDialog: showVipLimitDialog ?? this.showVipLimitDialog,
     );
   }
 
   @override
-  List<Object?> get props => [status, assets, errorMessage, showVipLimitDialog];
+  List<Object?> get props => [status, assets, errorMessage];
 }

@@ -94,11 +94,13 @@ class StockService {
 
   bool get usesOnDemandSearch => _isUsScope && _isFinnhubConfigured;
 
+  bool get canSearchStocks => _isUsScope ? _isFinnhubConfigured : true;
+
+  bool get canRefreshQuotes =>
+      _isUsScope ? _isFinnhubConfigured : _isZhituConfigured;
+
   Exception get _usStockPendingException =>
       Exception('US stock search and quotes are not connected yet');
-
-  Exception get _cnStockPendingException =>
-      Exception('CN stock search and quotes are not connected yet');
 
   Future<List<StockPosition>> getPositions({bool tryRestore = false}) async {
     if (tryRestore) {
@@ -378,7 +380,8 @@ class StockService {
     final cached = _loadSearchCache();
     if (!force && cached.isNotEmpty) return cached;
     if (!isProviderReady) {
-      throw _cnStockPendingException;
+      await _saveSearchCache(_fallbackCnSearchItems);
+      return _fallbackCnSearchItems;
     }
 
     final resp = await _dio.get(
@@ -400,6 +403,11 @@ class StockService {
         .where((e) => e.code.isNotEmpty && e.name.isNotEmpty)
         .toList();
 
+    await _saveSearchCache(items);
+    return items;
+  }
+
+  Future<void> _saveSearchCache(List<StockSearchItem> items) async {
     await _prefs.setString(
       _searchCacheKey,
       jsonEncode(items.map((e) => e.toJson()).toList()),
@@ -408,7 +416,6 @@ class StockService {
       _searchCacheUpdatedAtKey,
       DateTime.now().millisecondsSinceEpoch,
     );
-    return items;
   }
 
   List<StockSearchItem> _loadSearchCache() {
@@ -509,7 +516,7 @@ class StockService {
     }
 
     try {
-      if (!isProviderReady) return position;
+      if (!_isZhituConfigured) return position;
       final resp = await _dio.get(
         'https://api.zhituapi.com/hs/real/time/${position.code}',
         queryParameters: {'token': _zhituApiToken},
@@ -764,4 +771,48 @@ class StockService {
       );
     }
   }
+
+  static const List<StockSearchItem> _fallbackCnSearchItems = [
+    StockSearchItem(code: '000001.SZ', name: '平安银行', exchange: 'SZ'),
+    StockSearchItem(code: '000002.SZ', name: '万科A', exchange: 'SZ'),
+    StockSearchItem(code: '000063.SZ', name: '中兴通讯', exchange: 'SZ'),
+    StockSearchItem(code: '000333.SZ', name: '美的集团', exchange: 'SZ'),
+    StockSearchItem(code: '000651.SZ', name: '格力电器', exchange: 'SZ'),
+    StockSearchItem(code: '000858.SZ', name: '五粮液', exchange: 'SZ'),
+    StockSearchItem(code: '002027.SZ', name: '分众传媒', exchange: 'SZ'),
+    StockSearchItem(code: '002230.SZ', name: '科大讯飞', exchange: 'SZ'),
+    StockSearchItem(code: '002236.SZ', name: '大华股份', exchange: 'SZ'),
+    StockSearchItem(code: '002241.SZ', name: '歌尔股份', exchange: 'SZ'),
+    StockSearchItem(code: '002415.SZ', name: '海康威视', exchange: 'SZ'),
+    StockSearchItem(code: '002594.SZ', name: '比亚迪', exchange: 'SZ'),
+    StockSearchItem(code: '300015.SZ', name: '爱尔眼科', exchange: 'SZ'),
+    StockSearchItem(code: '300059.SZ', name: '东方财富', exchange: 'SZ'),
+    StockSearchItem(code: '300274.SZ', name: '阳光电源', exchange: 'SZ'),
+    StockSearchItem(code: '300750.SZ', name: '宁德时代', exchange: 'SZ'),
+    StockSearchItem(code: '600000.SH', name: '浦发银行', exchange: 'SH'),
+    StockSearchItem(code: '600009.SH', name: '上海机场', exchange: 'SH'),
+    StockSearchItem(code: '600030.SH', name: '中信证券', exchange: 'SH'),
+    StockSearchItem(code: '600036.SH', name: '招商银行', exchange: 'SH'),
+    StockSearchItem(code: '600050.SH', name: '中国联通', exchange: 'SH'),
+    StockSearchItem(code: '600276.SH', name: '恒瑞医药', exchange: 'SH'),
+    StockSearchItem(code: '600309.SH', name: '万华化学', exchange: 'SH'),
+    StockSearchItem(code: '600519.SH', name: '贵州茅台', exchange: 'SH'),
+    StockSearchItem(code: '600690.SH', name: '海尔智家', exchange: 'SH'),
+    StockSearchItem(code: '600887.SH', name: '伊利股份', exchange: 'SH'),
+    StockSearchItem(code: '600900.SH', name: '长江电力', exchange: 'SH'),
+    StockSearchItem(code: '601012.SH', name: '隆基绿能', exchange: 'SH'),
+    StockSearchItem(code: '601166.SH', name: '兴业银行', exchange: 'SH'),
+    StockSearchItem(code: '601318.SH', name: '中国平安', exchange: 'SH'),
+    StockSearchItem(code: '601398.SH', name: '工商银行', exchange: 'SH'),
+    StockSearchItem(code: '601601.SH', name: '中国太保', exchange: 'SH'),
+    StockSearchItem(code: '601668.SH', name: '中国建筑', exchange: 'SH'),
+    StockSearchItem(code: '601688.SH', name: '华泰证券', exchange: 'SH'),
+    StockSearchItem(code: '601888.SH', name: '中国中免', exchange: 'SH'),
+    StockSearchItem(code: '601899.SH', name: '紫金矿业', exchange: 'SH'),
+    StockSearchItem(code: '601988.SH', name: '中国银行', exchange: 'SH'),
+    StockSearchItem(code: '601998.SH', name: '中信银行', exchange: 'SH'),
+    StockSearchItem(code: '603259.SH', name: '药明康德', exchange: 'SH'),
+    StockSearchItem(code: '688111.SH', name: '金山办公', exchange: 'SH'),
+    StockSearchItem(code: '688981.SH', name: '中芯国际', exchange: 'SH'),
+  ];
 }

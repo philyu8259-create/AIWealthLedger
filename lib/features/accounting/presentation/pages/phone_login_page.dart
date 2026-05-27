@@ -358,6 +358,9 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
+    final supportsAppleSignIn = supportsAppleSignInOnTargetPlatform(
+      defaultTargetPlatform,
+    );
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -756,40 +759,43 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
 
                         SizedBox(height: compact ? 20 : 24),
 
-                        SizedBox(
-                          width: double.infinity,
-                          height: buttonHeight,
-                          child: OutlinedButton.icon(
-                            onPressed: _appleSigningIn
-                                ? null
-                                : _signInWithApple,
-                            icon: _appleSigningIn
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Icon(Icons.apple, size: 22),
-                            label: Text(
-                              strings.text(AppStringKeys.intlAuthApple),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                        if (supportsAppleSignIn) ...[
+                          SizedBox(
+                            width: double.infinity,
+                            height: buttonHeight,
+                            child: OutlinedButton.icon(
+                              onPressed: _appleSigningIn
+                                  ? null
+                                  : _signInWithApple,
+                              icon: _appleSigningIn
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.apple, size: 22),
+                              label: Text(
+                                strings.text(AppStringKeys.intlAuthApple),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF111827),
-                              side: const BorderSide(color: Color(0xFFE5E7EB)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF111827),
+                                side: const BorderSide(
+                                  color: Color(0xFFE5E7EB),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-
-                        SizedBox(height: compact ? 20 : 24),
+                          SizedBox(height: compact ? 20 : 24),
+                        ],
 
                         // 协议提示
                         Center(

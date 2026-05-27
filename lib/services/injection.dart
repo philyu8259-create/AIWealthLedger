@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app/profile/capability_profile.dart';
 import 'ai_privacy_consent_service.dart';
 import 'ai/input_parser_service.dart';
 import 'ai/receipt_ocr_service.dart';
+import 'ad_preferences_service.dart';
 import 'app_migration_service.dart';
 import 'app_profile_service.dart';
 import 'quick_chip_service.dart';
@@ -38,8 +40,13 @@ import 'cloud_service.dart';
 import 'gemini_input_parser_service.dart';
 import 'gemini_spending_prediction_service.dart';
 import 'google_vision_receipt_ocr_service.dart';
+import 'huawei_iap_vip_gateway.dart';
 import 'intl_auth_service.dart';
 import 'funnel_analytics_service.dart';
+import 'cn_receipt_ocr_service.dart';
+import 'ocr_space_service.dart';
+import 'pangle_ad_service.dart';
+import 'aliyun_ocr_service.dart';
 import 'qwen_service.dart';
 import 'qwen_spending_prediction_service.dart';
 import 'sms_service.dart';
@@ -75,6 +82,15 @@ Future<void> configureDependencies() async {
   );
   getIt.registerLazySingleton<AliyunASRService>(() => AliyunASRService());
   getIt.registerLazySingleton<BaiduOCRService>(() => BaiduOCRService());
+  getIt.registerLazySingleton<OcrSpaceService>(() => OcrSpaceService());
+  getIt.registerLazySingleton<AliyunOCRService>(() => AliyunOCRService());
+  getIt.registerLazySingleton<CnReceiptOcrService>(
+    () => CnReceiptOcrService([
+      getIt<BaiduOCRService>(),
+      getIt<OcrSpaceService>(),
+      getIt<AliyunOCRService>(),
+    ]),
+  );
   getIt.registerLazySingleton<GeminiInputParserService>(
     () => GeminiInputParserService(),
   );
@@ -99,6 +115,10 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<AIPrivacyConsentService>(
     () => AIPrivacyConsentService(getIt<SharedPreferences>()),
   );
+  getIt.registerLazySingleton<AdPreferencesService>(
+    () => AdPreferencesService(getIt<SharedPreferences>()),
+  );
+  getIt.registerLazySingleton<PangleAdService>(() => const PangleAdService());
   getIt.registerLazySingleton<AutoBookkeepingShortcutService>(
     () => AutoBookkeepingShortcutService(),
   );
@@ -140,8 +160,11 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => SmsService());
   getIt.registerLazySingleton(() => AliyunSmsService());
   getIt.registerLazySingleton(
-    () =>
-        VipService(getIt<SharedPreferences>(), getIt<FunnelAnalyticsService>()),
+    () => VipService(
+      getIt<SharedPreferences>(),
+      getIt<FunnelAnalyticsService>(),
+      _buildVipInAppPurchaseGateway(getIt<AppProfileService>()),
+    ),
   );
   getIt.registerLazySingleton(() => AvatarService(getIt<SharedPreferences>()));
   getIt.registerLazySingleton(() => StockService(getIt<SharedPreferences>()));
@@ -188,6 +211,19 @@ Future<void> configureDependencies() async {
   );
 }
 
+VipInAppPurchaseGateway? _buildVipInAppPurchaseGateway(
+  AppProfileService profileService,
+) {
+  final provider = resolveVipStoreProvider(
+    platform: defaultTargetPlatform,
+    flavor: profileService.flavor,
+  );
+  if (provider == VipStoreProvider.huawei) {
+    return HuaweiIapVipGateway();
+  }
+  return null;
+}
+
 InputParserService _buildInputParserService(AppProfileService profileService) {
   switch (profileService.currentProfile.capabilityProfile.aiProvider) {
     case AiProviderType.gemini:
@@ -203,7 +239,7 @@ ReceiptOcrService _buildReceiptOcrService(AppProfileService profileService) {
     case OcrProviderType.googleExpenseParser:
       return getIt<GoogleVisionReceiptOcrService>();
     case OcrProviderType.legacyCnOcr:
-      return getIt<BaiduOCRService>();
+      return getIt<CnReceiptOcrService>();
   }
 }
 

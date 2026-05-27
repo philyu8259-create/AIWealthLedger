@@ -58,8 +58,6 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     on<ParseTextInput>(_onParseTextInput);
     on<ClearParsedResults>(_onClearParsedResults);
     on<ChangeMonthFilter>(_onChangeMonthFilter);
-    on<ClearVipLimitDialog>(_onClearVipLimitDialog);
-    on<ClearLoginLimitDialog>(_onClearLoginLimitDialog);
     on<FilterByDay>(_onFilterByDay);
 
     final hasScreenshotMonth =
@@ -227,30 +225,7 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     AddAccountEntry event,
     Emitter<AccountState> emit,
   ) async {
-    // 限制检查
-    final phone = repository.getCurrentPhone();
     final total = await _getTotalEntryCount();
-    // Demo 账号不做任何限制检查（方便审核员测试）
-    if (repository.isDemoAccount()) {
-      // 跳过所有限制检查
-    } else if (phone == null) {
-      // 游客：超过限制弹登录提示
-      if (total >= VipService.touristLimit) {
-        emit(state.copyWith(showLoginLimitDialog: true));
-        return;
-      }
-    } else if (!vipService.isVip) {
-      // 登录非会员：超过限制弹VIP提示
-      if (total >= VipService.freeUserLimit) {
-        emit(state.copyWith(showVipLimitDialog: true));
-        return;
-      }
-    }
-    // 会员已过期：禁止新增账单
-    if (vipService.hasExpiredEntitlement) {
-      emit(state.copyWith(showVipLimitDialog: true));
-      return;
-    }
     debugPrint('[Bloc] _onAddEntry called, entry.id=${event.entry.id}');
     final entryWithId = event.entry.copyWith(
       id: event.entry.id.isEmpty ? _uuid.v4() : event.entry.id,
@@ -296,28 +271,7 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     AddMultipleAccountEntries event,
     Emitter<AccountState> emit,
   ) async {
-    // 限制检查
-    final phone = repository.getCurrentPhone();
     final total = await _getTotalEntryCount();
-    // Demo 账号不做任何限制检查
-    if (repository.isDemoAccount()) {
-      // 跳过所有限制检查
-    } else if (phone == null) {
-      if (total + event.entries.length > VipService.touristLimit) {
-        emit(state.copyWith(showLoginLimitDialog: true));
-        return;
-      }
-    } else if (!vipService.isVip) {
-      if (total + event.entries.length > VipService.freeUserLimit) {
-        emit(state.copyWith(showVipLimitDialog: true));
-        return;
-      }
-    }
-    // 会员已过期：禁止新增账单
-    if (vipService.hasExpiredEntitlement) {
-      emit(state.copyWith(showVipLimitDialog: true));
-      return;
-    }
     debugPrint(
       '[Bloc] _onAddMultipleEntries called, event.entries.length=${event.entries.length}, state.entries.length=${state.entries.length}',
     );
@@ -408,20 +362,6 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     Emitter<AccountState> emit,
   ) {
     emit(state.copyWith(parsedResults: const [], isAiPanelVisible: false));
-  }
-
-  void _onClearVipLimitDialog(
-    ClearVipLimitDialog event,
-    Emitter<AccountState> emit,
-  ) {
-    emit(state.copyWith(showVipLimitDialog: false));
-  }
-
-  void _onClearLoginLimitDialog(
-    ClearLoginLimitDialog event,
-    Emitter<AccountState> emit,
-  ) {
-    emit(state.copyWith(showLoginLimitDialog: false));
   }
 
   Future<void> _onChangeMonthFilter(

@@ -243,12 +243,11 @@ class CloudAssetDataSource implements IAssetDataSource {
         id: asset.id.isEmpty
             ? DateTime.now().millisecondsSinceEpoch.toString()
             : asset.id,
+        syncStatus: SyncStatus.synced,
       );
       assets.add(_toJson(newAsset));
       _saveLocalAssets(assets);
-      throw Exception(
-        'Failed to add asset. cloud.isConfigured=${_cloud.isConfigured}. resp.data was null (FC returned empty body)',
-      );
+      return newAsset;
     }
     if (resp.isEmpty) {
       // FC 返回空 body（HTTP 200 但无内容）→ 将 asset 存入本地缓存，然后返回完整列表

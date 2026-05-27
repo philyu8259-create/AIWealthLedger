@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../core/formatters/app_formatter.dart';
@@ -9,7 +8,6 @@ import '../../../../l10n/app_strings.dart';
 import '../../../../services/app_profile_service.dart';
 import '../../../../services/injection.dart';
 import '../../../../services/stock_service.dart';
-import '../../../../services/vip_service.dart';
 import '../../../../app/profile/capability_profile.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/entities/stock_position.dart';
@@ -203,6 +201,7 @@ class _AssetManagementPageState extends State<AssetManagementPage>
   Future<void> _warmUpSearchCache() async {
     try {
       await _stockService.ensureSearchCache();
+      if (mounted) setState(() {});
     } catch (_) {}
   }
 
@@ -238,8 +237,8 @@ class _AssetManagementPageState extends State<AssetManagementPage>
 
   Future<void> _manualRefreshQuotes() async {
     if (_refreshingQuotes) return;
-    if (!_stockService.isProviderReady) {
-      _showStockProviderPendingDialog();
+    if (!_stockService.canRefreshQuotes) {
+      _showStockProviderPendingDialog(forRefresh: true);
       return;
     }
     setState(() => _refreshingQuotes = true);
@@ -317,12 +316,7 @@ class _AssetManagementPageState extends State<AssetManagementPage>
   }
 
   Future<void> _showStockForm({StockPosition? position}) async {
-    final vipService = getIt<VipService>();
-    if (vipService.hasExpiredEntitlement) {
-      _showVipExpiredDialog();
-      return;
-    }
-    if (!_stockService.isProviderReady) {
+    if (!_stockService.canSearchStocks) {
       _showStockProviderPendingDialog();
       return;
     }
@@ -366,13 +360,28 @@ class _AssetManagementPageState extends State<AssetManagementPage>
     );
   }
 
-  void _showStockProviderPendingDialog() {
+  void _showStockProviderPendingDialog({bool forRefresh = false}) {
     final t = AppStrings.of(context);
+    final isUsScope = _isUsStockScope();
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(t.text(AppStringKeys.assetsStockProviderPendingTitle)),
-        content: Text(t.text(AppStringKeys.assetsStockProviderPendingContent)),
+        title: Text(
+          t.text(
+            isUsScope
+                ? AppStringKeys.assetsStockProviderPendingTitle
+                : AppStringKeys.assetsCnStockProviderPendingTitle,
+          ),
+        ),
+        content: Text(
+          t.text(
+            isUsScope
+                ? AppStringKeys.assetsStockProviderPendingContent
+                : (forRefresh
+                      ? AppStringKeys.assetsCnStockQuotePendingContent
+                      : AppStringKeys.assetsCnStockProviderPendingContent),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -384,11 +393,6 @@ class _AssetManagementPageState extends State<AssetManagementPage>
   }
 
   void _showAssetForm({Asset? asset}) {
-    final vipService = getIt<VipService>();
-    if (vipService.hasExpiredEntitlement) {
-      _showVipExpiredDialog();
-      return;
-    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -405,34 +409,6 @@ class _AssetManagementPageState extends State<AssetManagementPage>
             _updateAsset(asset, name, type, balance, description);
           }
         },
-      ),
-    );
-  }
-
-  void _showVipExpiredDialog() {
-    final t = AppStrings.of(context);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(t.text(AppStringKeys.assetsVipExpiredTitle)),
-        content: Text(t.text(AppStringKeys.assetsVipExpiredContent)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(t.text(AppStringKeys.commonMaybeLater)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4A47D8),
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              context.go('/settings');
-            },
-            child: Text(t.text(AppStringKeys.assetsVipExpiredRenew)),
-          ),
-        ],
       ),
     );
   }

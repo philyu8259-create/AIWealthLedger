@@ -16,6 +16,11 @@ class AppStringKeys {
   static const welcomePhoneLogin = 'welcome.phoneLogin';
   static const welcomeAgreementPrefix = 'welcome.agreementPrefix';
   static const welcomeAgreementAnd = 'welcome.agreementAnd';
+  static const welcomePrivacyGateTitle = 'welcome.privacyGate.title';
+  static const welcomePrivacyGateContent = 'welcome.privacyGate.content';
+  static const welcomePrivacyGateDecline = 'welcome.privacyGate.decline';
+  static const welcomePrivacyGateAgree = 'welcome.privacyGate.agree';
+  static const welcomePrivacyGateRequired = 'welcome.privacyGate.required';
   static const welcomeOpenPrivacyFailed = 'welcome.openPrivacyFailed';
   static const welcomeOpenTermsFailed = 'welcome.openTermsFailed';
   static const phoneLoginTitle = 'phoneLogin.title';
@@ -41,6 +46,7 @@ class AppStringKeys {
   static const phoneLoginLoginFailed = 'phoneLogin.loginFailed';
   static const intlAuthTitle = 'intlAuth.title';
   static const intlAuthSubtitle = 'intlAuth.subtitle';
+  static const intlAuthSubtitleAndroid = 'intlAuth.subtitle.android';
   static const intlAuthEmail = 'intlAuth.email';
   static const intlAuthGoogle = 'intlAuth.google';
   static const intlAuthApple = 'intlAuth.apple';
@@ -62,15 +68,8 @@ class AppStringKeys {
   static const providerAiGemini = 'provider.ai.gemini';
   static const providerOcrBaidu = 'provider.ocr.baidu';
   static const providerOcrGoogleVision = 'provider.ocr.googleVision';
-  static const homeVipUpgradeTitle = 'home.vipUpgrade.title';
-  static const homeVipUpgradeContent = 'home.vipUpgrade.content';
-  static const homeVipUpgradeLater = 'home.vipUpgrade.later';
-  static const homeVipUpgradeNow = 'home.vipUpgrade.now';
-  static const homeLoginPromptTitle = 'home.loginPrompt.title';
-  static const homeLoginPromptContent = 'home.loginPrompt.content';
-  static const homeLoginPromptLater = 'home.loginPrompt.later';
-  static const homeLoginPromptNow = 'home.loginPrompt.now';
   static const homeVoiceUnavailable = 'home.voiceUnavailable';
+  static const homeVoiceStartFailed = 'home.voiceStartFailed';
   static const homeOcrConsentTitle = 'home.ocrConsent.title';
   static const homeOcrConsentContent = 'home.ocrConsent.content';
   static const homeOcrCancelled = 'home.ocrCancelled';
@@ -196,10 +195,6 @@ class AppStringKeys {
   static const predictionTrendPoint = 'prediction.trendPoint';
   static const assetsTitle = 'assets.title';
   static const assetsQuotesUpdated = 'assets.quotesUpdated';
-  static const assetsVipExpiredTitle = 'assets.vipExpired.title';
-  static const assetsVipExpiredContent = 'assets.vipExpired.content';
-  static const assetsVipExpiredLater = 'assets.vipExpired.later';
-  static const assetsVipExpiredRenew = 'assets.vipExpired.renew';
   static const assetsDeleteAssetTitle = 'assets.deleteAsset.title';
   static const assetsDeleteAssetContent = 'assets.deleteAsset.content';
   static const assetsDeleteStockTitle = 'assets.deleteStock.title';
@@ -262,6 +257,12 @@ class AppStringKeys {
       'assets.stockProviderPending.title';
   static const assetsStockProviderPendingContent =
       'assets.stockProviderPending.content';
+  static const assetsCnStockProviderPendingTitle =
+      'assets.cnStockProviderPending.title';
+  static const assetsCnStockProviderPendingContent =
+      'assets.cnStockProviderPending.content';
+  static const assetsCnStockQuotePendingContent =
+      'assets.cnStockQuotePending.content';
   static const assetsSearchNoResults = 'assets.searchNoResults';
   static const assetsSearchFailed = 'assets.searchFailed';
   static const assetsSelectStockFirst = 'assets.selectStockFirst';
@@ -323,13 +324,19 @@ class AppStringKeys {
   static const settingsAutoBookkeepingTitle = 'settings.autoBookkeeping.title';
   static const settingsAutoBookkeepingSubtitle =
       'settings.autoBookkeeping.subtitle';
+  static const settingsAutoBookkeepingSubtitleAndroid =
+      'settings.autoBookkeeping.android.subtitle';
   static const settingsAutoBookkeepingDialogTitle =
       'settings.autoBookkeeping.dialogTitle';
   static const settingsAutoBookkeepingDialogContent =
       'settings.autoBookkeeping.dialogContent';
   static const autoBookkeepingSetupTitle = 'autoBookkeeping.setup.title';
   static const autoBookkeepingHeroTitle = 'autoBookkeeping.hero.title';
+  static const autoBookkeepingHeroTitleAndroid =
+      'autoBookkeeping.hero.android.title';
   static const autoBookkeepingHeroSubtitle = 'autoBookkeeping.hero.subtitle';
+  static const autoBookkeepingHeroSubtitleAndroid =
+      'autoBookkeeping.hero.android.subtitle';
   static const autoBookkeepingTriggerSection =
       'autoBookkeeping.trigger.section';
   static const autoBookkeepingTriggerBackTap =
@@ -339,19 +346,39 @@ class AppStringKeys {
   static const autoBookkeepingTriggerSiri = 'autoBookkeeping.trigger.siri';
   static const autoBookkeepingShortcutSection =
       'autoBookkeeping.shortcut.section';
+  static const autoBookkeepingShortcutSectionAndroid =
+      'autoBookkeeping.shortcut.android.section';
   static const autoBookkeepingShortcutStepScreenshot =
       'autoBookkeeping.shortcut.stepScreenshot';
   static const autoBookkeepingShortcutStepExtract =
       'autoBookkeeping.shortcut.stepExtract';
   static const autoBookkeepingShortcutStepRun =
       'autoBookkeeping.shortcut.stepRun';
+  static const autoBookkeepingShortcutStepCopy =
+      'autoBookkeeping.shortcut.android.stepCopy';
+  static const autoBookkeepingShortcutStepReturn =
+      'autoBookkeeping.shortcut.android.stepReturn';
+  static const autoBookkeepingShortcutStepPaste =
+      'autoBookkeeping.shortcut.android.stepPaste';
   static const autoBookkeepingInstallSection =
       'autoBookkeeping.install.section';
+  static const autoBookkeepingInstallSectionAndroid =
+      'autoBookkeeping.install.android.section';
   static const autoBookkeepingInstallCopy = 'autoBookkeeping.install.copy';
+  static const autoBookkeepingInstallCopyAndroid =
+      'autoBookkeeping.install.android.copy';
   static const autoBookkeepingInstallButton = 'autoBookkeeping.install.button';
+  static const autoBookkeepingInstallButtonAndroid =
+      'autoBookkeeping.install.android.button';
   static const autoBookkeepingInstallBackTapNote =
       'autoBookkeeping.install.backTapNote';
+  static const autoBookkeepingInstallBackTapNoteAndroid =
+      'autoBookkeeping.install.android.note';
+  static const autoBookkeepingTriggerSectionAndroid =
+      'autoBookkeeping.trigger.android.section';
   static const autoBookkeepingManualSection = 'autoBookkeeping.manual.section';
+  static const autoBookkeepingManualSectionAndroid =
+      'autoBookkeeping.manual.android.section';
   static const autoBookkeepingManualScreenshot =
       'autoBookkeeping.manual.screenshot';
   static const autoBookkeepingManualExtract = 'autoBookkeeping.manual.extract';
@@ -359,22 +386,50 @@ class AppStringKeys {
   static const autoBookkeepingManualBillText =
       'autoBookkeeping.manual.billText';
   static const autoBookkeepingManualSave = 'autoBookkeeping.manual.save';
-  static const autoBookkeepingBackTapSection =
-      'autoBookkeeping.backTap.section';
-  static const autoBookkeepingBackTapCopy = 'autoBookkeeping.backTap.copy';
-  static const autoBookkeepingTroubleshootingSection =
-      'autoBookkeeping.troubleshooting.section';
+  static const autoBookkeepingManualCopy =
+      'autoBookkeeping.manual.android.copy';
+  static const autoBookkeepingManualReturn =
+      'autoBookkeeping.manual.android.return';
+  static const autoBookkeepingManualPaste =
+      'autoBookkeeping.manual.android.paste';
+  static const autoBookkeepingManualConfirm =
+      'autoBookkeeping.manual.android.confirm';
+  static const autoBookkeepingTriggerCopy =
+      'autoBookkeeping.trigger.android.copy';
+  static const autoBookkeepingTriggerReturn =
+      'autoBookkeeping.trigger.android.return';
+  static const autoBookkeepingTriggerParse =
+      'autoBookkeeping.trigger.android.parse';
   static const autoBookkeepingTroubleshootingActionMissing =
       'autoBookkeeping.troubleshooting.actionMissing';
   static const autoBookkeepingTroubleshootingVariableMissing =
       'autoBookkeeping.troubleshooting.variableMissing';
   static const autoBookkeepingTroubleshootingSiri =
       'autoBookkeeping.troubleshooting.siri';
+  static const autoBookkeepingBackTapSection =
+      'autoBookkeeping.backTap.section';
+  static const autoBookkeepingBackTapSectionAndroid =
+      'autoBookkeeping.backTap.android.section';
+  static const autoBookkeepingBackTapCopy = 'autoBookkeeping.backTap.copy';
+  static const autoBookkeepingBackTapCopyAndroid =
+      'autoBookkeeping.backTap.android.copy';
+  static const autoBookkeepingTroubleshootingSection =
+      'autoBookkeeping.troubleshooting.section';
+  static const autoBookkeepingTroubleshootingSectionAndroid =
+      'autoBookkeeping.troubleshooting.android.section';
+  static const autoBookkeepingTroubleshootingNoText =
+      'autoBookkeeping.troubleshooting.android.noText';
+  static const autoBookkeepingTroubleshootingPasteFailed =
+      'autoBookkeeping.troubleshooting.android.pasteFailed';
+  static const autoBookkeepingTroubleshootingParseFailed =
+      'autoBookkeeping.troubleshooting.android.parseFailed';
   static const autoBookkeepingOpenShortcutsFailed =
       'autoBookkeeping.openShortcutsFailed';
   static const autoBookkeepingPrivacySection =
       'autoBookkeeping.privacy.section';
   static const autoBookkeepingPrivacyCopy = 'autoBookkeeping.privacy.copy';
+  static const autoBookkeepingPrivacyCopyAndroid =
+      'autoBookkeeping.privacy.android.copy';
   static const autoBookkeepingTestSection = 'autoBookkeeping.test.section';
   static const autoBookkeepingTestCopy = 'autoBookkeeping.test.copy';
   static const autoBookkeepingTestButton = 'autoBookkeeping.test.button';
@@ -401,6 +456,11 @@ class AppStringKeys {
       'settings.mode.switchDialogContent';
   static const settingsModeSwitchConfirm = 'settings.mode.switchConfirm';
   static const settingsModeSwitchSuccess = 'settings.mode.switchSuccess';
+  static const settingsPersonalizedAdsTitle = 'settings.personalizedAds.title';
+  static const settingsPersonalizedAdsSubtitleOn =
+      'settings.personalizedAds.subtitleOn';
+  static const settingsPersonalizedAdsSubtitleOff =
+      'settings.personalizedAds.subtitleOff';
   static const settingsDeleteAccountTitle = 'settings.deleteAccount.title';
   static const settingsDeleteAccountSubtitle =
       'settings.deleteAccount.subtitle';
@@ -413,6 +473,8 @@ class AppStringKeys {
   static const settingsPrivacyTitle = 'settings.privacy.title';
   static const settingsTermsTitle = 'settings.terms.title';
   static const settingsRateTitle = 'settings.rate.title';
+  static const settingsRateUnavailableAndroid =
+      'settings.rate.android.unavailable';
   static const settingsAboutAppTitle = 'settings.aboutApp.title';
   static const settingsBackupProgress = 'settings.backup.progress';
   static const settingsBackupNoLocalData = 'settings.backup.noLocalData';
@@ -521,18 +583,26 @@ class AppStringKeys {
   static const vipMonthlyPeriod = 'vip.monthlyPeriod';
   static const vipYearlyTitle = 'vip.yearlyTitle';
   static const vipYearlyPeriod = 'vip.yearlyPeriod';
+  static const vipLifetimeTitle = 'vip.lifetimeTitle';
+  static const vipLifetimePeriod = 'vip.lifetimePeriod';
   static const vipRecommended = 'vip.recommended';
   static const vipConsent = 'vip.consent';
   static const vipRenewConfirm = 'vip.renewConfirm';
   static const vipSubscribeNow = 'vip.subscribeNow';
   static const vipPriceMonthly = 'vip.priceMonthly';
   static const vipPriceYearly = 'vip.priceYearly';
+  static const vipPriceLifetime = 'vip.priceLifetime';
   static const vipPeriodMonthly = 'vip.periodMonthly';
   static const vipPeriodYearly = 'vip.periodYearly';
+  static const vipPeriodLifetime = 'vip.periodLifetime';
+  static const vipSelectLifetime = 'vip.selectLifetime';
   static const vipRestorePurchase = 'vip.restorePurchase';
   static const vipPaymentHint = 'vip.paymentHint';
+  static const vipPaymentHintAndroid = 'vip.paymentHint.android';
   static const vipOpenFailed = 'vip.openFailed';
   static const vipProductUnavailable = 'vip.productUnavailable';
+  static const vipPaymentUnavailable = 'vip.paymentUnavailable';
+  static const vipPaymentUnavailableCta = 'vip.paymentUnavailable.cta';
   static const vipLoadingPrice = 'vip.loadingPrice';
   static const vipConfirming = 'vip.confirming';
   static const vipUpdated = 'vip.updated';

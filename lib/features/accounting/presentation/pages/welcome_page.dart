@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +10,7 @@ import '../../../../app/profile/capability_profile.dart';
 import '../../../../l10n/app_string_keys.dart';
 import '../../../../l10n/app_strings.dart';
 import '../../../../services/app_profile_service.dart';
+import '../../../../services/ai_privacy_consent_service.dart';
 import '../../../../services/demo_data_seeder.dart';
 import '../../../../services/funnel_analytics_service.dart';
 import '../../../../services/injection.dart';
@@ -28,12 +30,9 @@ class _WelcomePageState extends State<WelcomePage> {
   @override
   void initState() {
     super.initState();
-    unawaited(
-      getIt<FunnelAnalyticsService>().track(
-        'onboarding_viewed',
-        properties: {'surface': 'welcome'},
-      ),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_trackOnboardingAfterPrivacyConsent());
+    });
   }
 
   @override
@@ -45,12 +44,16 @@ class _WelcomePageState extends State<WelcomePage> {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
+    final isZhLocale = Localizations.localeOf(context).languageCode == 'zh';
+    final agreementGap = isZhLocale ? '' : ' ';
     final authProviders = getIt<AppProfileService>()
         .currentProfile
         .capabilityProfile
         .authProviders;
     final usesPhoneAuth = authProviders.contains(AuthProviderType.phoneSms);
-    final usesAppleAuth = authProviders.contains(AuthProviderType.apple);
+    final usesAppleAuth =
+        authProviders.contains(AuthProviderType.apple) &&
+        supportsAppleSignInOnTargetPlatform(defaultTargetPlatform);
 
     return Scaffold(
       body: SafeArea(
@@ -151,7 +154,10 @@ class _WelcomePageState extends State<WelcomePage> {
                             width: double.infinity,
                             height: buttonHeight,
                             child: FilledButton(
-                              onPressed: () => _guestLogin(context),
+                              onPressed: () => _continueWithPrivacyConsent(
+                                context,
+                                () => _guestLogin(context),
+                              ),
                               style: FilledButton.styleFrom(
                                 backgroundColor: const Color(0xFF4A47D8),
                                 shape: RoundedRectangleBorder(
@@ -169,7 +175,10 @@ class _WelcomePageState extends State<WelcomePage> {
                             width: double.infinity,
                             height: buttonHeight,
                             child: OutlinedButton(
-                              onPressed: () => context.push('/phone_login'),
+                              onPressed: () => _continueWithPrivacyConsent(
+                                context,
+                                () async => context.push('/phone_login'),
+                              ),
                               style: OutlinedButton.styleFrom(
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -186,7 +195,10 @@ class _WelcomePageState extends State<WelcomePage> {
                             _IntlAuthEntryButton(
                               icon: Icons.apple,
                               label: strings.text(AppStringKeys.intlAuthApple),
-                              onTap: () => _signInWithApple(context),
+                              onTap: () => _continueWithPrivacyConsent(
+                                context,
+                                () => _signInWithApple(context),
+                              ),
                             ),
                           ],
                         ] else ...[
@@ -194,7 +206,10 @@ class _WelcomePageState extends State<WelcomePage> {
                             width: double.infinity,
                             height: buttonHeight,
                             child: FilledButton(
-                              onPressed: () => _guestLogin(context),
+                              onPressed: () => _continueWithPrivacyConsent(
+                                context,
+                                () => _guestLogin(context),
+                              ),
                               style: FilledButton.styleFrom(
                                 backgroundColor: const Color(0xFF4A47D8),
                                 shape: RoundedRectangleBorder(
@@ -211,14 +226,22 @@ class _WelcomePageState extends State<WelcomePage> {
                           _IntlAuthEntryButton(
                             icon: Icons.g_mobiledata,
                             label: strings.text(AppStringKeys.intlAuthGoogle),
-                            onTap: () => _signInWithGoogle(context),
+                            onTap: () => _continueWithPrivacyConsent(
+                              context,
+                              () => _signInWithGoogle(context),
+                            ),
                           ),
-                          const SizedBox(height: 12),
-                          _IntlAuthEntryButton(
-                            icon: Icons.apple,
-                            label: strings.text(AppStringKeys.intlAuthApple),
-                            onTap: () => _signInWithApple(context),
-                          ),
+                          if (usesAppleAuth) ...[
+                            const SizedBox(height: 12),
+                            _IntlAuthEntryButton(
+                              icon: Icons.apple,
+                              label: strings.text(AppStringKeys.intlAuthApple),
+                              onTap: () => _continueWithPrivacyConsent(
+                                context,
+                                () => _signInWithApple(context),
+                              ),
+                            ),
+                          ],
                         ],
                         SizedBox(height: compact ? 24 : 32),
                         Text.rich(
@@ -226,9 +249,8 @@ class _WelcomePageState extends State<WelcomePage> {
                           TextSpan(
                             children: [
                               TextSpan(
-                                text: strings.text(
-                                  AppStringKeys.welcomeAgreementPrefix,
-                                ),
+                                text:
+                                    '${strings.text(AppStringKeys.welcomeAgreementPrefix)}$agreementGap',
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: Colors.grey.shade500,
@@ -250,9 +272,11 @@ class _WelcomePageState extends State<WelcomePage> {
                                   ..onTap = () => _openTermsOfService(context),
                               ),
                               TextSpan(
-                                text: strings.text(
-                                  AppStringKeys.welcomeAgreementAnd,
-                                ),
+                                text: isZhLocale
+                                    ? strings.text(
+                                        AppStringKeys.welcomeAgreementAnd,
+                                      )
+                                    : ' ${strings.text(AppStringKeys.welcomeAgreementAnd)} ',
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: Colors.grey.shade500,
@@ -301,9 +325,92 @@ class _WelcomePageState extends State<WelcomePage> {
     _demoPressTimer = null;
   }
 
+  Future<void> _trackOnboardingAfterPrivacyConsent() async {
+    if (!mounted) return;
+    final consent = getIt<AIPrivacyConsentService>();
+    if (!consent.hasAppPrivacyConsent) {
+      final accepted = await _showAppPrivacyConsentDialog(context);
+      if (!accepted || !mounted) return;
+    }
+    await _trackOnboardingViewed();
+  }
+
+  Future<void> _trackOnboardingViewed() async {
+    await getIt<FunnelAnalyticsService>().track(
+      'onboarding_viewed',
+      properties: {'surface': 'welcome'},
+    );
+  }
+
+  Future<void> _continueWithPrivacyConsent(
+    BuildContext context,
+    Future<void> Function() action,
+  ) async {
+    if (!await _ensureAppPrivacyConsent(context)) return;
+    await action();
+  }
+
+  Future<bool> _ensureAppPrivacyConsent(BuildContext context) async {
+    final consent = getIt<AIPrivacyConsentService>();
+    if (consent.hasAppPrivacyConsent) return true;
+
+    final accepted = await _showAppPrivacyConsentDialog(context);
+    if (accepted) return true;
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppStrings.of(
+              context,
+            ).text(AppStringKeys.welcomePrivacyGateRequired),
+          ),
+        ),
+      );
+    }
+    return false;
+  }
+
+  Future<bool> _showAppPrivacyConsentDialog(BuildContext context) async {
+    final strings = AppStrings.of(context);
+    final accepted = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(strings.text(AppStringKeys.welcomePrivacyGateTitle)),
+        content: Text(strings.text(AppStringKeys.welcomePrivacyGateContent)),
+        actions: [
+          TextButton(
+            onPressed: () => _openTermsOfService(dialogContext),
+            child: Text(strings.text(AppStringKeys.settingsTermsTitle)),
+          ),
+          TextButton(
+            onPressed: () => _openPrivacyPolicy(dialogContext),
+            child: Text(strings.text(AppStringKeys.settingsPrivacyTitle)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(strings.text(AppStringKeys.welcomePrivacyGateDecline)),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(strings.text(AppStringKeys.welcomePrivacyGateAgree)),
+          ),
+        ],
+      ),
+    );
+
+    if (accepted == true) {
+      await getIt<AIPrivacyConsentService>().setAppPrivacyConsent();
+      return true;
+    }
+    return false;
+  }
+
   Future<void> _activateDemoMode() async {
     _cancelDemoPress();
     if (_loggingInDemo || !mounted) return;
+    if (!await _ensureAppPrivacyConsent(context)) return;
 
     setState(() => _loggingInDemo = true);
     try {

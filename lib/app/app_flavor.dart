@@ -10,24 +10,44 @@ extension AppFlavorX on AppFlavor {
     defaultValue: '',
   );
 
-  static bool get hasExplicitBuildFlavor =>
-      _rawBuildFlavor == 'cn' || _rawBuildFlavor == 'intl';
+  static bool get hasExplicitBuildFlavor => explicitBuildFlavor != null;
+
+  static AppFlavor? get explicitBuildFlavor =>
+      _parseFlavor(_rawBuildFlavor.trim().toLowerCase());
 
   static AppFlavor get buildFlavor {
-    return _rawBuildFlavor == 'intl' ? AppFlavor.intl : AppFlavor.cn;
+    return explicitBuildFlavor ?? AppFlavor.cn;
   }
 
   static AppFlavor get current {
+    final explicitFlavor = explicitBuildFlavor;
+    if (explicitFlavor != null) return explicitFlavor;
+    final storedFlavor = _storedFlavor;
+    if (storedFlavor != null) return storedFlavor;
+    return buildFlavor;
+  }
+
+  static AppFlavor? get _storedFlavor {
     try {
       if (GetIt.I.isRegistered<SharedPreferences>()) {
         final raw = GetIt.I<SharedPreferences>().getString(_modeKey)?.trim();
-        if (raw == 'cn') return AppFlavor.cn;
-        if (raw == 'intl') return AppFlavor.intl;
+        return _parseFlavor(raw?.trim().toLowerCase());
       }
     } catch (_) {
-      // Fall through to build flavor.
+      // Fallback to compile-time build flavor when prefs are unavailable.
     }
-    return buildFlavor;
+    return null;
+  }
+
+  static AppFlavor? _parseFlavor(String? raw) {
+    switch (raw) {
+      case 'cn':
+        return AppFlavor.cn;
+      case 'intl':
+        return AppFlavor.intl;
+      default:
+        return null;
+    }
   }
 
   bool get isCn => this == AppFlavor.cn;
@@ -41,5 +61,5 @@ extension AppFlavorX on AppFlavor {
 
   String get termsOfServiceUrl => isIntl
       ? 'https://www.apple.com/legal/internet-services/itunes/'
-      : 'https://www.apple.com/legal/internet-services/itunes/cn/terms.html';
+      : 'https://philyu8259-create.github.io/ai-accounting-privacy/eula.html';
 }

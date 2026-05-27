@@ -30,7 +30,7 @@ void main() {
           'balance': 100.0,
           'createdAt': DateTime.now().millisecondsSinceEpoch,
           'syncStatus': 'synced',
-        }
+        },
       ]),
     );
 
@@ -58,11 +58,31 @@ void main() {
     expect(assets.first.name, '现金');
   });
 
+  test(
+    'logged-in asset add should fall back to local when cloud is not configured',
+    () async {
+      final prefs = GetIt.instance<SharedPreferences>();
+      await prefs.setString('logged_in_phone', '13800138000');
+      final dataSource = CloudAssetDataSource();
+
+      final created = await dataSource.addAsset(
+        Asset(
+          id: '',
+          name: '农行',
+          type: AssetType.bank,
+          balance: 20000,
+          createdAt: DateTime.now(),
+        ),
+      );
+
+      final assets = await dataSource.getAssets();
+      expect(created.id, isNotEmpty);
+      expect(assets.map((e) => e.name), contains('农行'));
+    },
+  );
+
   test('guest should not be treated as expired vip user', () async {
-    expect(
-      shouldTreatAsExpiredEntitlement(phone: null, expireMs: 0),
-      isFalse,
-    );
+    expect(shouldTreatAsExpiredEntitlement(phone: null, expireMs: 0), isFalse);
   });
 
   test('demo account should not be treated as expired vip user', () async {
@@ -77,22 +97,28 @@ void main() {
     );
   });
 
-  test('normal logged-in non-vip user should not be treated as expired', () async {
-    expect(
-      shouldTreatAsExpiredEntitlement(phone: '13800138000', expireMs: 0),
-      isFalse,
-    );
-  });
+  test(
+    'normal logged-in non-vip user should not be treated as expired',
+    () async {
+      expect(
+        shouldTreatAsExpiredEntitlement(phone: '13800138000', expireMs: 0),
+        isFalse,
+      );
+    },
+  );
 
-  test('only real user with expired vip cache should be treated as expired', () async {
-    expect(
-      shouldTreatAsExpiredEntitlement(
-        phone: '13800138000',
-        expireMs: DateTime.now()
-            .subtract(const Duration(days: 1))
-            .millisecondsSinceEpoch,
-      ),
-      isTrue,
-    );
-  });
+  test(
+    'only real user with expired vip cache should be treated as expired',
+    () async {
+      expect(
+        shouldTreatAsExpiredEntitlement(
+          phone: '13800138000',
+          expireMs: DateTime.now()
+              .subtract(const Duration(days: 1))
+              .millisecondsSinceEpoch,
+        ),
+        isTrue,
+      );
+    },
+  );
 }

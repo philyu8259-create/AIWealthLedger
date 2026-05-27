@@ -1,0 +1,10 @@
+name: google_sign_in
+description: Local CN-only stub for google_sign_in
+version: 0.0.0
+
+environment:
+  sdk: ^3.11.3
+
+dependencies:
+  flutter:
+    sdk: flutter

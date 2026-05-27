@@ -26,7 +26,7 @@ class AppStrings {
 
   static const Map<String, Map<String, String>> _dictionaries = {
     'zh': {
-      'app.title': 'AI财富记账本',
+      'app.title': '财富记账本',
       'nav.home': '首页',
       'nav.transactions': '账单',
       'nav.reports': '报表',
@@ -41,6 +41,12 @@ class AppStrings {
       'welcome.phoneLogin': '手机号登录',
       'welcome.agreementPrefix': '登录即表示同意',
       'welcome.agreementAnd': '和',
+      'welcome.privacyGate.title': '请先阅读并同意隐私政策',
+      'welcome.privacyGate.content':
+          '为了提供记账、票据识别、AI 解析、云同步和广告展示等服务，我们会按照隐私政策处理必要信息。未同意前，我们不会记录漏斗事件、初始化广告 SDK 或进入登录流程。',
+      'welcome.privacyGate.decline': '暂不同意',
+      'welcome.privacyGate.agree': '同意并继续',
+      'welcome.privacyGate.required': '需要同意隐私政策后才能继续使用',
       'welcome.openPrivacyFailed': '无法打开隐私政策',
       'welcome.openTermsFailed': '无法打开用户协议',
       'phoneLogin.title': '手机号登录',
@@ -66,6 +72,7 @@ class AppStrings {
       'phoneLogin.loginFailed': '登录失败: {error}',
       'intlAuth.title': '继续登录',
       'intlAuth.subtitle': '英文版当前仅提供 Google 和 Apple 登录',
+      'intlAuth.subtitle.android': '安卓版当前仅提供 Google 登录',
       'intlAuth.email': '邮箱登录',
       'intlAuth.google': '使用 Google 登录',
       'intlAuth.apple': '使用 Apple 登录',
@@ -87,17 +94,8 @@ class AppStrings {
       'provider.ai.gemini': 'Gemini',
       'provider.ocr.baidu': '百度 OCR',
       'provider.ocr.googleVision': 'Google Vision',
-      'home.vipUpgrade.title': '升级 AI财富记账本会员',
-      'home.vipUpgrade.content':
-          '您已记录 50 条账单，作为免费用户额度已用完。升级会员可解锁无限记账次数，享受 AI 智能分析、无限类目自定义等高级功能。',
-      'home.vipUpgrade.later': '以后再说',
-      'home.vipUpgrade.now': '立即升级',
-      'home.loginPrompt.title': '登录后可继续记账',
-      'home.loginPrompt.content':
-          '您当前以游客身份已记录 20 条账单。登录账号后可继续免费使用，记录更多账单，还能同步数据到云端。',
-      'home.loginPrompt.later': '以后再说',
-      'home.loginPrompt.now': '立即登录',
       'home.voiceUnavailable': '语音功能暂不可用，请检查麦克风权限',
+      'home.voiceStartFailed': '语音识别启动失败，请重试',
       'home.ocrConsent.title': 'OCR识别授权',
       'home.ocrConsent.content':
           '您的账单图片将发送至 {ocrProvider} 进行文字识别，再由 {aiProvider} 进行智能分析。详细说明请参阅隐私政策。',
@@ -218,10 +216,6 @@ class AppStrings {
       'prediction.trendPoint': '{month} 支出 {amount}',
       'assets.title': '资产管理',
       'assets.quotesUpdated': '行情已更新',
-      'assets.vipExpired.title': '会员已过期',
-      'assets.vipExpired.content': '您的会员已到期，续费后可继续新增和编辑资产。',
-      'assets.vipExpired.later': '以后再说',
-      'assets.vipExpired.renew': '立即续费',
       'assets.deleteAsset.title': '删除账户',
       'assets.deleteAsset.content': '确定删除"{name}"吗?',
       'assets.deleteStock.title': '删除持仓',
@@ -277,6 +271,10 @@ class AppStrings {
       'assets.config.loadHint': '账户资产加载提示：{error}',
       'assets.stockProviderPending.title': '美股功能暂不可用',
       'assets.stockProviderPending.content': '当前构建未配置美股搜索与行情服务，暂不能新增或刷新股票持仓。',
+      'assets.cnStockProviderPending.title': 'A 股功能暂不可用',
+      'assets.cnStockProviderPending.content': '当前构建未配置 A 股搜索服务，暂不能新增股票持仓。',
+      'assets.cnStockQuotePending.content':
+          '当前构建未配置 A 股实时行情服务，可继续新增股票持仓；刷新行情暂不可用。',
       'assets.searchNoResults': '没有找到匹配的股票',
       'assets.searchFailed': '股票搜索失败，请稍后重试',
       'assets.selectStockFirst': '请先选择股票',
@@ -331,47 +329,81 @@ class AppStrings {
       'settings.aiConsentWithdraw.subtitle': '清除 OCR 和语音的隐私授权记录',
       'settings.autoBookkeeping.title': '自动记账',
       'settings.autoBookkeeping.subtitle': '通过快捷指令、Siri 或轻点背面触发',
+      'settings.autoBookkeeping.android.subtitle': '复制账单文字后回到本应用粘贴解析',
       'settings.autoBookkeeping.dialogTitle': '自动记账快捷指令',
       'settings.autoBookkeeping.dialogContent':
           '在快捷指令 App 中创建流程：截屏 -> 从图像提取文本 -> 运行“AI Auto Bookkeeping”。之后可绑定到轻点背面、辅助触控或 Siri。',
       'autoBookkeeping.setup.title': '自动记账',
       'autoBookkeeping.hero.title': '把付款页面变成一笔账单',
       'autoBookkeeping.hero.subtitle': '付款后主动触发快捷指令，AI 会读取当前截图文字并带你确认保存。',
+      'autoBookkeeping.hero.android.title': '复制账单文本，快速生成记账',
+      'autoBookkeeping.hero.android.subtitle':
+          '支持从支付、聊天或订单页复制完整文本，返回本应用后直接粘贴并确认。',
       'autoBookkeeping.trigger.section': '触发方式',
+      'autoBookkeeping.trigger.android.section': '可用流程',
+      'autoBookkeeping.trigger.android.copy': '复制账单文字',
+      'autoBookkeeping.trigger.android.return': '回到本应用',
+      'autoBookkeeping.trigger.android.parse': '粘贴并确认解析',
       'autoBookkeeping.trigger.backTap': '轻点背面',
       'autoBookkeeping.trigger.assistive': '辅助触控',
       'autoBookkeeping.trigger.siri': 'Siri 语音',
       'autoBookkeeping.shortcut.section': '快捷指令流程',
+      'autoBookkeeping.shortcut.android.section': '推荐操作',
       'autoBookkeeping.shortcut.stepScreenshot': '截取当前屏幕',
       'autoBookkeeping.shortcut.stepExtract': '从图像提取文字',
       'autoBookkeeping.shortcut.stepRun': '运行 AI Auto Bookkeeping 并传入文本',
+      'autoBookkeeping.shortcut.android.stepCopy': '在支付页、聊天页或订单页复制完整账单文字',
+      'autoBookkeeping.shortcut.android.stepReturn': '回到财富记账本',
+      'autoBookkeeping.shortcut.android.stepPaste': '点击“打开 AI 记账”，然后粘贴并确认识别结果',
       'autoBookkeeping.install.section': '快速安装',
+      'autoBookkeeping.install.android.section': '开始使用',
       'autoBookkeeping.install.copy':
           '点下方按钮打开预设快捷指令，选择“添加快捷指令”。iOS 仍会要求你确认系统权限；如果导入失败，可按下面的手动步骤设置。',
+      'autoBookkeeping.install.android.copy':
+          '先在支付/聊天/订单页复制账单文本，再回到本应用点击“打开 AI 记账”开始解析。',
       'autoBookkeeping.install.button': '安装快捷指令',
+      'autoBookkeeping.install.android.button': '打开 AI 记账',
       'autoBookkeeping.install.backTapNote':
           '安装后还需要完成一次系统设置：设置 > 辅助功能 > 触控 > 轻点背面，把轻点两下或三下绑定到 AI Auto Bookkeeping。',
+      'autoBookkeeping.install.android.note':
+          '建议复制完整文本（商户名+金额+时间），回到 App 后可直接粘贴并确认。',
       'autoBookkeeping.manual.section': '手动设置步骤',
+      'autoBookkeeping.manual.android.section': '建议操作',
       'autoBookkeeping.manual.screenshot': '添加“截屏”动作，作为付款页文字识别的来源。',
       'autoBookkeeping.manual.extract': '添加“从图像提取文本”，输入选择上一步的截屏。',
       'autoBookkeeping.manual.action': '添加本 App 的“AI Auto Bookkeeping”动作。',
       'autoBookkeeping.manual.billText':
           '点 Bill Text 输入框，选择变量，把它设置为上一步的“提取的文本”。成功后 Bill Text 后面会显示蓝色变量块。',
       'autoBookkeeping.manual.save': '保存快捷指令，命名为“AI 自动记账”或“自动记账”。',
+      'autoBookkeeping.manual.android.copy': '复制付款页/订单页的完整账单文字。',
+      'autoBookkeeping.manual.android.return': '回到财富记账本，进入自动记账页面。',
+      'autoBookkeeping.manual.android.paste': '点击“打开 AI 记账”并粘贴文本。',
+      'autoBookkeeping.manual.android.confirm': '确认商户、金额和日期后保存。',
       'autoBookkeeping.backTap.section': '绑定轻点背面',
+      'autoBookkeeping.backTap.android.section': '隐私与边界',
       'autoBookkeeping.backTap.copy':
           '打开 iPhone 设置 > 辅助功能 > 触控 > 轻点背面 > 轻点两下或轻点三下，然后选择刚创建的自动记账快捷指令。',
+      'autoBookkeeping.backTap.android.copy': '仅在你手动复制后触发解析流程；应用不会主动读取其他应用内容。',
       'autoBookkeeping.troubleshooting.section': '常见卡点',
+      'autoBookkeeping.troubleshooting.android.section': '常见问题',
       'autoBookkeeping.troubleshooting.actionMissing':
           '找不到 AI Auto Bookkeeping：先打开一次本 App，再回到快捷指令 App 搜索。',
       'autoBookkeeping.troubleshooting.variableMissing':
           '找不到提取的文本：点 Bill Text 后选择“选择变量”，再点上一步“从图像提取文本”的输出变量。',
       'autoBookkeeping.troubleshooting.siri':
           'Siri 不识别：把快捷指令改成更独特的名字，例如“AI 自动记账”。',
+      'autoBookkeeping.troubleshooting.android.noText':
+          '没识别到文本：先确认复制文本里是否包含金额与商户名称。',
+      'autoBookkeeping.troubleshooting.android.pasteFailed':
+          '粘贴无反应：检查系统是否允许本应用访问粘贴板，或尝试重新复制。',
+      'autoBookkeeping.troubleshooting.android.parseFailed':
+          '解析不正确：先用“测试解析”按钮确认模型能正常识别，再回到步骤重新输入。',
       'autoBookkeeping.openShortcutsFailed': '无法打开快捷指令 App: {error}',
       'autoBookkeeping.privacy.section': '隐私边界',
       'autoBookkeeping.privacy.copy':
           '不会后台读取微信、支付宝、短信或通知。只有你主动触发快捷指令时，当前截图文字才会进入 AI 解析。',
+      'autoBookkeeping.privacy.android.copy':
+          '仅处理你手动粘贴到本页输入框的文本，不会请求读取其他 App 的账单数据。',
       'autoBookkeeping.test.section': '测试解析',
       'autoBookkeeping.test.copy': '先用示例文字跑一次，确认 AI 解析链路正常。',
       'autoBookkeeping.test.button': '用示例测试',
@@ -397,6 +429,9 @@ class AppStrings {
           '切换到 {target} 后，当前账号会退出登录，本地缓存数据会被清除，并返回欢迎页。该操作不会自动来回跟随系统语言切换。',
       'settings.mode.switchConfirm': '切换并继续',
       'settings.mode.switchSuccess': '已切换到 {target}',
+      'settings.personalizedAds.title': '个性化广告推荐',
+      'settings.personalizedAds.subtitleOn': '已开启，广告相关度可能更高',
+      'settings.personalizedAds.subtitleOff': '已关闭，广告数量可能不变但相关度会降低',
       'settings.deleteAccount.title': '注销账号',
       'settings.deleteAccount.subtitle': '注销后30天内可恢复，逾期数据永久删除',
       'settings.backup.title': '数据备份',
@@ -408,7 +443,8 @@ class AppStrings {
       'settings.privacy.title': '隐私政策',
       'settings.terms.title': '用户协议',
       'settings.rate.title': '给我们评分',
-      'settings.aboutApp.title': '关于 AI财富记账本',
+      'settings.rate.android.unavailable': '评分入口将在安卓版正式发布后开放',
+      'settings.aboutApp.title': '关于财富记账本',
       'settings.backup.progress': '正在备份...',
       'settings.backup.noLocalData': '本地没有数据可备份',
       'settings.backup.success': '备份完成，共 {count} 条数据已同步到云端',
@@ -417,13 +453,13 @@ class AppStrings {
       'settings.export.progress': '正在生成 CSV...',
       'settings.export.noData': '暂无账单数据',
       'settings.export.noDataInRange': '该日期范围内无账单数据',
-      'settings.export.subject': 'AI财富记账本账单导出',
-      'settings.export.message': 'AI财富记账本账单导出（{start} ~ {end}）',
+      'settings.export.subject': '财富记账本账单导出',
+      'settings.export.message': '财富记账本账单导出（{start} ~ {end}）',
       'settings.export.failed': '导出失败: {error}',
       'settings.export.csvHeaders': '序号,日期,时间,类型,分类,金额,备注,关联账户,同步状态',
       'settings.export.csvTypeIncome': '收入',
       'settings.export.csvTypeExpense': '支出',
-      'settings.export.filePrefix': 'AI财富记账本',
+      'settings.export.filePrefix': '财富记账本',
       'settings.export.sheetTitle': '导出账单',
       'settings.export.range.thisMonth': '本月',
       'settings.export.range.lastMonth': '上月',
@@ -442,7 +478,7 @@ class AppStrings {
       'funnel.token.missing': '还没有可用 token',
       'funnel.refreshAttribution': '刷新归因 Token',
       'funnel.exportCsv': '导出漏斗 CSV',
-      'funnel.export.subject': 'AI财富记账本漏斗事件',
+      'funnel.export.subject': '财富记账本漏斗事件',
       'funnel.recentEvents': '最近事件',
       'funnel.noEvents': '暂无漏斗事件',
       'funnel.conversion': '上一步转化 {rate}',
@@ -468,7 +504,7 @@ class AppStrings {
       'settings.delete.requestFailed': '注销请求失败，请稍后重试',
       'settings.delete.success': '账号已注销',
       'settings.delete.failed': '注销失败: {error}',
-      'settings.rate.openFailed': '无法打开 App Store',
+      'settings.rate.openFailed': '无法打开评分页面',
       'settings.about.version': '版本：v{version}',
       'settings.about.techStack': '技术栈：Flutter',
       'settings.about.aiServices': 'AI 服务：{aiProvider} + {ocrProvider}',
@@ -503,10 +539,10 @@ class AppStrings {
       'vip.openTitle': '解锁 AI 月度财务复盘',
       'vip.expireAt': '到期时间 {date}',
       'vip.expireUntil': '您已是会员，有效期至 {date}',
-      'vip.unlockFeatures': '无限记账、AI 分析、资产管理和自定义类目',
+      'vip.unlockFeatures': 'AI 分析、资产管理和自定义类目',
       'vip.benefit.aiReport': 'AI 月度报告：看清本月钱花在哪里',
       'vip.benefit.budgetWarning': '预算预警：提前发现高频小额和异常支出',
-      'vip.benefit.unlimited': '无限记账：不用担心免费额度用完',
+      'vip.benefit.unlimited': '持续记录：适合长期追踪每一笔收支',
       'vip.benefit.assets': '资产视图：现金、银行卡和股票一起看',
       'vip.manage': '管理会员',
       'vip.open': '开通会员',
@@ -515,18 +551,26 @@ class AppStrings {
       'vip.monthlyPeriod': '按月计费，随时取消',
       'vip.yearlyTitle': '年度会员',
       'vip.yearlyPeriod': '折合{price}/月，省钱首选',
+      'vip.lifetimeTitle': '终身去广告',
+      'vip.lifetimePeriod': '一次购买，永久去除广告',
       'vip.recommended': '推荐',
       'vip.consent': '购买即表示同意《用户协议》',
       'vip.renewConfirm': '确认续费（{period}）',
       'vip.subscribeNow': '立即开通（{price}）',
       'vip.priceMonthly': '{price}/月',
       'vip.priceYearly': '{price}/年',
+      'vip.priceLifetime': '{price} 终身',
       'vip.periodMonthly': '月度',
       'vip.periodYearly': '年度',
+      'vip.periodLifetime': '终身',
+      'vip.selectLifetime': '选择去广告权益',
       'vip.restorePurchase': '恢复购买',
       'vip.paymentHint': '支付完成后即时生效 · 取消续费请前往 App Store 订阅管理',
+      'vip.paymentHint.android': '支付完成后即时生效 · 可通过恢复购买找回权益',
       'vip.openFailed': '开通失败: {error}',
       'vip.productUnavailable': '当前暂时无法发起购买，请稍后重试。',
+      'vip.paymentUnavailable': '华为支付暂时不可用，请打开或更新 HMS Core 后重试。',
+      'vip.paymentUnavailable.cta': '暂不可购买',
       'vip.loadingPrice': '价格加载中...',
       'vip.confirming': '正在确认订阅状态...',
       'vip.updated': '会员已更新，有效期至 {date}',
@@ -565,6 +609,13 @@ class AppStrings {
       'welcome.phoneLogin': 'Sign in with phone',
       'welcome.agreementPrefix': 'By signing in, you agree to the',
       'welcome.agreementAnd': 'and',
+      'welcome.privacyGate.title': 'Review privacy terms first',
+      'welcome.privacyGate.content':
+          'To provide bookkeeping, receipt OCR, AI parsing, cloud sync, and ads where enabled, we process necessary information as described in the Privacy Policy. Before you agree, we will not record funnel events, initialize ad SDKs, or continue sign-in.',
+      'welcome.privacyGate.decline': 'Not now',
+      'welcome.privacyGate.agree': 'Agree and continue',
+      'welcome.privacyGate.required':
+          'Please agree to the Privacy Policy before continuing',
       'welcome.openPrivacyFailed': 'Unable to open the Privacy Policy',
       'welcome.openTermsFailed': 'Unable to open the Terms of Service',
       'phoneLogin.title': 'Phone sign in',
@@ -593,6 +644,8 @@ class AppStrings {
       'intlAuth.title': 'Sign in',
       'intlAuth.subtitle':
           'The international version currently supports Google and Apple sign in only',
+      'intlAuth.subtitle.android':
+          'The Android version currently supports Google sign in only',
       'intlAuth.email': 'Continue with email',
       'intlAuth.google': 'Continue with Google',
       'intlAuth.apple': 'Continue with Apple',
@@ -616,18 +669,10 @@ class AppStrings {
       'provider.ai.gemini': 'Gemini',
       'provider.ocr.baidu': 'Baidu OCR',
       'provider.ocr.googleVision': 'Google Vision',
-      'home.vipUpgrade.title': 'Upgrade to premium',
-      'home.vipUpgrade.content':
-          'You have already recorded 50 entries and reached the free plan limit. Upgrade to unlock unlimited entries, AI insights, and unlimited custom categories.',
-      'home.vipUpgrade.later': 'Maybe later',
-      'home.vipUpgrade.now': 'Upgrade now',
-      'home.loginPrompt.title': 'Sign in to keep adding entries',
-      'home.loginPrompt.content':
-          'You are currently using the app as a guest and have already recorded 20 entries. Sign in to keep using the app for free, save more entries, and sync your data to the cloud.',
-      'home.loginPrompt.later': 'Maybe later',
-      'home.loginPrompt.now': 'Sign in now',
       'home.voiceUnavailable':
           'Voice input is currently unavailable, please check microphone permissions',
+      'home.voiceStartFailed':
+          'Failed to start speech input. Please check the system speech service and try again.',
       'home.ocrConsent.title': 'OCR permission',
       'home.ocrConsent.content':
           'Your receipt image will be sent to {ocrProvider} for text extraction, then analyzed by {aiProvider}. Please see the Privacy Policy for details.',
@@ -766,11 +811,6 @@ class AppStrings {
       'prediction.trendPoint': '{month} expense {amount}',
       'assets.title': 'Asset Management',
       'assets.quotesUpdated': 'Quotes updated',
-      'assets.vipExpired.title': 'Premium expired',
-      'assets.vipExpired.content':
-          'Your premium has expired. Renew to keep adding and editing assets.',
-      'assets.vipExpired.later': 'Maybe later',
-      'assets.vipExpired.renew': 'Renew now',
       'assets.deleteAsset.title': 'Delete asset',
       'assets.deleteAsset.content': 'Delete "{name}"?',
       'assets.deleteStock.title': 'Delete position',
@@ -834,6 +874,11 @@ class AppStrings {
       'assets.stockProviderPending.title': 'US stock feature unavailable',
       'assets.stockProviderPending.content':
           'This build does not have US stock quote and search services configured, so adding or refreshing stock positions is temporarily unavailable.',
+      'assets.cnStockProviderPending.title': 'A-share feature unavailable',
+      'assets.cnStockProviderPending.content':
+          'This build does not have A-share search configured, so adding stock positions is temporarily unavailable.',
+      'assets.cnStockQuotePending.content':
+          'A-share live quotes are not configured in this build. You can still add stock positions, but quote refresh is unavailable.',
       'assets.searchNoResults': 'No matching stocks found',
       'assets.searchFailed': 'Stock search failed. Please try again later',
       'assets.selectStockFirst': 'Please select a stock first',
@@ -902,6 +947,8 @@ class AppStrings {
       'settings.autoBookkeeping.title': 'Auto bookkeeping',
       'settings.autoBookkeeping.subtitle':
           'Trigger with Shortcuts, Siri, or Back Tap',
+      'settings.autoBookkeeping.android.subtitle':
+          'Copy bill text, then return to this app to paste and parse',
       'settings.autoBookkeeping.dialogTitle': 'Auto bookkeeping shortcut',
       'settings.autoBookkeeping.dialogContent':
           'In the Shortcuts app, create this flow: Take Screenshot -> Extract Text from Image -> Run "AI Auto Bookkeeping". Then bind it to Back Tap, AssistiveTouch, or Siri.',
@@ -909,22 +956,44 @@ class AppStrings {
       'autoBookkeeping.hero.title': 'Turn a payment screen into an entry',
       'autoBookkeeping.hero.subtitle':
           'After paying, trigger a shortcut yourself. AI reads the current screenshot text and lets you confirm the entry.',
+      'autoBookkeeping.hero.android.title':
+          'Copy bill text and create an entry quickly',
+      'autoBookkeeping.hero.android.subtitle':
+          'Copy bill text from payment, chat, or order pages, then paste and confirm in the app.',
       'autoBookkeeping.trigger.section': 'Trigger options',
+      'autoBookkeeping.trigger.android.section': 'Available flow',
+      'autoBookkeeping.trigger.android.copy': 'Copy bill text',
+      'autoBookkeeping.trigger.android.return': 'Return to this app',
+      'autoBookkeeping.trigger.android.parse': 'Paste and confirm parsing',
       'autoBookkeeping.trigger.backTap': 'Back Tap',
       'autoBookkeeping.trigger.assistive': 'AssistiveTouch',
       'autoBookkeeping.trigger.siri': 'Siri voice',
       'autoBookkeeping.shortcut.section': 'Shortcut flow',
+      'autoBookkeeping.shortcut.android.section': 'Recommended flow',
       'autoBookkeeping.shortcut.stepScreenshot': 'Take Screenshot',
       'autoBookkeeping.shortcut.stepExtract': 'Extract Text from Image',
       'autoBookkeeping.shortcut.stepRun':
           'Run AI Auto Bookkeeping with the extracted text',
+      'autoBookkeeping.shortcut.android.stepCopy':
+          'Copy the full bill text from payment, chat, or order pages',
+      'autoBookkeeping.shortcut.android.stepReturn':
+          'Back to AI Wealth Tracker',
+      'autoBookkeeping.shortcut.android.stepPaste':
+          'Tap Open AI Ledger and paste the text, then confirm',
       'autoBookkeeping.install.section': 'Quick setup',
+      'autoBookkeeping.install.android.section': 'Get started',
       'autoBookkeeping.install.copy':
           'Tap the button below to open the prepared shortcut, then choose Add Shortcut. iOS still asks you to confirm system permissions; if import fails, use the manual steps below.',
+      'autoBookkeeping.install.android.copy':
+          'Copy the bill text in payment/chat/order page first, return to the app, then tap Open AI Ledger.',
       'autoBookkeeping.install.button': 'Install shortcut',
+      'autoBookkeeping.install.android.button': 'Open AI Ledger',
       'autoBookkeeping.install.backTapNote':
           'After installing, finish one iOS setting: Settings > Accessibility > Touch > Back Tap, then bind Double Tap or Triple Tap to AI Auto Bookkeeping.',
+      'autoBookkeeping.install.android.note':
+          'Copy full text (merchant + amount + time), then paste and confirm in-app.',
       'autoBookkeeping.manual.section': 'Manual setup steps',
+      'autoBookkeeping.manual.android.section': 'Suggested flow',
       'autoBookkeeping.manual.screenshot':
           'Add the Take Screenshot action as the source for payment-screen text.',
       'autoBookkeeping.manual.extract':
@@ -935,21 +1004,41 @@ class AppStrings {
           'Tap the Bill Text field, choose a variable, and set it to the previous step’s Extracted Text. When it works, Bill Text shows a blue variable token.',
       'autoBookkeeping.manual.save':
           'Save the shortcut with a memorable name, such as Auto Bookkeeping.',
+      'autoBookkeeping.manual.android.copy':
+          'Copy the full bill text from payment/chat/order pages.',
+      'autoBookkeeping.manual.android.return':
+          'Return to AI Wealth Tracker and open automatic bookkeeping.',
+      'autoBookkeeping.manual.android.paste':
+          'Tap Open AI Ledger and paste the text.',
+      'autoBookkeeping.manual.android.confirm':
+          'Check merchant/amount/time and confirm.',
       'autoBookkeeping.backTap.section': 'Bind Back Tap',
+      'autoBookkeeping.backTap.android.section': 'Privacy boundary',
       'autoBookkeeping.backTap.copy':
           'Open iPhone Settings > Accessibility > Touch > Back Tap > Double Tap or Triple Tap, then choose the shortcut you just created.',
+      'autoBookkeeping.backTap.android.copy':
+          'Parsing starts only after you manually copy text and open this app; it does not read data from other apps in the background.',
       'autoBookkeeping.troubleshooting.section': 'Common snags',
+      'autoBookkeeping.troubleshooting.android.section': 'Common issues',
       'autoBookkeeping.troubleshooting.actionMissing':
           'Cannot find AI Auto Bookkeeping: open this app once, then return to Shortcuts and search again.',
       'autoBookkeeping.troubleshooting.variableMissing':
           'Cannot find Extracted Text: tap Bill Text, choose Select Variable, then tap the output from Extract Text from Image.',
       'autoBookkeeping.troubleshooting.siri':
           'Siri misses the phrase: rename the shortcut to something more distinctive.',
+      'autoBookkeeping.troubleshooting.android.noText':
+          'No text detected: make sure copied text includes merchant name and amount.',
+      'autoBookkeeping.troubleshooting.android.pasteFailed':
+          'Paste not applied: check clipboard permission and try copying again.',
+      'autoBookkeeping.troubleshooting.android.parseFailed':
+          'Wrong parse result: run sample parsing first, then try again from the text copy flow.',
       'autoBookkeeping.openShortcutsFailed':
           'Could not open Shortcuts: {error}',
       'autoBookkeeping.privacy.section': 'Privacy boundary',
       'autoBookkeeping.privacy.copy':
           'The app does not read WeChat, Alipay, messages, or notifications in the background. Text enters AI parsing only when you trigger the shortcut.',
+      'autoBookkeeping.privacy.android.copy':
+          'Only text pasted manually into this app is processed. The app does not access other apps’ bill data in the background.',
       'autoBookkeeping.test.section': 'Test parsing',
       'autoBookkeeping.test.copy':
           'Run sample text once to confirm the AI parsing path is ready.',
@@ -979,6 +1068,11 @@ class AppStrings {
           'Switching to {target} will sign out the current account, clear local cached data, and return you to the welcome screen. The app will not keep auto-switching back and forth with system language changes.',
       'settings.mode.switchConfirm': 'Switch and continue',
       'settings.mode.switchSuccess': 'Switched to {target}',
+      'settings.personalizedAds.title': 'Personalized ads',
+      'settings.personalizedAds.subtitleOn':
+          'On. Ads may be more relevant to you.',
+      'settings.personalizedAds.subtitleOff':
+          'Off. The number of ads may stay the same, but relevance may decrease.',
       'settings.deleteAccount.title': 'Delete account',
       'settings.deleteAccount.subtitle':
           'Recoverable within 30 days, then data is permanently deleted',
@@ -992,6 +1086,8 @@ class AppStrings {
       'settings.privacy.title': 'Privacy policy',
       'settings.terms.title': 'Terms of service',
       'settings.rate.title': 'Rate us',
+      'settings.rate.android.unavailable':
+          'Rating will be available after the Android release',
       'settings.aboutApp.title': 'About AI Wealth Tracker',
       'settings.backup.progress': 'Backing up...',
       'settings.backup.noLocalData': 'No local data available to back up',
@@ -1060,7 +1156,7 @@ class AppStrings {
           'Delete request failed, please try again later',
       'settings.delete.success': 'Account deleted',
       'settings.delete.failed': 'Delete failed: {error}',
-      'settings.rate.openFailed': 'Unable to open the App Store',
+      'settings.rate.openFailed': 'Unable to open the rating page',
       'settings.about.version': 'Version: v{version}',
       'settings.about.techStack': 'Tech stack: Flutter',
       'settings.about.aiServices': 'AI services: {aiProvider} + {ocrProvider}',
@@ -1096,13 +1192,12 @@ class AppStrings {
       'vip.openTitle': 'Unlock AI monthly money reviews',
       'vip.expireAt': 'Expires on {date}',
       'vip.expireUntil': 'Your premium is active until {date}',
-      'vip.unlockFeatures':
-          'Unlimited entries, AI insights, assets, and custom categories',
+      'vip.unlockFeatures': 'AI insights, assets, and custom categories',
       'vip.benefit.aiReport': 'AI monthly report: see where your money went',
       'vip.benefit.budgetWarning':
           'Budget warnings: catch frequent and unusual spending early',
       'vip.benefit.unlimited':
-          'Unlimited records: keep logging after the free limit',
+          'Long-term records: keep every income and expense in one timeline',
       'vip.benefit.assets': 'Asset view: cash, cards, and stocks in one place',
       'vip.manage': 'Manage',
       'vip.open': 'Upgrade',
@@ -1111,20 +1206,30 @@ class AppStrings {
       'vip.monthlyPeriod': 'Billed monthly, cancel anytime',
       'vip.yearlyTitle': 'Yearly plan',
       'vip.yearlyPeriod': 'About {price}/month, best value',
+      'vip.lifetimeTitle': 'Lifetime ad-free',
+      'vip.lifetimePeriod': 'One purchase, ads removed forever',
       'vip.recommended': 'Recommended',
       'vip.consent': 'By purchasing, you agree to the Terms of Service',
       'vip.renewConfirm': 'Renew ({period})',
       'vip.subscribeNow': 'Subscribe ({price})',
       'vip.priceMonthly': '{price}/month',
       'vip.priceYearly': '{price}/year',
+      'vip.priceLifetime': '{price} lifetime',
       'vip.periodMonthly': 'monthly',
       'vip.periodYearly': 'yearly',
+      'vip.periodLifetime': 'lifetime',
+      'vip.selectLifetime': 'Choose ad-free access',
       'vip.restorePurchase': 'Restore purchases',
       'vip.paymentHint':
           'Effective immediately after payment. Manage cancellations in App Store subscriptions.',
+      'vip.paymentHint.android':
+          'Effective immediately after payment. Manage cancellations through the payment channel.',
       'vip.openFailed': 'Purchase failed: {error}',
       'vip.productUnavailable':
           'Purchases are temporarily unavailable. Please try again later.',
+      'vip.paymentUnavailable':
+          'Huawei payment is temporarily unavailable. Open or update HMS Core, then retry.',
+      'vip.paymentUnavailable.cta': 'Unavailable',
       'vip.loadingPrice': 'Loading price...',
       'vip.confirming': 'Confirming subscription status...',
       'vip.updated': 'Premium updated. Active until {date}',

@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:convert';
+import '../../../../app/app_flavor.dart';
 import '../../../../app/profile/capability_profile.dart';
 import '../../../../core/formatters/app_formatter.dart';
 import '../../../../core/formatters/category_formatter.dart';
@@ -19,6 +20,7 @@ import '../../../../l10n/app_string_keys.dart';
 import '../../../../l10n/app_strings.dart';
 import '../../../../services/injection.dart';
 import '../../../../services/ai_privacy_consent_service.dart';
+import '../../../../services/ad_preferences_service.dart';
 import '../../../../services/app_profile_service.dart';
 import '../../../../services/aliyun_sms_service.dart';
 import '../../../../services/quick_chip_service.dart';
@@ -169,6 +171,10 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
+    final subscriptionsEnabled = getIt<AppProfileService>()
+        .currentProfile
+        .capabilityProfile
+        .isEnabled('subscriptions');
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: PremiumPageAppBar(title: t.text(AppStringKeys.settingsTitle)),
@@ -194,9 +200,11 @@ class _SettingsPageState extends State<SettingsPage> {
                     MediaQuery.of(context).padding.bottom + 120,
                   ),
                   children: [
-                    // 会员专属卡片（页面最顶部）
-                    _VipBanner(),
-                    const SizedBox(height: 16),
+                    if (subscriptionsEnabled) ...[
+                      // 会员专属卡片（页面最顶部）
+                      _VipBanner(),
+                      const SizedBox(height: 16),
+                    ],
 
                     // 用户信息（带自定义头像）
                     AvatarTile(
@@ -233,7 +241,10 @@ class _SettingsPageState extends State<SettingsPage> {
                       icon: Icons.auto_awesome_motion_outlined,
                       title: t.text(AppStringKeys.settingsAutoBookkeepingTitle),
                       subtitle: t.text(
-                        AppStringKeys.settingsAutoBookkeepingSubtitle,
+                        Theme.of(context).platform == TargetPlatform.android
+                            ? AppStringKeys
+                                  .settingsAutoBookkeepingSubtitleAndroid
+                            : AppStringKeys.settingsAutoBookkeepingSubtitle,
                       ),
                       onTap: () => context.push('/auto_bookkeeping'),
                     ),
@@ -295,12 +306,13 @@ class _SettingsPageState extends State<SettingsPage> {
                       subtitle: t.text(AppStringKeys.settingsExportSubtitle),
                       onTap: () => _exportData(context),
                     ),
-                    _SettingTile(
-                      icon: Icons.query_stats_rounded,
-                      title: t.text(AppStringKeys.settingsFunnelTitle),
-                      subtitle: t.text(AppStringKeys.settingsFunnelSubtitle),
-                      onTap: () => _openFunnelDiagnostics(context),
-                    ),
+                    if (Theme.of(context).platform == TargetPlatform.iOS)
+                      _SettingTile(
+                        icon: Icons.query_stats_rounded,
+                        title: t.text(AppStringKeys.settingsFunnelTitle),
+                        subtitle: t.text(AppStringKeys.settingsFunnelSubtitle),
+                        onTap: () => _openFunnelDiagnostics(context),
+                      ),
 
                     _SectionDivider(),
                     _SectionHeader(t.text(AppStringKeys.settingsAbout)),
@@ -310,6 +322,28 @@ class _SettingsPageState extends State<SettingsPage> {
                       title: t.text(AppStringKeys.settingsPrivacyTitle),
                       onTap: () => _openPrivacyPolicy(context),
                     ),
+                    if (getIt<AppProfileService>().flavor == AppFlavor.cn)
+                      ListenableBuilder(
+                        listenable: getIt<AdPreferencesService>(),
+                        builder: (context, _) {
+                          final service = getIt<AdPreferencesService>();
+                          return _SettingSwitchTile(
+                            icon: Icons.campaign_outlined,
+                            title: t.text(
+                              AppStringKeys.settingsPersonalizedAdsTitle,
+                            ),
+                            subtitle: t.text(
+                              service.personalizedAdsEnabled
+                                  ? AppStringKeys
+                                        .settingsPersonalizedAdsSubtitleOn
+                                  : AppStringKeys
+                                        .settingsPersonalizedAdsSubtitleOff,
+                            ),
+                            value: service.personalizedAdsEnabled,
+                            onChanged: service.setPersonalizedAdsEnabled,
+                          );
+                        },
+                      ),
                     _SettingTile(
                       icon: Icons.description_outlined,
                       title: t.text(AppStringKeys.settingsTermsTitle),
@@ -1014,7 +1048,15 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _rateApp(BuildContext context) async {
     final t = AppStrings.of(context);
-    // App Store 链接（临时用 App 名称搜索页）
+    if (Theme.of(context).platform == TargetPlatform.android) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(t.text(AppStringKeys.settingsRateUnavailableAndroid)),
+        ),
+      );
+      return;
+    }
+
     final url = Uri.parse(
       'https://apps.apple.com/app/id6761321533?action=write-review',
     );
@@ -1727,6 +1769,84 @@ class _SettingTile extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SettingSwitchTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _SettingSwitchTile({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    final hasSubtitle = subtitle != null && subtitle!.trim().isNotEmpty;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      constraints: BoxConstraints(minHeight: hasSubtitle ? 64 : 48),
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 8,
+        top: hasSubtitle ? 8 : 0,
+        bottom: hasSubtitle ? 8 : 0,
+      ),
+      child: Row(
+        crossAxisAlignment: hasSubtitle
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.center,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(top: hasSubtitle ? 8 : 0),
+            child: Icon(icon, size: 24, color: colors.textPrimary),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colors.textPrimary,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                if (hasSubtitle) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle!,
+                    maxLines: 2,
+                    overflow: TextOverflow.visible,
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.35,
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Switch.adaptive(value: value, onChanged: onChanged),
+        ],
       ),
     );
   }
@@ -2781,10 +2901,15 @@ class _VipPurchaseSheet extends StatefulWidget {
 }
 
 class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
-  VipType _selectedType = VipType.monthly;
+  VipType _selectedType = resolveVipStoreProvider() == VipStoreProvider.huawei
+      ? VipType.lifetime
+      : VipType.monthly;
   bool _isLoading = false;
+  bool _isLoadingProducts = true;
+  bool _hasProductLoadError = false;
   ProductDetails? _monthlyProduct;
   ProductDetails? _yearlyProduct;
+  ProductDetails? _lifetimeProduct;
 
   @override
   void initState() {
@@ -2809,15 +2934,29 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
   }
 
   Future<void> _loadProducts() async {
-    try {
-      final result = await InAppPurchase.instance.queryProductDetails({
-        'com.phil.AIAccountant.mon',
-        'com.phil.AIAccountant.year',
+    if (mounted) {
+      setState(() {
+        _isLoadingProducts = true;
+        _hasProductLoadError = false;
       });
+    }
+    try {
+      final vipService = getIt<VipService>();
+      final isHuaweiStore =
+          resolveVipStoreProvider() == VipStoreProvider.huawei;
+      final monthlyId = resolveVipProductId(type: VipType.monthly);
+      final yearlyId = resolveVipProductId(type: VipType.yearly);
+      final lifetimeId = resolveVipProductId(type: VipType.lifetime);
+      final result = await vipService.queryVipProductDetails();
 
       debugPrint(
         '[VipSheet] queryProductDetails found=${result.productDetails.length}, notFound=${result.notFoundIDs.join(',')}',
       );
+      if (result.error != null) {
+        debugPrint(
+          '[VipSheet] queryProductDetails error=${result.error!.code}, message=${result.error!.message}, details=${result.error!.details}',
+        );
+      }
       for (final product in result.productDetails) {
         debugPrint(
           '[VipSheet] product id=${product.id}, price=${product.price}, currencyCode=${product.currencyCode}, rawPrice=${product.rawPrice}',
@@ -2826,17 +2965,32 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
 
       ProductDetails? monthly;
       ProductDetails? yearly;
+      ProductDetails? lifetime;
       for (final product in result.productDetails) {
-        if (product.id == 'com.phil.AIAccountant.mon') monthly = product;
-        if (product.id == 'com.phil.AIAccountant.year') yearly = product;
+        if (product.id == monthlyId) monthly = product;
+        if (product.id == yearlyId) yearly = product;
+        if (product.id == lifetimeId) lifetime = product;
       }
 
       if (!mounted) return;
       setState(() {
         _monthlyProduct = monthly;
         _yearlyProduct = yearly;
+        _lifetimeProduct = lifetime;
+        _hasProductLoadError = isHuaweiStore
+            ? lifetime == null
+            : monthly == null && yearly == null;
+        _isLoadingProducts = false;
       });
-    } catch (_) {}
+    } catch (error, stackTrace) {
+      debugPrint('[VipSheet] queryProductDetails failed: $error');
+      debugPrint('$stackTrace');
+      if (!mounted) return;
+      setState(() {
+        _hasProductLoadError = true;
+        _isLoadingProducts = false;
+      });
+    }
   }
 
   Future<void> _confirmVipChangeInBackground(
@@ -2894,15 +3048,26 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
           listenable: vipService,
           builder: (context, _) {
             final isVip = vipService.isVip;
+            final isHuaweiStore =
+                resolveVipStoreProvider() == VipStoreProvider.huawei;
             final hasMonthlyProduct = _monthlyProduct != null;
             final hasYearlyProduct = _yearlyProduct != null;
-            final selectedProductLoaded = _selectedType == VipType.monthly
-                ? hasMonthlyProduct
-                : hasYearlyProduct;
+            final hasLifetimeProduct = _lifetimeProduct != null;
+            final selectedProductLoaded = switch (_selectedType) {
+              VipType.monthly => hasMonthlyProduct,
+              VipType.yearly => hasYearlyProduct,
+              VipType.lifetime => hasLifetimeProduct,
+              VipType.none => false,
+            };
+            final showProductLoadError =
+                _hasProductLoadError && !selectedProductLoaded;
             final monthlyPrice =
                 _monthlyProduct?.price ?? t.text(AppStringKeys.vipLoadingPrice);
             final yearlyPrice =
                 _yearlyProduct?.price ?? t.text(AppStringKeys.vipLoadingPrice);
+            final lifetimePrice =
+                _lifetimeProduct?.price ??
+                (isHuaweiStore ? '¥28' : t.text(AppStringKeys.vipLoadingPrice));
             final yearlyCurrency = _yearlyProduct?.currencyCode;
             final yearlyRawPrice = _yearlyProduct?.rawPrice;
             final yearlyMonthlyPrice =
@@ -2980,34 +3145,95 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                     const SizedBox(height: 16),
                   ],
                   Text(
-                    t.text(AppStringKeys.vipSelectPlan),
+                    isHuaweiStore
+                        ? t.text(AppStringKeys.vipSelectLifetime)
+                        : t.text(AppStringKeys.vipSelectPlan),
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _VipOptionTile(
-                    title: t.text(AppStringKeys.vipMonthlyTitle),
-                    price: monthlyPrice,
-                    period: t.text(AppStringKeys.vipMonthlyPeriod),
-                    icon: '📅',
-                    isSelected: _selectedType == VipType.monthly,
-                    onTap: () => _selectPlan(VipType.monthly),
-                  ),
-                  const SizedBox(height: 8),
-                  _VipOptionTile(
-                    title: t.text(AppStringKeys.vipYearlyTitle),
-                    price: yearlyPrice,
-                    period: t.text(
-                      AppStringKeys.vipYearlyPeriod,
-                      params: {'price': yearlyMonthlyPrice},
+                  if (isHuaweiStore) ...[
+                    _VipOptionTile(
+                      title: t.text(AppStringKeys.vipLifetimeTitle),
+                      price: lifetimePrice,
+                      period: t.text(AppStringKeys.vipLifetimePeriod),
+                      icon: '✓',
+                      isSelected: _selectedType == VipType.lifetime,
+                      onTap: () => _selectPlan(VipType.lifetime),
+                      badge: t.text(AppStringKeys.vipRecommended),
                     ),
-                    icon: '🎁',
-                    isSelected: _selectedType == VipType.yearly,
-                    onTap: () => _selectPlan(VipType.yearly),
-                    badge: t.text(AppStringKeys.vipRecommended),
-                  ),
+                  ] else ...[
+                    _VipOptionTile(
+                      title: t.text(AppStringKeys.vipMonthlyTitle),
+                      price: monthlyPrice,
+                      period: t.text(AppStringKeys.vipMonthlyPeriod),
+                      icon: '📅',
+                      isSelected: _selectedType == VipType.monthly,
+                      onTap: () => _selectPlan(VipType.monthly),
+                    ),
+                    const SizedBox(height: 8),
+                    _VipOptionTile(
+                      title: t.text(AppStringKeys.vipYearlyTitle),
+                      price: yearlyPrice,
+                      period: t.text(
+                        AppStringKeys.vipYearlyPeriod,
+                        params: {'price': yearlyMonthlyPrice},
+                      ),
+                      icon: '🎁',
+                      isSelected: _selectedType == VipType.yearly,
+                      onTap: () => _selectPlan(VipType.yearly),
+                      badge: t.text(AppStringKeys.vipRecommended),
+                    ),
+                  ],
+                  if (showProductLoadError) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF4E5),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFFFCC80)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.info_outline,
+                            size: 18,
+                            color: Color(0xFFB26A00),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              t.text(AppStringKeys.vipPaymentUnavailable),
+                              style: const TextStyle(
+                                color: Color(0xFF7A4B00),
+                                fontSize: 12,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: _isLoadingProducts
+                                ? null
+                                : _loadProducts,
+                            style: TextButton.styleFrom(
+                              foregroundColor: const Color(0xFF5C6BC0),
+                              minimumSize: const Size(48, 32),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(t.text(AppStringKeys.commonRetry)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   Center(
                     child: Text(
@@ -3040,9 +3266,15 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                                 );
                                 final previousType = vipService.vipType;
                                 final previousExpire = vipService.expireDate;
-                                final started = _selectedType == VipType.monthly
-                                    ? await vipService.purchaseMonthly()
-                                    : await vipService.purchaseYearly();
+                                final started = switch (_selectedType) {
+                                  VipType.monthly =>
+                                    await vipService.purchaseMonthly(),
+                                  VipType.yearly =>
+                                    await vipService.purchaseYearly(),
+                                  VipType.lifetime =>
+                                    await vipService.purchaseLifetimeAdFree(),
+                                  VipType.none => false,
+                                };
                                 unawaited(
                                   getIt<FunnelAnalyticsService>().track(
                                     started
@@ -3109,34 +3341,48 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                             )
                           : Text(
                               !selectedProductLoaded
-                                  ? t.text(AppStringKeys.vipLoadingPrice)
+                                  ? showProductLoadError
+                                        ? t.text(
+                                            AppStringKeys
+                                                .vipPaymentUnavailableCta,
+                                          )
+                                        : t.text(AppStringKeys.vipLoadingPrice)
                                   : isVip
                                   ? t.text(
                                       AppStringKeys.vipRenewConfirm,
                                       params: {
-                                        'period':
-                                            _selectedType == VipType.monthly
-                                            ? t.text(
-                                                AppStringKeys.vipPeriodMonthly,
-                                              )
-                                            : t.text(
-                                                AppStringKeys.vipPeriodYearly,
-                                              ),
+                                        'period': switch (_selectedType) {
+                                          VipType.monthly => t.text(
+                                            AppStringKeys.vipPeriodMonthly,
+                                          ),
+                                          VipType.yearly => t.text(
+                                            AppStringKeys.vipPeriodYearly,
+                                          ),
+                                          VipType.lifetime => t.text(
+                                            AppStringKeys.vipPeriodLifetime,
+                                          ),
+                                          VipType.none => '',
+                                        },
                                       },
                                     )
                                   : t.text(
                                       AppStringKeys.vipSubscribeNow,
                                       params: {
-                                        'price':
-                                            _selectedType == VipType.monthly
-                                            ? t.text(
-                                                AppStringKeys.vipPriceMonthly,
-                                                params: {'price': monthlyPrice},
-                                              )
-                                            : t.text(
-                                                AppStringKeys.vipPriceYearly,
-                                                params: {'price': yearlyPrice},
-                                              ),
+                                        'price': switch (_selectedType) {
+                                          VipType.monthly => t.text(
+                                            AppStringKeys.vipPriceMonthly,
+                                            params: {'price': monthlyPrice},
+                                          ),
+                                          VipType.yearly => t.text(
+                                            AppStringKeys.vipPriceYearly,
+                                            params: {'price': yearlyPrice},
+                                          ),
+                                          VipType.lifetime => t.text(
+                                            AppStringKeys.vipPriceLifetime,
+                                            params: {'price': lifetimePrice},
+                                          ),
+                                          VipType.none => '',
+                                        },
                                       },
                                     ),
                             ),
@@ -3145,7 +3391,11 @@ class _VipPurchaseSheetState extends State<_VipPurchaseSheet> {
                   const SizedBox(height: 8),
                   Center(
                     child: Text(
-                      t.text(AppStringKeys.vipPaymentHint),
+                      t.text(
+                        Theme.of(context).platform == TargetPlatform.android
+                            ? AppStringKeys.vipPaymentHintAndroid
+                            : AppStringKeys.vipPaymentHint,
+                      ),
                       style: TextStyle(
                         color: colors.textSecondary,
                         fontSize: 11,

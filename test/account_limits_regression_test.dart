@@ -1,12 +1,3 @@
-import 'dart:async';
-
-import 'package:dartz/dartz.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:in_app_purchase_platform_interface/in_app_purchase_platform_interface.dart';
-
 import 'package:ai_accounting_app/features/accounting/domain/entities/entities.dart';
 import 'package:ai_accounting_app/features/accounting/domain/repositories/account_entry_repository.dart';
 import 'package:ai_accounting_app/features/accounting/domain/usecases/add_entry.dart';
@@ -14,119 +5,67 @@ import 'package:ai_accounting_app/features/accounting/domain/usecases/delete_ent
 import 'package:ai_accounting_app/features/accounting/domain/usecases/get_entries_by_month.dart';
 import 'package:ai_accounting_app/features/accounting/presentation/bloc/account_bloc.dart';
 import 'package:ai_accounting_app/features/accounting/presentation/bloc/account_event.dart';
-import 'package:ai_accounting_app/l10n/app_string_keys.dart';
-import 'package:ai_accounting_app/l10n/app_strings.dart';
 import 'package:ai_accounting_app/services/ai/input_parser_service.dart';
 import 'package:ai_accounting_app/services/vip_service.dart';
+import 'package:dartz/dartz.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
-  InAppPurchasePlatform.instance = _FakeInAppPurchasePlatform();
 
-  tearDownAll(() {
-    debugDefaultTargetPlatformOverride = null;
-  });
-
-  group('account entry limits', () {
-    test('guest user is blocked once total entries reaches 20', () async {
+  group('account entry recording is unlimited', () {
+    test('guest user can add after the old 20-entry threshold', () async {
       final bloc = await _makeBloc(totalEntries: 20, phone: null);
 
       bloc.add(AddAccountEntry(_entry('new-guest')));
 
       final state = await bloc.stream
-          .firstWhere((s) => s.showLoginLimitDialog)
+          .firstWhere((s) => s.totalEntryCount == 21)
           .timeout(const Duration(seconds: 1));
 
-      expect(state.showLoginLimitDialog, isTrue);
-      expect(state.showVipLimitDialog, isFalse);
-      expect((bloc.repository as _FakeRepository).entries, hasLength(20));
+      expect(state.totalEntryCount, 21);
+      expect((bloc.repository as _FakeRepository).entries, hasLength(21));
 
       await bloc.close();
     });
 
-    test('logged-in non-vip user is blocked once total entries reaches 50', () async {
-      final bloc = await _makeBloc(totalEntries: 50, phone: '13800138000');
+    test(
+      'logged-in free user can add after the old 50-entry threshold',
+      () async {
+        final bloc = await _makeBloc(totalEntries: 50, phone: '13800138000');
 
-      bloc.add(AddAccountEntry(_entry('new-free-user')));
+        bloc.add(AddAccountEntry(_entry('new-free-user')));
 
-      final state = await bloc.stream
-          .firstWhere((s) => s.showVipLimitDialog)
-          .timeout(const Duration(seconds: 1));
+        final state = await bloc.stream
+            .firstWhere((s) => s.totalEntryCount == 51)
+            .timeout(const Duration(seconds: 1));
 
-      expect(state.showVipLimitDialog, isTrue);
-      expect(state.showLoginLimitDialog, isFalse);
-      expect((bloc.repository as _FakeRepository).entries, hasLength(50));
+        expect(state.totalEntryCount, 51);
+        expect((bloc.repository as _FakeRepository).entries, hasLength(51));
 
-      await bloc.close();
-    });
+        await bloc.close();
+      },
+    );
 
-    test('guest user can still add the 20th entry when currently at 19', () async {
-      final bloc = await _makeBloc(totalEntries: 19, phone: null);
-
-      bloc.add(AddAccountEntry(_entry('guest-20th')));
-
-      final state = await bloc.stream
-          .firstWhere((s) => s.totalEntryCount == 20)
-          .timeout(const Duration(seconds: 1));
-
-      expect(state.showLoginLimitDialog, isFalse);
-      expect(state.showVipLimitDialog, isFalse);
-      expect((bloc.repository as _FakeRepository).entries, hasLength(20));
-
-      await bloc.close();
-    });
-
-    test('logged-in non-vip user can still add the 50th entry when currently at 49', () async {
+    test('batch add can cross the old free-user threshold', () async {
       final bloc = await _makeBloc(totalEntries: 49, phone: '13800138000');
 
-      bloc.add(AddAccountEntry(_entry('free-user-50th')));
+      bloc.add(
+        AddMultipleAccountEntries([
+          _entry('batch-50'),
+          _entry('batch-51'),
+          _entry('batch-52'),
+        ]),
+      );
 
       final state = await bloc.stream
-          .firstWhere((s) => s.totalEntryCount == 50)
+          .firstWhere((s) => s.totalEntryCount == 52)
           .timeout(const Duration(seconds: 1));
 
-      expect(state.showVipLimitDialog, isFalse);
-      expect(state.showLoginLimitDialog, isFalse);
-      expect((bloc.repository as _FakeRepository).entries, hasLength(50));
+      expect(state.totalEntryCount, 52);
 
       await bloc.close();
-    });
-  });
-
-  group('localized limit copy', () {
-    test('zh strings exist for guest and vip limit dialogs', () {
-      final zh = AppStrings.forLocale(const Locale('zh'));
-
-      expect(
-        zh.text(AppStringKeys.homeLoginPromptTitle),
-        '登录后可继续记账',
-      );
-      expect(
-        zh.text(AppStringKeys.homeLoginPromptContent),
-        contains('20 条账单'),
-      );
-      expect(
-        zh.text(AppStringKeys.homeVipUpgradeContent),
-        contains('50 条账单'),
-      );
-    });
-
-    test('en strings exist for guest and vip limit dialogs', () {
-      final en = AppStrings.forLocale(const Locale('en'));
-
-      expect(
-        en.text(AppStringKeys.homeLoginPromptTitle),
-        'Sign in to keep adding entries',
-      );
-      expect(
-        en.text(AppStringKeys.homeLoginPromptContent),
-        contains('20 entries'),
-      );
-      expect(
-        en.text(AppStringKeys.homeVipUpgradeContent),
-        contains('50 entries'),
-      );
     });
   });
 }
@@ -177,46 +116,6 @@ class _FakeInputParserService implements InputParserService {
   Future<List<ParsedResult>> parseInput(String input) async => const [];
 }
 
-class _FakeInAppPurchasePlatform extends InAppPurchasePlatform {
-  final StreamController<List<PurchaseDetails>> _controller =
-      StreamController<List<PurchaseDetails>>.broadcast();
-
-  @override
-  Stream<List<PurchaseDetails>> get purchaseStream => _controller.stream;
-
-  @override
-  Future<bool> isAvailable() async => true;
-
-  @override
-  Future<ProductDetailsResponse> queryProductDetails(
-    Set<String> identifiers,
-  ) async {
-    return ProductDetailsResponse(productDetails: const [], notFoundIDs: []);
-  }
-
-  @override
-  Future<bool> buyNonConsumable({required PurchaseParam purchaseParam}) async {
-    return true;
-  }
-
-  @override
-  Future<bool> buyConsumable({
-    required PurchaseParam purchaseParam,
-    bool autoConsume = true,
-  }) async {
-    return true;
-  }
-
-  @override
-  Future<void> completePurchase(PurchaseDetails purchase) async {}
-
-  @override
-  Future<void> restorePurchases({String? applicationUserName}) async {}
-
-  @override
-  Future<String> countryCode() async => 'CN';
-}
-
 class _FakeRepository implements AccountEntryRepository {
   _FakeRepository({required List<AccountEntry> entries, required this.phone})
     : entries = List<AccountEntry>.from(entries);
@@ -248,7 +147,9 @@ class _FakeRepository implements AccountEntryRepository {
   ) async {
     return Right(
       entries
-          .where((entry) => entry.date.year == year && entry.date.month == month)
+          .where(
+            (entry) => entry.date.year == year && entry.date.month == month,
+          )
           .toList(),
     );
   }

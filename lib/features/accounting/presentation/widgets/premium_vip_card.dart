@@ -93,7 +93,7 @@ class _PremiumVipCardState extends State<PremiumVipCard>
           hapticType: HapticType.medium,
           scaleFactor: 0.985,
           child: Container(
-            height: 188,
+            constraints: const BoxConstraints(minHeight: 188),
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
@@ -173,6 +173,7 @@ class _PremiumVipCardState extends State<PremiumVipCard>
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
                         children: [
@@ -229,9 +230,11 @@ class _PremiumVipCardState extends State<PremiumVipCard>
                           ],
                         ],
                       ),
-                      const Spacer(),
+                      const SizedBox(height: 16),
                       Text(
                         widget.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 20,
@@ -254,8 +257,8 @@ class _PremiumVipCardState extends State<PremiumVipCard>
                         alignment: Alignment.centerLeft,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
+                            horizontal: 12,
+                            vertical: 8,
                           ),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
@@ -274,10 +277,12 @@ class _PremiumVipCardState extends State<PremiumVipCard>
                           ),
                           child: Text(
                             widget.actionLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: Color(0xFF241A08),
                               fontWeight: FontWeight.w800,
-                              fontSize: 14,
+                              fontSize: 13,
                             ),
                           ),
                         ),

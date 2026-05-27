@@ -344,7 +344,7 @@ class CloudService {
     }
   }
 
-  /// 主动通过 App Store Server API 刷新云端 VIP 档案。
+  /// 主动通过应用商店服务端 API 刷新云端 VIP 档案。
   Future<Map<String, dynamic>?> refreshVipProfile({
     String? transactionId,
     String? vipEnvironment,
@@ -382,6 +382,10 @@ class CloudService {
     required String vipType,
     required int expireMs,
     String? receiptData,
+    String? receiptSource,
+    String? receiptSignature,
+    String? storeProvider,
+    String? productId,
     String? transactionId,
     String? originalTransactionId,
     String? appAccountToken,
@@ -395,6 +399,18 @@ class CloudService {
           'vip_type': vipType,
           'vip_expire_ms': expireMs,
           ...?(receiptData == null ? null : {'receipt_data': receiptData}),
+          ...?(receiptSource == null || receiptSource.isEmpty
+              ? null
+              : {'receipt_source': receiptSource}),
+          ...?(receiptSignature == null || receiptSignature.isEmpty
+              ? null
+              : {'receipt_signature': receiptSignature}),
+          ...?(storeProvider == null || storeProvider.isEmpty
+              ? null
+              : {'store_provider': storeProvider}),
+          ...?(productId == null || productId.isEmpty
+              ? null
+              : {'product_id': productId}),
           ...?(transactionId == null || transactionId.isEmpty
               ? null
               : {'transaction_id': transactionId}),

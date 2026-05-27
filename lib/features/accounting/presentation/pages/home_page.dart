@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -27,11 +28,13 @@ import '../../../../l10n/app_strings.dart';
 import '../../../../services/ai/input_parser_service.dart';
 import '../../../../services/ai/receipt_ocr_service.dart';
 import '../../../../services/ai_privacy_consent_service.dart';
+import '../../../../services/aliyun_asr_service.dart';
 import '../../../../services/app_profile_service.dart';
 import '../../../../services/config_service.dart';
 import '../../../../services/funnel_analytics_service.dart';
 import '../../../../services/quick_chip_service.dart';
 import '../../../../services/injection.dart';
+import '../../../../services/native_speech_service.dart';
 import '../../../../services/stock_service.dart';
 import '../../../../app/router.dart';
 import '../widgets/press_feedback.dart';
@@ -40,6 +43,7 @@ import '../widgets/ai_scanner_hud.dart';
 import '../widgets/ai_sparkles_icon.dart';
 import '../widgets/custom_numpad_sheet.dart';
 import '../widgets/financial_health_report.dart';
+import '../widgets/pangle_banner_ad.dart';
 import '../widgets/premium_capsule_button.dart';
 import '../widgets/premium_hero_card.dart';
 import '../widgets/premium_surface_card.dart';
@@ -103,7 +107,7 @@ bool _homeAiReady() {
     case AiProviderType.gemini:
       return ConfigService.instance.isGeminiConfigured;
     case AiProviderType.legacyCnAi:
-      return true;
+      return ConfigService.instance.isQwenConfigured;
   }
 }
 
@@ -226,15 +230,27 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   static const _assetPrivacyHiddenKey = 'home_asset_privacy_hidden_v1';
+  static const _speechRestartCooldown = Duration(milliseconds: 1200);
+  static const _nativeSpeechMaxDuration = Duration(seconds: 12);
 
   final _textController = TextEditingController();
+  final NativeSpeechService _nativeSpeechService = NativeSpeechService();
+  final AliyunASRService _aliyunAsrService = getIt<AliyunASRService>();
   final _uuid = const Uuid();
-  final _speech = stt.SpeechToText();
+  stt.SpeechToText _speech = stt.SpeechToText();
   final AssetRepository _assetRepository = getIt<AssetRepository>();
   final StockService _stockService = getIt<StockService>();
-  bool _isListening = false;
   bool _speechAvailable = false;
   bool _speechInitialized = false;
+  final ValueNotifier<bool> _speechListeningNotifier = ValueNotifier(false);
+  String _lastRecognizedSpeech = '';
+  bool _hasSubmittedRecognizedSpeech = false;
+  bool _speechOperationInFlight = false;
+  bool _isUsingNativeSpeech = false;
+  bool _nativeSpeechFinishing = false;
+  Timer? _nativeSpeechAutoStopTimer;
+  DateTime? _lastSpeechSessionEndedAt;
+  int _speechCleanupToken = 0;
 
   bool _ensureAiReady() {
     if (_homeAiReady()) return true;
@@ -307,7 +323,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       showAiBottomSheet(
         context: context,
         textController: _textController,
-        isListening: _isListening,
+        isListening: _speechListeningNotifier,
         onStartListening: _startListening,
         onStopListening: _stopListening,
         onPickCamera: () => _pickImageForOCR(ImageSource.camera),
@@ -444,7 +460,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     homeOcrHudTrigger.removeListener(_onOcrHudTriggered);
     homeShortcutTextTrigger.removeListener(_onShortcutTextTriggered);
     WidgetsBinding.instance.removeObserver(this);
+    _nativeSpeechAutoStopTimer?.cancel();
+    if (_isUsingNativeSpeech) {
+      unawaited(_nativeSpeechService.stopPcmRecording());
+    }
     _textController.dispose();
+    _speechListeningNotifier.dispose();
     super.dispose();
   }
 
@@ -464,14 +485,21 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     try {
       _speechAvailable = await _speech.initialize(
         onStatus: (status) {
-          if (!mounted) return;
+          debugPrint('[Speech] status: $status');
           if (status == 'done' || status == 'notListening') {
-            setState(() => _isListening = false);
+            if (_lastRecognizedSpeech.isNotEmpty) {
+              _submitLastRecognizedSpeechIfNeeded();
+            }
+            _markSpeechSessionEnded();
+            _updateListeningState(false);
+            _scheduleSpeechSessionCleanup();
           }
         },
-        onError: (_) {
-          if (!mounted) return;
-          setState(() => _isListening = false);
+        onError: (error) {
+          debugPrint('[Speech] error: $error');
+          _markSpeechSessionEnded();
+          _updateListeningState(false);
+          _scheduleSpeechSessionCleanup();
         },
       );
       _speechInitialized = _speechAvailable;
@@ -482,7 +510,214 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     return _speechAvailable;
   }
 
+  void _updateListeningState(bool isListening) {
+    _speechListeningNotifier.value = isListening;
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  void _markSpeechSessionEnded() {
+    _lastSpeechSessionEndedAt = DateTime.now();
+  }
+
+  void _scheduleSpeechSessionCleanup() {
+    final token = ++_speechCleanupToken;
+    unawaited(
+      Future<void>.delayed(const Duration(milliseconds: 350), () async {
+        if (token != _speechCleanupToken) return;
+        if (_speechListeningNotifier.value || _speechOperationInFlight) return;
+        try {
+          await _speech.cancel();
+          debugPrint('[Speech] cleanup cancel complete');
+        } catch (error, stackTrace) {
+          debugPrint('[Speech] cleanup cancel failed: $error');
+          debugPrint(stackTrace.toString());
+        }
+        _speechInitialized = false;
+        _speechAvailable = false;
+        _speech = stt.SpeechToText();
+        debugPrint('[Speech] client reset complete');
+      }),
+    );
+  }
+
+  Future<bool> _waitForSpeechRestartCooldown() async {
+    final lastEndedAt = _lastSpeechSessionEndedAt;
+    if (lastEndedAt == null) return true;
+    final elapsed = DateTime.now().difference(lastEndedAt);
+    if (elapsed >= _speechRestartCooldown) return true;
+    await Future<void>.delayed(_speechRestartCooldown - elapsed);
+    return mounted;
+  }
+
+  void _resetRecognizedSpeechState() {
+    _lastRecognizedSpeech = '';
+    _hasSubmittedRecognizedSpeech = false;
+  }
+
+  void _updateRecognizedSpeechText(String recognizedWords) {
+    if (recognizedWords.isEmpty) return;
+    if (!mounted) return;
+    _lastRecognizedSpeech = recognizedWords;
+    _textController.text = recognizedWords;
+    _textController.selection = TextSelection.collapsed(
+      offset: recognizedWords.length,
+    );
+  }
+
+  void _submitLastRecognizedSpeechIfNeeded() {
+    final text = _lastRecognizedSpeech.trim();
+    if (text.isEmpty || _hasSubmittedRecognizedSpeech) return;
+    if (!mounted) return;
+    if (!_ensureAiReady()) return;
+    _hasSubmittedRecognizedSpeech = true;
+    context.read<AccountBloc>().add(ParseTextInput(text));
+  }
+
   Future<bool> _startListening() async {
+    if (_speechOperationInFlight) return false;
+    if (_speechListeningNotifier.value) return true;
+    _speechOperationInFlight = true;
+    try {
+      if (Platform.isAndroid && ConfigService.instance.isAliyunConfigured) {
+        final nativeStarted = await _startNativeListening();
+        if (nativeStarted) return true;
+      }
+
+      return await _startFlutterSpeechListening();
+    } finally {
+      _speechOperationInFlight = false;
+    }
+  }
+
+  Future<void> _stopListening() async {
+    if (_speechOperationInFlight) return;
+    if (!_speechListeningNotifier.value) return;
+    _speechOperationInFlight = true;
+    try {
+      if (_isUsingNativeSpeech) {
+        await _finishNativePcmRecordingAndParse();
+        return;
+      }
+      await _speech.stop();
+    } catch (error, stackTrace) {
+      debugPrint('[Speech] stop failed: $error');
+      debugPrint(stackTrace.toString());
+    } finally {
+      _speechOperationInFlight = false;
+      _markSpeechSessionEnded();
+      _updateListeningState(false);
+    }
+    if (_lastRecognizedSpeech.isNotEmpty) {
+      _submitLastRecognizedSpeechIfNeeded();
+    }
+  }
+
+  Future<bool> _startNativeListening() async {
+    if (!await _waitForSpeechRestartCooldown()) return false;
+    _speechCleanupToken++;
+    _resetRecognizedSpeechState();
+    try {
+      final started = await _nativeSpeechService.startPcmRecording();
+      if (!started) return false;
+      _isUsingNativeSpeech = true;
+      _updateListeningState(true);
+      debugPrint('[Speech] native PCM recording started');
+      _scheduleNativeSpeechAutoStop();
+      return true;
+    } on PlatformException catch (error, stackTrace) {
+      debugPrint('[Speech] native PCM start failed: $error');
+      debugPrint(stackTrace.toString());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppStrings.of(context).text(AppStringKeys.homeVoiceStartFailed),
+            ),
+          ),
+        );
+      }
+      return false;
+    }
+  }
+
+  void _scheduleNativeSpeechAutoStop() {
+    _nativeSpeechAutoStopTimer?.cancel();
+    _nativeSpeechAutoStopTimer = Timer(_nativeSpeechMaxDuration, () {
+      if (!mounted || !_isUsingNativeSpeech || _speechOperationInFlight) return;
+      _speechOperationInFlight = true;
+      unawaited(
+        _finishNativePcmRecordingAndParse().whenComplete(() {
+          _speechOperationInFlight = false;
+        }),
+      );
+    });
+  }
+
+  Future<void> _finishNativePcmRecordingAndParse() async {
+    if (_nativeSpeechFinishing) return;
+    _nativeSpeechFinishing = true;
+    _nativeSpeechAutoStopTimer?.cancel();
+    _nativeSpeechAutoStopTimer = null;
+    try {
+      final audioBytes = await _nativeSpeechService.stopPcmRecording();
+      if (!mounted) return;
+      _isUsingNativeSpeech = false;
+      _markSpeechSessionEnded();
+      _updateListeningState(false);
+
+      debugPrint('[Speech] native PCM bytes=${audioBytes.length}');
+      if (audioBytes.length < 3200) {
+        debugPrint('[Speech] native PCM too short');
+        return;
+      }
+
+      final recognizedText =
+          (await _aliyunAsrService.recognizeBytes(audioBytes))?.trim() ?? '';
+      if (!mounted) return;
+      if (recognizedText.isEmpty) {
+        debugPrint('[Speech] Aliyun ASR returned empty text');
+        return;
+      }
+
+      debugPrint(
+        '[Speech] Aliyun ASR recognized length=${recognizedText.length}',
+      );
+      _updateRecognizedSpeechText(recognizedText);
+      _submitLastRecognizedSpeechIfNeeded();
+    } on PlatformException catch (error, stackTrace) {
+      debugPrint('[Speech] native PCM stop failed: $error');
+      debugPrint(stackTrace.toString());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppStrings.of(context).text(AppStringKeys.homeVoiceStartFailed),
+            ),
+          ),
+        );
+      }
+    } catch (error, stackTrace) {
+      debugPrint('[Speech] Aliyun ASR unexpected: $error');
+      debugPrint(stackTrace.toString());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppStrings.of(context).text(AppStringKeys.homeVoiceStartFailed),
+            ),
+          ),
+        );
+      }
+    } finally {
+      _isUsingNativeSpeech = false;
+      _nativeSpeechFinishing = false;
+      _markSpeechSessionEnded();
+      _updateListeningState(false);
+    }
+  }
+
+  Future<bool> _startFlutterSpeechListening() async {
     // 语音能力改为按需初始化，避免页面首帧阶段触发原生插件导致启动闪退
     final available = await _ensureSpeechInitialized();
     if (!mounted) return false;
@@ -496,35 +731,44 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       );
       return false;
     }
-    setState(() => _isListening = true);
+
+    if (!await _waitForSpeechRestartCooldown()) return false;
+    _speechCleanupToken++;
+    _isUsingNativeSpeech = false;
+
+    _resetRecognizedSpeechState();
+    _updateListeningState(true);
     try {
+      final localeId = getIt<AppProfileService>().speechLocaleId;
+      debugPrint('[Speech] starting locale=$localeId');
       await _speech.listen(
-        localeId: getIt<AppProfileService>().speechLocaleId,
+        localeId: localeId,
         onResult: (result) {
-          if (result.finalResult && result.recognizedWords.isNotEmpty) {
-            _textController.text = result.recognizedWords;
-            if (!_ensureAiReady()) return;
-            context.read<AccountBloc>().add(
-              ParseTextInput(result.recognizedWords),
-            );
+          final recognizedWords = result.recognizedWords;
+          _updateRecognizedSpeechText(recognizedWords);
+          if (result.finalResult) {
+            _submitLastRecognizedSpeechIfNeeded();
           }
         },
         listenFor: const Duration(seconds: 30),
         pauseFor: const Duration(seconds: 3),
       );
       return true;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('[Speech] listen failed: $error');
+      debugPrint(stackTrace.toString());
       if (mounted) {
-        setState(() => _isListening = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppStrings.of(context).text(AppStringKeys.homeVoiceStartFailed),
+            ),
+          ),
+        );
       }
+      _markSpeechSessionEnded();
+      _updateListeningState(false);
       return false;
-    }
-  }
-
-  Future<void> _stopListening() async {
-    await _speech.stop();
-    if (mounted) {
-      setState(() => _isListening = false);
     }
   }
 
@@ -850,90 +1094,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     ], entryType);
   }
 
-  void _showVipUpgradeDialog(BuildContext ctx) {
-    final t = AppStrings.of(ctx);
-    showDialog(
-      context: ctx,
-      builder: (ctx) {
-        final colors = Theme.of(ctx).extension<AppColorsExtension>()!;
-        return AlertDialog(
-          backgroundColor: colors.cardBackground,
-          titleTextStyle: TextStyle(
-            color: colors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-          ),
-          contentTextStyle: TextStyle(
-            color: colors.textSecondary,
-            fontSize: 14,
-            height: 1.5,
-          ),
-          title: Text(t.text(AppStringKeys.homeVipUpgradeTitle)),
-          content: Text(t.text(AppStringKeys.homeVipUpgradeContent)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(t.text(AppStringKeys.homeVipUpgradeLater)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A47D8),
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () {
-                Navigator.pop(ctx);
-                context.go('/settings');
-              },
-              child: Text(t.text(AppStringKeys.homeVipUpgradeNow)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showLoginPromptDialog(BuildContext ctx) {
-    final t = AppStrings.of(ctx);
-    showDialog(
-      context: ctx,
-      builder: (ctx) {
-        final colors = Theme.of(ctx).extension<AppColorsExtension>()!;
-        return AlertDialog(
-          backgroundColor: colors.cardBackground,
-          titleTextStyle: TextStyle(
-            color: colors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-          ),
-          contentTextStyle: TextStyle(
-            color: colors.textSecondary,
-            fontSize: 14,
-            height: 1.5,
-          ),
-          title: Text(t.text(AppStringKeys.homeLoginPromptTitle)),
-          content: Text(t.text(AppStringKeys.homeLoginPromptContent)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(t.text(AppStringKeys.homeLoginPromptLater)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A47D8),
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () {
-                Navigator.pop(ctx);
-                context.go('/phone_login');
-              },
-              child: Text(t.text(AppStringKeys.homeLoginPromptNow)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _showAiConfirmDialog(BuildContext ctx, List<ParsedResult> results) {
     showModalBottomSheet(
       context: ctx,
@@ -1037,28 +1197,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             });
                             context.read<AccountBloc>().add(
                               const ClearParsedResults(),
-                            );
-                          }
-
-                          // VIP 限额弹窗
-                          if (state.showVipLimitDialog) {
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              if (!context.mounted) return;
-                              _showVipUpgradeDialog(context);
-                            });
-                            context.read<AccountBloc>().add(
-                              const ClearVipLimitDialog(),
-                            );
-                          }
-
-                          // 游客登录提示弹窗
-                          if (state.showLoginLimitDialog) {
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              if (!context.mounted) return;
-                              _showLoginPromptDialog(context);
-                            });
-                            context.read<AccountBloc>().add(
-                              const ClearLoginLimitDialog(),
                             );
                           }
 
@@ -1802,6 +1940,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                         },
                                       ),
                                     ),
+
+                              const SliverToBoxAdapter(
+                                child: HomePangleBannerAd(),
+                              ),
 
                               SliverToBoxAdapter(
                                 child: SizedBox(

@@ -90,16 +90,6 @@ class ChangeMonthFilter extends AccountEvent {
   List<Object?> get props => [year, month];
 }
 
-/// 关闭 VIP 限额提示弹窗
-class ClearVipLimitDialog extends AccountEvent {
-  const ClearVipLimitDialog();
-}
-
-/// 关闭登录提示弹窗
-class ClearLoginLimitDialog extends AccountEvent {
-  const ClearLoginLimitDialog();
-}
-
 /// 按指定日期筛选账单（null=显示整月）
 class FilterByDay extends AccountEvent {
   final DateTime? day;

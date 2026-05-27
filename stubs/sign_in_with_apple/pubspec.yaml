@@ -1,0 +1,10 @@
+name: sign_in_with_apple
+description: Local CN-only stub for sign_in_with_apple
+version: 0.0.0
+
+environment:
+  sdk: ^3.11.3
+
+dependencies:
+  flutter:
+    sdk: flutter

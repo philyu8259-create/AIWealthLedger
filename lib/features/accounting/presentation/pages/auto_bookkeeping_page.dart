@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -14,12 +15,21 @@ const _autoBookkeepingShortcutTemplateUrl =
     'https://www.icloud.com/shortcuts/6962df2b8ec5474a805ffee4a09aaf65';
 
 class AutoBookkeepingPage extends StatelessWidget {
-  const AutoBookkeepingPage({super.key});
+  const AutoBookkeepingPage({super.key, this.platformResolver});
+
+  final TargetPlatform Function()? platformResolver;
+
+  bool _isAndroidPlatform() {
+    return platformResolver?.call() == TargetPlatform.android ||
+        (platformResolver == null &&
+            defaultTargetPlatform == TargetPlatform.android);
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
     final colors = Theme.of(context).extension<AppColorsExtension>()!;
+    final isAndroid = _isAndroidPlatform();
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: PremiumPageAppBar(
@@ -51,48 +61,71 @@ class AutoBookkeepingPage extends StatelessWidget {
                       MediaQuery.of(context).padding.bottom + 120,
                     ),
                     children: [
-                      _HeroPanel(colors: colors),
+                      _HeroPanel(colors: colors, isAndroid: isAndroid),
                       const SizedBox(height: 18),
-                      _InstallPanel(colors: colors),
-                      const SizedBox(height: 18),
-                      _SectionTitle(
-                        title: t.text(
-                          AppStringKeys.autoBookkeepingTriggerSection,
-                        ),
-                      ),
-                      _TriggerGrid(colors: colors),
+                      _InstallPanel(colors: colors, isAndroid: isAndroid),
                       const SizedBox(height: 18),
                       _SectionTitle(
                         title: t.text(
-                          AppStringKeys.autoBookkeepingShortcutSection,
+                          isAndroid
+                              ? AppStringKeys
+                                    .autoBookkeepingTriggerSectionAndroid
+                              : AppStringKeys.autoBookkeepingTriggerSection,
                         ),
                       ),
-                      _ShortcutSteps(colors: colors),
+                      _TriggerGrid(colors: colors, isAndroid: isAndroid),
                       const SizedBox(height: 18),
                       _SectionTitle(
                         title: t.text(
-                          AppStringKeys.autoBookkeepingManualSection,
+                          isAndroid
+                              ? AppStringKeys
+                                    .autoBookkeepingShortcutSectionAndroid
+                              : AppStringKeys.autoBookkeepingShortcutSection,
                         ),
                       ),
-                      _ManualSetupPanel(colors: colors),
+                      _ShortcutSteps(colors: colors, isAndroid: isAndroid),
+                      const SizedBox(height: 18),
+                      _SectionTitle(
+                        title: t.text(
+                          isAndroid
+                              ? AppStringKeys
+                                    .autoBookkeepingManualSectionAndroid
+                              : AppStringKeys.autoBookkeepingManualSection,
+                        ),
+                      ),
+                      _ManualSetupPanel(colors: colors, isAndroid: isAndroid),
                       const SizedBox(height: 18),
                       _InfoPanel(
                         icon: Icons.touch_app_outlined,
                         title: t.text(
-                          AppStringKeys.autoBookkeepingBackTapSection,
+                          isAndroid
+                              ? AppStringKeys
+                                    .autoBookkeepingBackTapSectionAndroid
+                              : AppStringKeys.autoBookkeepingBackTapSection,
                         ),
-                        body: t.text(AppStringKeys.autoBookkeepingBackTapCopy),
+                        body: t.text(
+                          isAndroid
+                              ? AppStringKeys.autoBookkeepingBackTapCopyAndroid
+                              : AppStringKeys.autoBookkeepingBackTapCopy,
+                        ),
                         colors: colors,
                       ),
                       const SizedBox(height: 18),
-                      _TroubleshootingPanel(colors: colors),
+                      _TroubleshootingPanel(
+                        colors: colors,
+                        isAndroid: isAndroid,
+                      ),
                       const SizedBox(height: 18),
                       _InfoPanel(
                         icon: Icons.lock_outline_rounded,
                         title: t.text(
                           AppStringKeys.autoBookkeepingPrivacySection,
                         ),
-                        body: t.text(AppStringKeys.autoBookkeepingPrivacyCopy),
+                        body: isAndroid
+                            ? t.text(
+                                AppStringKeys.autoBookkeepingPrivacyCopyAndroid,
+                              )
+                            : t.text(AppStringKeys.autoBookkeepingPrivacyCopy),
                         colors: colors,
                       ),
                       const SizedBox(height: 14),
@@ -110,9 +143,10 @@ class AutoBookkeepingPage extends StatelessWidget {
 }
 
 class _InstallPanel extends StatelessWidget {
-  const _InstallPanel({required this.colors});
+  const _InstallPanel({required this.colors, required this.isAndroid});
 
   final AppColorsExtension colors;
+  final bool isAndroid;
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +167,11 @@ class _InstallPanel extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  t.text(AppStringKeys.autoBookkeepingInstallSection),
+                  t.text(
+                    isAndroid
+                        ? AppStringKeys.autoBookkeepingInstallSectionAndroid
+                        : AppStringKeys.autoBookkeepingInstallSection,
+                  ),
                   style: TextStyle(
                     color: colors.textPrimary,
                     fontSize: 15,
@@ -145,7 +183,11 @@ class _InstallPanel extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            t.text(AppStringKeys.autoBookkeepingInstallCopy),
+            t.text(
+              isAndroid
+                  ? AppStringKeys.autoBookkeepingInstallCopyAndroid
+                  : AppStringKeys.autoBookkeepingInstallCopy,
+            ),
             style: TextStyle(
               color: colors.textSecondary,
               fontSize: 13,
@@ -157,7 +199,8 @@ class _InstallPanel extends StatelessWidget {
             identifier: 'auto-bookkeeping-open-shortcuts-button',
             button: true,
             child: PressFeedback(
-              onTap: () => _openShortcuts(context),
+              onTap: () =>
+                  isAndroid ? _openHomeAi(context) : _openShortcuts(context),
               child: Container(
                 height: 48,
                 alignment: Alignment.center,
@@ -176,7 +219,12 @@ class _InstallPanel extends StatelessWidget {
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
-                        t.text(AppStringKeys.autoBookkeepingInstallButton),
+                        t.text(
+                          isAndroid
+                              ? AppStringKeys
+                                    .autoBookkeepingInstallButtonAndroid
+                              : AppStringKeys.autoBookkeepingInstallButton,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -203,7 +251,11 @@ class _InstallPanel extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  t.text(AppStringKeys.autoBookkeepingInstallBackTapNote),
+                  t.text(
+                    isAndroid
+                        ? AppStringKeys.autoBookkeepingInstallBackTapNoteAndroid
+                        : AppStringKeys.autoBookkeepingInstallBackTapNote,
+                  ),
                   style: TextStyle(
                     color: colors.textSecondary,
                     fontSize: 12.5,
@@ -252,12 +304,18 @@ class _InstallPanel extends StatelessWidget {
       );
     }
   }
+
+  void _openHomeAi(BuildContext context) {
+    queueHomeAiOpenAfterNavigation();
+    context.go('/home');
+  }
 }
 
 class _HeroPanel extends StatelessWidget {
-  const _HeroPanel({required this.colors});
+  const _HeroPanel({required this.colors, required this.isAndroid});
 
   final AppColorsExtension colors;
+  final bool isAndroid;
 
   @override
   Widget build(BuildContext context) {
@@ -292,7 +350,11 @@ class _HeroPanel extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  t.text(AppStringKeys.autoBookkeepingHeroTitle),
+                  t.text(
+                    isAndroid
+                        ? AppStringKeys.autoBookkeepingHeroTitleAndroid
+                        : AppStringKeys.autoBookkeepingHeroTitle,
+                  ),
                   style: TextStyle(
                     color: colors.textPrimary,
                     fontSize: 20,
@@ -301,7 +363,11 @@ class _HeroPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  t.text(AppStringKeys.autoBookkeepingHeroSubtitle),
+                  t.text(
+                    isAndroid
+                        ? AppStringKeys.autoBookkeepingHeroSubtitleAndroid
+                        : AppStringKeys.autoBookkeepingHeroSubtitle,
+                  ),
                   style: TextStyle(
                     color: colors.textSecondary,
                     fontSize: 13,
@@ -318,26 +384,45 @@ class _HeroPanel extends StatelessWidget {
 }
 
 class _TriggerGrid extends StatelessWidget {
-  const _TriggerGrid({required this.colors});
+  const _TriggerGrid({required this.colors, required this.isAndroid});
 
   final AppColorsExtension colors;
+  final bool isAndroid;
 
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
     final items = [
-      (
-        icon: Icons.touch_app_outlined,
-        label: t.text(AppStringKeys.autoBookkeepingTriggerBackTap),
-      ),
-      (
-        icon: Icons.adjust_outlined,
-        label: t.text(AppStringKeys.autoBookkeepingTriggerAssistive),
-      ),
-      (
-        icon: Icons.graphic_eq_rounded,
-        label: t.text(AppStringKeys.autoBookkeepingTriggerSiri),
-      ),
+      if (isAndroid)
+        (
+          icon: Icons.content_copy_rounded,
+          label: t.text(AppStringKeys.autoBookkeepingTriggerCopy),
+        )
+      else
+        (
+          icon: Icons.touch_app_outlined,
+          label: t.text(AppStringKeys.autoBookkeepingTriggerBackTap),
+        ),
+      if (isAndroid)
+        (
+          icon: Icons.arrow_back_rounded,
+          label: t.text(AppStringKeys.autoBookkeepingTriggerReturn),
+        )
+      else
+        (
+          icon: Icons.adjust_outlined,
+          label: t.text(AppStringKeys.autoBookkeepingTriggerAssistive),
+        ),
+      if (isAndroid)
+        (
+          icon: Icons.checklist_rtl_rounded,
+          label: t.text(AppStringKeys.autoBookkeepingTriggerParse),
+        )
+      else
+        (
+          icon: Icons.graphic_eq_rounded,
+          label: t.text(AppStringKeys.autoBookkeepingTriggerSiri),
+        ),
     ];
     return Row(
       children: [
@@ -407,18 +492,25 @@ class _MiniActionCard extends StatelessWidget {
 }
 
 class _ShortcutSteps extends StatelessWidget {
-  const _ShortcutSteps({required this.colors});
+  const _ShortcutSteps({required this.colors, required this.isAndroid});
 
   final AppColorsExtension colors;
+  final bool isAndroid;
 
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
-    final steps = [
-      t.text(AppStringKeys.autoBookkeepingShortcutStepScreenshot),
-      t.text(AppStringKeys.autoBookkeepingShortcutStepExtract),
-      t.text(AppStringKeys.autoBookkeepingShortcutStepRun),
-    ];
+    final steps = isAndroid
+        ? [
+            t.text(AppStringKeys.autoBookkeepingShortcutStepCopy),
+            t.text(AppStringKeys.autoBookkeepingShortcutStepReturn),
+            t.text(AppStringKeys.autoBookkeepingShortcutStepPaste),
+          ]
+        : [
+            t.text(AppStringKeys.autoBookkeepingShortcutStepScreenshot),
+            t.text(AppStringKeys.autoBookkeepingShortcutStepExtract),
+            t.text(AppStringKeys.autoBookkeepingShortcutStepRun),
+          ];
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -489,32 +581,55 @@ class _StepRow extends StatelessWidget {
 }
 
 class _ManualSetupPanel extends StatelessWidget {
-  const _ManualSetupPanel({required this.colors});
+  const _ManualSetupPanel({required this.colors, required this.isAndroid});
 
   final AppColorsExtension colors;
+  final bool isAndroid;
 
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
-    final steps = [
-      (
-        Icons.screenshot_monitor_outlined,
-        t.text(AppStringKeys.autoBookkeepingManualScreenshot),
-      ),
-      (
-        Icons.document_scanner_outlined,
-        t.text(AppStringKeys.autoBookkeepingManualExtract),
-      ),
-      (
-        Icons.auto_awesome_motion_outlined,
-        t.text(AppStringKeys.autoBookkeepingManualAction),
-      ),
-      (
-        Icons.text_fields_rounded,
-        t.text(AppStringKeys.autoBookkeepingManualBillText),
-      ),
-      (Icons.save_outlined, t.text(AppStringKeys.autoBookkeepingManualSave)),
-    ];
+    final steps = isAndroid
+        ? [
+            (
+              Icons.copy_all_rounded,
+              t.text(AppStringKeys.autoBookkeepingManualCopy),
+            ),
+            (
+              Icons.subdirectory_arrow_left_rounded,
+              t.text(AppStringKeys.autoBookkeepingManualReturn),
+            ),
+            (
+              Icons.paste_rounded,
+              t.text(AppStringKeys.autoBookkeepingManualPaste),
+            ),
+            (
+              Icons.done_all_rounded,
+              t.text(AppStringKeys.autoBookkeepingManualConfirm),
+            ),
+          ]
+        : [
+            (
+              Icons.screenshot_monitor_outlined,
+              t.text(AppStringKeys.autoBookkeepingManualScreenshot),
+            ),
+            (
+              Icons.document_scanner_outlined,
+              t.text(AppStringKeys.autoBookkeepingManualExtract),
+            ),
+            (
+              Icons.auto_awesome_motion_outlined,
+              t.text(AppStringKeys.autoBookkeepingManualAction),
+            ),
+            (
+              Icons.text_fields_rounded,
+              t.text(AppStringKeys.autoBookkeepingManualBillText),
+            ),
+            (
+              Icons.save_outlined,
+              t.text(AppStringKeys.autoBookkeepingManualSave),
+            ),
+          ];
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -647,22 +762,33 @@ class _InfoPanel extends StatelessWidget {
 }
 
 class _TroubleshootingPanel extends StatelessWidget {
-  const _TroubleshootingPanel({required this.colors});
+  const _TroubleshootingPanel({required this.colors, required this.isAndroid});
 
   final AppColorsExtension colors;
+  final bool isAndroid;
 
   @override
   Widget build(BuildContext context) {
     final t = AppStrings.of(context);
-    final items = [
-      t.text(AppStringKeys.autoBookkeepingTroubleshootingActionMissing),
-      t.text(AppStringKeys.autoBookkeepingTroubleshootingVariableMissing),
-      t.text(AppStringKeys.autoBookkeepingTroubleshootingSiri),
-    ];
+    final items = isAndroid
+        ? [
+            t.text(AppStringKeys.autoBookkeepingTroubleshootingNoText),
+            t.text(AppStringKeys.autoBookkeepingTroubleshootingPasteFailed),
+            t.text(AppStringKeys.autoBookkeepingTroubleshootingParseFailed),
+          ]
+        : [
+            t.text(AppStringKeys.autoBookkeepingTroubleshootingActionMissing),
+            t.text(AppStringKeys.autoBookkeepingTroubleshootingVariableMissing),
+            t.text(AppStringKeys.autoBookkeepingTroubleshootingSiri),
+          ];
 
     return _InfoPanel(
       icon: Icons.help_outline_rounded,
-      title: t.text(AppStringKeys.autoBookkeepingTroubleshootingSection),
+      title: t.text(
+        isAndroid
+            ? AppStringKeys.autoBookkeepingTroubleshootingSectionAndroid
+            : AppStringKeys.autoBookkeepingTroubleshootingSection,
+      ),
       body: items.map((item) => '• $item').join('\n'),
       colors: colors,
     );

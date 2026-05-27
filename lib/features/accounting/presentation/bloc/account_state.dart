@@ -26,8 +26,6 @@ class AccountState extends Equatable {
   final bool isVip;
   final DateTime? vipExpireDate;
   final int totalEntryCount;
-  final bool showVipLimitDialog;
-  final bool showLoginLimitDialog;
   // 上月数据，用于环比比较
   final double? lastMonthExpense;
   final double? lastMonthIncome;
@@ -45,8 +43,6 @@ class AccountState extends Equatable {
     this.isVip = false,
     this.vipExpireDate,
     this.totalEntryCount = 0,
-    this.showVipLimitDialog = false,
-    this.showLoginLimitDialog = false,
     this.lastMonthExpense,
     this.lastMonthIncome,
   });
@@ -77,8 +73,6 @@ class AccountState extends Equatable {
     bool? isVip,
     DateTime? vipExpireDate,
     int? totalEntryCount,
-    bool? showVipLimitDialog,
-    bool? showLoginLimitDialog,
     double? lastMonthExpense,
     double? lastMonthIncome,
   }) {
@@ -94,8 +88,6 @@ class AccountState extends Equatable {
       isVip: isVip ?? this.isVip,
       vipExpireDate: vipExpireDate ?? this.vipExpireDate,
       totalEntryCount: totalEntryCount ?? this.totalEntryCount,
-      showVipLimitDialog: showVipLimitDialog ?? this.showVipLimitDialog,
-      showLoginLimitDialog: showLoginLimitDialog ?? this.showLoginLimitDialog,
       lastMonthExpense: lastMonthExpense ?? this.lastMonthExpense,
       lastMonthIncome: lastMonthIncome ?? this.lastMonthIncome,
     );
@@ -129,8 +121,6 @@ class AccountState extends Equatable {
     parsedResults,
     isParsing,
     isAiPanelVisible,
-    showLoginLimitDialog,
-    showVipLimitDialog,
     lastMonthExpense,
     lastMonthIncome,
   ];

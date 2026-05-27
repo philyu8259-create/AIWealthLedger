@@ -2,11 +2,12 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'config_service.dart';
+import 'ai/receipt_ocr_service.dart';
 
 /// OCR.space 免费 OCR 服务
 /// API 文档：https://ocr.space/ocrapi
 /// 免费额度：25,000 次/月
-class OcrSpaceService {
+class OcrSpaceService implements ReceiptOcrService {
   Dio get _dio => Dio(
     BaseOptions(
       connectTimeout: const Duration(seconds: 10),
@@ -22,6 +23,7 @@ class OcrSpaceService {
   /// 识别图片文字
   /// [imageBytes] - 图片二进制数据
   /// 返回识别的纯文本
+  @override
   Future<String?> recognizeText(List<int> imageBytes) async {
     if (!_isConfigured) {
       debugPrint('[OCR.space] not configured (no API key)');
@@ -83,6 +85,7 @@ class OcrSpaceService {
   }
 
   /// 识别票据（与通用文字识别相同）
+  @override
   Future<String?> recognizeReceipt(List<int> imageBytes) async {
     return recognizeText(imageBytes);
   }

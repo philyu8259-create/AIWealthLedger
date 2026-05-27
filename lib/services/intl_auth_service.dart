@@ -16,10 +16,44 @@ import 'injection.dart';
 import 'stock_service.dart';
 import 'vip_service.dart';
 
+typedef GoogleSignInClientFactory =
+    GoogleSignInClient Function({
+      required List<String> scopes,
+      String? clientId,
+      String? serverClientId,
+    });
+
+class GoogleSignInAccountInfo {
+  const GoogleSignInAccountInfo({required this.email, this.displayName});
+
+  final String email;
+  final String? displayName;
+}
+
+abstract class GoogleSignInClient {
+  Future<void> signOut();
+  Future<GoogleSignInAccountInfo?> signIn();
+}
+
+bool supportsAppleSignInOnTargetPlatform(TargetPlatform platform) {
+  return platform == TargetPlatform.iOS;
+}
+
 class IntlAuthService {
-  IntlAuthService(this._prefs);
+  IntlAuthService(
+    this._prefs, {
+    GoogleSignInClientFactory? googleSignInClientFactory,
+    bool Function()? isIosPlatform,
+    bool Function()? isAndroidPlatform,
+  }) : _googleSignInClientFactory =
+           googleSignInClientFactory ?? _defaultGoogleSignInClient,
+       _isIosPlatform = isIosPlatform ?? (() => Platform.isIOS),
+       _isAndroidPlatform = isAndroidPlatform ?? (() => Platform.isAndroid);
 
   final SharedPreferences _prefs;
+  final GoogleSignInClientFactory _googleSignInClientFactory;
+  final bool Function() _isIosPlatform;
+  final bool Function() _isAndroidPlatform;
 
   static const _loggedInKey = 'has_logged_in';
   static const _accountKey = 'logged_in_phone';
@@ -65,7 +99,10 @@ class IntlAuthService {
 
   Future<void> signInWithGoogle() async {
     debugPrint('[IntlAuthService] signInWithGoogle start');
-    if (!Platform.isIOS && !Platform.isAndroid) {
+    final isIos = _isIosPlatform();
+    final isAndroid = _isAndroidPlatform();
+
+    if (!isIos && !isAndroid) {
       throw UnsupportedError(
         _message(
           'Google 登录当前只支持 iOS 和 Android',
@@ -73,15 +110,25 @@ class IntlAuthService {
         ),
       );
     }
-    final missing = <String>[
-      if (Platform.isIOS && ConfigService.instance.googleIosClientId.isEmpty)
-        'GOOGLE_IOS_CLIENT_ID',
-      if (ConfigService.instance.googleServerClientId.isEmpty)
-        'GOOGLE_SERVER_CLIENT_ID',
-      if (Platform.isIOS &&
-          ConfigService.instance.googleIosReversedClientId.isEmpty)
-        'GOOGLE_IOS_REVERSED_CLIENT_ID',
-    ];
+
+    final isMissingServerClientId =
+        ConfigService.instance.googleServerClientId.isEmpty;
+    final missing = <String>[];
+    if (isIos) {
+      if (ConfigService.instance.googleIosClientId.isEmpty) {
+        missing.add('GOOGLE_IOS_CLIENT_ID');
+      }
+      if (isMissingServerClientId) {
+        missing.add('GOOGLE_SERVER_CLIENT_ID');
+      }
+      if (ConfigService.instance.googleIosReversedClientId.isEmpty) {
+        missing.add('GOOGLE_IOS_REVERSED_CLIENT_ID');
+      }
+    } else if (isAndroid && isMissingServerClientId) {
+      missing.add('GOOGLE_SERVER_CLIENT_ID');
+    }
+
+    // 仅 Android 端：至少需要 Web 客户端 ID 用于 server auth；iOS 端还需要完整的 3 项。
     if (missing.isNotEmpty) {
       throw StateError(
         _message(
@@ -91,16 +138,13 @@ class IntlAuthService {
       );
     }
 
-    final signIn = GoogleSignIn(
+    final signIn = _googleSignInClientFactory(
       scopes: const ['email'],
-      clientId: Platform.isIOS
-          ? ConfigService.instance.googleIosClientId
-          : null,
-      serverClientId: ConfigService.instance.googleServerClientId.isEmpty
+      clientId: isIos ? ConfigService.instance.googleIosClientId : null,
+      serverClientId: isMissingServerClientId
           ? null
           : ConfigService.instance.googleServerClientId,
     );
-
     await signIn.signOut();
     final account = await signIn.signIn();
     if (account == null) {
@@ -126,7 +170,7 @@ class IntlAuthService {
 
   Future<void> signInWithApple() async {
     debugPrint('[IntlAuthService] signInWithApple start');
-    if (!Platform.isIOS) {
+    if (!_isIosPlatform()) {
       throw UnsupportedError(
         _message(
           'Apple 登录当前先只接 iOS',
@@ -236,6 +280,20 @@ class IntlAuthService {
         ),
       );
     }
+  }
+
+  static GoogleSignInClient _defaultGoogleSignInClient({
+    required List<String> scopes,
+    String? clientId,
+    String? serverClientId,
+  }) {
+    return _RealGoogleSignInClient(
+      GoogleSignIn(
+        scopes: scopes,
+        clientId: clientId,
+        serverClientId: serverClientId,
+      ),
+    );
   }
 
   Future<void> _signInWithIntlDemoEmail(String email) async {
@@ -390,5 +448,28 @@ class IntlAuthService {
     if (full.isNotEmpty) return full;
     if (email.isNotEmpty) return email;
     return _message('Apple 用户', 'Apple User');
+  }
+}
+
+class _RealGoogleSignInClient implements GoogleSignInClient {
+  const _RealGoogleSignInClient(this._googleSignIn);
+
+  final GoogleSignIn _googleSignIn;
+
+  @override
+  Future<void> signOut() {
+    return _googleSignIn.signOut();
+  }
+
+  @override
+  Future<GoogleSignInAccountInfo?> signIn() async {
+    final account = await _googleSignIn.signIn();
+    if (account == null) {
+      return null;
+    }
+    return GoogleSignInAccountInfo(
+      email: account.email,
+      displayName: account.displayName,
+    );
   }
 }

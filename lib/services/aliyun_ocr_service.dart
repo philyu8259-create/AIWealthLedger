@@ -3,11 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'config_service.dart';
+import 'ai/receipt_ocr_service.dart';
 
 /// 阿里云通用 OCR 服务
 /// 使用阿里云 OCR API RecognizeAllText 接口
 /// 文档：https://help.aliyun.com/zh/ocr/developer-reference/api-ocr-api-2021-07-07-recognizealltext
-class AliyunOCRService {
+class AliyunOCRService implements ReceiptOcrService {
   Dio get _dio => Dio(
     BaseOptions(
       connectTimeout: const Duration(seconds: 15),
@@ -33,6 +34,7 @@ class AliyunOCRService {
   }
 
   /// 通用文字识别
+  @override
   Future<String?> recognizeText(List<int> imageBytes) async {
     if (!_isConfigured) {
       debugPrint('[OCR] not configured');
@@ -142,6 +144,7 @@ class AliyunOCRService {
   }
 
   /// 票据识别
+  @override
   Future<String?> recognizeReceipt(List<int> imageBytes) async {
     return recognizeText(imageBytes);
   }

@@ -1,7 +1,7 @@
 # App Store 上架素材
 
 ## App 名称
-AI财富账本
+财富记账本
 
 ## 副标题（可选）
 开口记账，拍照识别 — AI 语音 + OCR 双模式
@@ -11,7 +11,7 @@ AI财富账本
 ## App 描述
 
 **📣 一句话简介**
-AI财富账本 — 开口记账，拍照识别，AI 自动归类，随时随地记清楚每一笔
+财富记账本 — 开口记账，拍照识别，AI 自动归类，随时随地记清楚每一笔
 
 **📝 完整描述**
 
@@ -116,7 +116,7 @@ https://philyu8259-create.github.io/ai-accounting-privacy/privacy_policy.html
 用于 AI 图像工具生成 1024×1024 App Store Icon：
 
 ```
-App Store app icon for Chinese iOS finance app AI财富账本.
+App Store app icon for Chinese iOS finance app 财富记账本.
 Modern finance icon, emerald green background, white ledger/book symbol, subtle gold coin and upward financial line, clean premium style, square format, no text, no animal mascot, high quality vector illustration style
 ```
 
@@ -126,7 +126,7 @@ Modern finance icon, emerald green background, white ledger/book symbol, subtle 
 
 ### iPhone 6.7" (1290×2796)
 ```
-iPhone 15 Pro Max app store screenshot for Chinese finance app "AI财富账本".
+iPhone 15 Pro Max app store screenshot for Chinese finance app "财富记账本".
 Show the main home screen with a large voice recording button labeled "按住说话",
 a list of recent expenses below, and a pie chart showing spending categories.
 Modern clean UI, soft blue color scheme, white background, Chinese text.
@@ -135,7 +135,7 @@ Professional screenshot style, realistic device frame.
 
 ### iPhone 6.5" (1284×2778)
 ```
-iPhone 14 Pro Max app store screenshot for Chinese finance app "AI财富账本".
+iPhone 14 Pro Max app store screenshot for Chinese finance app "财富记账本".
 Show the main home screen with voice input and recent transactions.
 Modern clean UI, soft blue color scheme, Chinese text.
 Professional app store screenshot style.
@@ -143,7 +143,7 @@ Professional app store screenshot style.
 
 ### iPhone 5.5" (1242×2208)
 ```
-iPhone 8 Plus app store screenshot for Chinese finance app "AI财富账本".
+iPhone 8 Plus app store screenshot for Chinese finance app "财富记账本".
 Show the main home screen with voice button and expense list.
 Modern clean UI, soft blue color scheme, Chinese text.
 Professional app store screenshot style.
@@ -151,7 +151,7 @@ Professional app store screenshot style.
 
 ### iPad (2048×2732)
 ```
-iPad Pro app store screenshot for Chinese finance app "AI财富账本".
+iPad Pro app store screenshot for Chinese finance app "财富记账本".
 Show the main home screen with voice input, transaction list, and pie chart.
 Modern clean UI, soft blue color scheme, white background, Chinese text.
 Professional app store screenshot style.
